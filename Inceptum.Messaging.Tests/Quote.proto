@@ -1,0 +1,23 @@
+message Quote{		//	1 ?????????
+    required uint32 finam_id 		= 1;
+    optional uint32 date 		= 2;
+    optional double last 		= 3;
+    optional double bid 		= 4;
+    optional double bidvol		= 17;	//NOTE: this value of integer type
+    optional double ask 		= 5;
+    optional double askvol 		= 18;	//NOTE: this value of integer type
+    optional double open 		= 6;
+    optional double high 		= 7;
+    optional double low 		= 8;
+    optional double close 		= 9;
+    optional double volume 		= 10;	//NOTE: this value of integer type
+    optional double value 		= 11;	//NOTE: not translated from RFA
+    optional double chg 		= 12;	//NOTE: not transmitted from Reuters
+    optional uint32 chgdir 		= 13;
+    optional uint32 last_time 		= 14;
+    optional double last_trade_size 	= 15;
+    optional uint32 trade_count 	= 16; 
+
+    optional double yhigh	 	= 19;		//	max in year
+    optional double ylow 		= 20;		//	min in year
+}
