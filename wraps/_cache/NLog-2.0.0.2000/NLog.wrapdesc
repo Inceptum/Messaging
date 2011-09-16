@@ -1,0 +1,3 @@
+﻿name: NLog
+version: 2.0.0.2000
+description: NLog is a logging platform for .NET with rich log routing and management capabilities. It can help you produce and manage high-quality logs for your application regardless of its size or complexity. This package installs NLog.dll with includes core logging functionality. For your main project also need to install "NLog Configuration" package.

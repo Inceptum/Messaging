@@ -1,0 +1,4 @@
+﻿name: RhinoMocks
+version: 3.6.1
+description: A dynamic mock object framework for the .Net platform. It's purpose is to ease testing by allowing the developer to create mock implementations of custom objects and verify the interactions using unit testing.
+depends: Castle.Core
