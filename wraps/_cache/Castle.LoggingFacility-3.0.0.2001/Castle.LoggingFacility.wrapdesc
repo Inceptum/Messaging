@@ -1,0 +1,5 @@
+﻿name: Castle.LoggingFacility
+version: 3.0.0.2001
+description: Castle Windsor logging facility lets you easily inject loggers into your components. It offers integration with most popular 3rd party logging frameworks like NLog and log4net.
+depends: Castle.Core >= 3.0 and < 3.1
+depends: Castle.Windsor >= 3.0 and < 3.1

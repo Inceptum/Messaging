@@ -1,0 +1,6 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package-list>
+  <wrap name="protobuf-net" version="2.0.0.431">
+    <link rel="package" href="protobuf-net-2.0.0.431.wrap" />
+  </wrap>
+<wrap name="RhinoMocks" version="3.6.1"><link rel="package" href="RhinoMocks-3.6.1.wrap" /><depends>Castle.Core</depends></wrap><wrap name="SonicClient" version="7.6.2"><link rel="package" href="SonicClient-7.6.2.wrap" /></wrap><wrap name="Rx-Main" version="1.0.10621"><link rel="package" href="Rx-Main-1.0.10621.wrap" /></wrap><wrap name="Rx-Providers" version="1.0.10621"><link rel="package" href="Rx-Providers-1.0.10621.wrap" /><depends>Rx-Main &gt;= 1.0 and &lt; 1.1</depends></wrap></package-list>

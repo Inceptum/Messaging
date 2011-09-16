@@ -1,0 +1,3 @@
+﻿name: SonicClient
+version: 7.6.2
+description: A dynamic mock object framework for the .Net platform. It's purpose is to ease testing by allowing the developer to create mock implementations of custom objects and verify the interactions using unit testing.
