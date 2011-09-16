@@ -1,0 +1,142 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "libs", "libs", "{50390586-FC3F-406D-B66F-C593FE9700C3}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "castle", "castle", "{C8F58DC6-6869-4F94-A23B-631925A1B940}"
+	ProjectSection(SolutionItems) = preProject
+		libs\castle\Castle.Core.dll = libs\castle\Castle.Core.dll
+		libs\castle\Castle.Core.pdb = libs\castle\Castle.Core.pdb
+		libs\castle\Castle.Core.xml = libs\castle\Castle.Core.xml
+		libs\castle\Castle.Facilities.Logging.dll = libs\castle\Castle.Facilities.Logging.dll
+		libs\castle\Castle.Facilities.Logging.pdb = libs\castle\Castle.Facilities.Logging.pdb
+		libs\castle\Castle.Facilities.Logging.xml = libs\castle\Castle.Facilities.Logging.xml
+		libs\castle\Castle.Facilities.NHibernateIntegration.dll = libs\castle\Castle.Facilities.NHibernateIntegration.dll
+		libs\castle\Castle.Facilities.NHibernateIntegration.pdb = libs\castle\Castle.Facilities.NHibernateIntegration.pdb
+		libs\castle\Castle.Facilities.NHibernateIntegration.xml = libs\castle\Castle.Facilities.NHibernateIntegration.xml
+		libs\castle\Castle.Facilities.WcfIntegration.dll = libs\castle\Castle.Facilities.WcfIntegration.dll
+		libs\castle\Castle.Facilities.WcfIntegration.pdb = libs\castle\Castle.Facilities.WcfIntegration.pdb
+		libs\castle\Castle.Facilities.WcfIntegration.xml = libs\castle\Castle.Facilities.WcfIntegration.xml
+		libs\castle\Castle.Services.Logging.NLogIntegration.dll = libs\castle\Castle.Services.Logging.NLogIntegration.dll
+		libs\castle\Castle.Services.Logging.NLogIntegration.pdb = libs\castle\Castle.Services.Logging.NLogIntegration.pdb
+		libs\castle\Castle.Services.Transaction.dll = libs\castle\Castle.Services.Transaction.dll
+		libs\castle\Castle.Services.Transaction.xml = libs\castle\Castle.Services.Transaction.xml
+		libs\castle\Castle.Windsor.dll = libs\castle\Castle.Windsor.dll
+		libs\castle\Castle.Windsor.pdb = libs\castle\Castle.Windsor.pdb
+		libs\castle\Castle.Windsor.XML = libs\castle\Castle.Windsor.XML
+		libs\castle\NLog.dll = libs\castle\NLog.dll
+		libs\castle\NLog.Extended.dll = libs\castle\NLog.Extended.dll
+		libs\castle\NLog.Extended.xml = libs\castle\NLog.Extended.xml
+		libs\castle\NLog.netfx40.xsd = libs\castle\NLog.netfx40.xsd
+		libs\castle\NLog.xml = libs\castle\NLog.xml
+		libs\castle\NLog.xsd = libs\castle\NLog.xsd
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inceptum.Messaging", "Inceptum.Messaging\Inceptum.Messaging.csproj", "{87CC7D22-A809-40D3-80FB-E9D58109DC82}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "nunit", "nunit", "{498D550E-3143-447D-B319-F63B88947EC1}"
+	ProjectSection(SolutionItems) = preProject
+		libs\nunit\nunit.framework.dll = libs\nunit\nunit.framework.dll
+		libs\nunit\nunit.framework.xml = libs\nunit\nunit.framework.xml
+		libs\nunit\nunit.mocks.dll = libs\nunit\nunit.mocks.dll
+		libs\nunit\pnunit.framework.dll = libs\nunit\pnunit.framework.dll
+		libs\nunit\Rhino.Mocks.dll = libs\nunit\Rhino.Mocks.dll
+		libs\nunit\Rhino.Mocks.xml = libs\nunit\Rhino.Mocks.xml
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inceptum.Messaging.Tests", "Inceptum.Messaging.Tests\Inceptum.Messaging.Tests.csproj", "{B370B3F0-31A7-4146-898C-C2928C025B99}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sonic", "sonic", "{89274C44-68E0-49BF-A386-B7C6D771FB57}"
+	ProjectSection(SolutionItems) = preProject
+		libs\sonic\Sonic.Client.dll = libs\sonic\Sonic.Client.dll
+		libs\sonic\Sonic.Client.Jms.Impl.dll = libs\sonic\Sonic.Client.Jms.Impl.dll
+		libs\sonic\Sonic.Jms.Cf.Impl.dll = libs\sonic\Sonic.Jms.Cf.Impl.dll
+		libs\sonic\Sonic.Jms.dll = libs\sonic\Sonic.Jms.dll
+		libs\sonic\Sonic.Security.dll = libs\sonic\Sonic.Security.dll
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inceptum.AppHosting", "Inceptum.AppHosting\Inceptum.AppHosting.csproj", "{D622FE26-8D36-4AE7-9E7A-3E892AD985FF}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ibank", "ibank", "{CB79CEF5-60BB-45C5-B578-ADEEE4155509}"
+	ProjectSection(SolutionItems) = preProject
+		libs\ibank\Finam.Internet.Bank.Configuration.Client.dll = libs\ibank\Finam.Internet.Bank.Configuration.Client.dll
+		libs\ibank\Finam.Internet.Bank.Configuration.Client.pdb = libs\ibank\Finam.Internet.Bank.Configuration.Client.pdb
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inceptum.AppHosting.Tests", "Inceptum.AppHosting.Tests\Inceptum.AppHosting.Tests.csproj", "{DFBD0CB3-346C-4DD0-B3BD-626A419EEB6F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "protobuf", "protobuf", "{C2A644B4-A687-4240-8CB0-A38964C77628}"
+	ProjectSection(SolutionItems) = preProject
+		libs\protobuf\Licence.txt = libs\protobuf\Licence.txt
+		libs\protobuf\protobuf-net.dll = libs\protobuf\protobuf-net.dll
+		libs\protobuf\protobuf-net.pdb = libs\protobuf\protobuf-net.pdb
+		libs\protobuf\protobuf-net.xml = libs\protobuf\protobuf-net.xml
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inceptum.DataBus", "Inceptum.DataBus\Inceptum.DataBus.csproj", "{7F5DD1AC-CA1A-488A-9053-03F4CBAF7D92}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "rx", "rx", "{527A6AFB-8F10-4A6C-A85B-403FB9268D70}"
+	ProjectSection(SolutionItems) = preProject
+		libs\rx\Microsoft.Reactive.Testing.dll = libs\rx\Microsoft.Reactive.Testing.dll
+		libs\rx\Microsoft.Reactive.Testing.xml = libs\rx\Microsoft.Reactive.Testing.xml
+		libs\rx\System.Reactive.dll = libs\rx\System.Reactive.dll
+		libs\rx\System.Reactive.Providers.dll = libs\rx\System.Reactive.Providers.dll
+		libs\rx\System.Reactive.Providers.xml = libs\rx\System.Reactive.Providers.xml
+		libs\rx\System.Reactive.Windows.Forms.dll = libs\rx\System.Reactive.Windows.Forms.dll
+		libs\rx\System.Reactive.Windows.Forms.xml = libs\rx\System.Reactive.Windows.Forms.xml
+		libs\rx\System.Reactive.Windows.Threading.dll = libs\rx\System.Reactive.Windows.Threading.dll
+		libs\rx\System.Reactive.Windows.Threading.xml = libs\rx\System.Reactive.Windows.Threading.xml
+		libs\rx\System.Reactive.xml = libs\rx\System.Reactive.xml
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inceptum.DataBus.Tests", "Inceptum.DataBus.Tests\Inceptum.DataBus.Tests.csproj", "{5D465092-2209-4743-8524-A8239137C79F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inceptum.Core", "Inceptum.Core\Inceptum.Core.csproj", "{6119133D-5984-4E3C-B93A-B0956FBA8B79}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{87CC7D22-A809-40D3-80FB-E9D58109DC82}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{87CC7D22-A809-40D3-80FB-E9D58109DC82}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{87CC7D22-A809-40D3-80FB-E9D58109DC82}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{87CC7D22-A809-40D3-80FB-E9D58109DC82}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B370B3F0-31A7-4146-898C-C2928C025B99}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B370B3F0-31A7-4146-898C-C2928C025B99}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B370B3F0-31A7-4146-898C-C2928C025B99}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B370B3F0-31A7-4146-898C-C2928C025B99}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D622FE26-8D36-4AE7-9E7A-3E892AD985FF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D622FE26-8D36-4AE7-9E7A-3E892AD985FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D622FE26-8D36-4AE7-9E7A-3E892AD985FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D622FE26-8D36-4AE7-9E7A-3E892AD985FF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DFBD0CB3-346C-4DD0-B3BD-626A419EEB6F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DFBD0CB3-346C-4DD0-B3BD-626A419EEB6F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DFBD0CB3-346C-4DD0-B3BD-626A419EEB6F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DFBD0CB3-346C-4DD0-B3BD-626A419EEB6F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7F5DD1AC-CA1A-488A-9053-03F4CBAF7D92}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7F5DD1AC-CA1A-488A-9053-03F4CBAF7D92}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7F5DD1AC-CA1A-488A-9053-03F4CBAF7D92}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7F5DD1AC-CA1A-488A-9053-03F4CBAF7D92}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5D465092-2209-4743-8524-A8239137C79F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5D465092-2209-4743-8524-A8239137C79F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5D465092-2209-4743-8524-A8239137C79F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5D465092-2209-4743-8524-A8239137C79F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6119133D-5984-4E3C-B93A-B0956FBA8B79}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6119133D-5984-4E3C-B93A-B0956FBA8B79}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6119133D-5984-4E3C-B93A-B0956FBA8B79}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6119133D-5984-4E3C-B93A-B0956FBA8B79}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{C8F58DC6-6869-4F94-A23B-631925A1B940} = {50390586-FC3F-406D-B66F-C593FE9700C3}
+		{498D550E-3143-447D-B319-F63B88947EC1} = {50390586-FC3F-406D-B66F-C593FE9700C3}
+		{89274C44-68E0-49BF-A386-B7C6D771FB57} = {50390586-FC3F-406D-B66F-C593FE9700C3}
+		{CB79CEF5-60BB-45C5-B578-ADEEE4155509} = {50390586-FC3F-406D-B66F-C593FE9700C3}
+		{C2A644B4-A687-4240-8CB0-A38964C77628} = {50390586-FC3F-406D-B66F-C593FE9700C3}
+		{527A6AFB-8F10-4A6C-A85B-403FB9268D70} = {50390586-FC3F-406D-B66F-C593FE9700C3}
+	EndGlobalSection
+EndGlobal
