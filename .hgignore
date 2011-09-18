@@ -36,5 +36,8 @@ _UpgradeReport_Files*/
 *.ReSharper.*
 *.dotCover
 
+_cache
+_cache\*
+
 syntax: regexp
 ^[^\/]*.wrap
