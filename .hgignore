@@ -5,8 +5,8 @@ syntax: glob
 
 # Ignore Visual Studio 2008 files
 *.obj
-*.exe
-*.pdb
+#*.exe
+#*.pdb
 *.user
 *.aps
 *.pch
