@@ -168,7 +168,7 @@ namespace Inceptum.DataBus.Tests
                         feedSource = new Subject<long>();
                         f.OnError(new Exception("test"));
                         Assert.AreEqual(FeedStatus.NotAvailable, feed.Status, "Status was not set to NotAvailable after feed source produced an error");
-                        Thread.Sleep(300);
+                        Thread.Sleep(500);
                     }
                 }
 
