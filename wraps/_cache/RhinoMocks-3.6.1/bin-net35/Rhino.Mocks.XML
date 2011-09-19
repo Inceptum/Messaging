@@ -1599,7 +1599,7 @@
             Add an actual method call to this expectation
             </summary>
         </member>
-        <member name="M:Rhino.Mocks.Interfaces.IExpectation.ReturnOrThrow(Castle.DynamicProxy.IInvocation,System.Object[])">
+        <member name="M:Rhino.Mocks.Interfaces.IExpectation.ReturnOrThrow(Castle.Core.Interceptor.IInvocation,System.Object[])">
             <summary>
             Returns the return value or throw the exception and setup any output / ref parameters
             that has been set.
@@ -1778,7 +1778,7 @@
             </summary>
             <returns></returns>
         </member>
-        <member name="M:Rhino.Mocks.Expectations.AbstractExpectation.ReturnOrThrow(Castle.DynamicProxy.IInvocation,System.Object[])">
+        <member name="M:Rhino.Mocks.Expectations.AbstractExpectation.ReturnOrThrow(Castle.Core.Interceptor.IInvocation,System.Object[])">
             <summary>
             Returns the return value or throw the exception and setup output / ref parameters
             </summary>
@@ -1789,7 +1789,7 @@
             </summary>
             <param name="args">The arguments with which the method was called</param>
         </member>
-        <member name="M:Rhino.Mocks.Expectations.AbstractExpectation.#ctor(Castle.DynamicProxy.IInvocation,Rhino.Mocks.Impl.Range)">
+        <member name="M:Rhino.Mocks.Expectations.AbstractExpectation.#ctor(Castle.Core.Interceptor.IInvocation,Rhino.Mocks.Impl.Range)">
             <summary>
             Creates a new <see cref="T:Rhino.Mocks.Expectations.AbstractExpectation"/> instance.
             </summary>
@@ -1920,7 +1920,7 @@
             Expectation that matches any arguments for the method.
             </summary>
         </member>
-        <member name="M:Rhino.Mocks.Expectations.AnyArgsExpectation.#ctor(Castle.DynamicProxy.IInvocation,Rhino.Mocks.Impl.Range)">
+        <member name="M:Rhino.Mocks.Expectations.AnyArgsExpectation.#ctor(Castle.Core.Interceptor.IInvocation,Rhino.Mocks.Impl.Range)">
             <summary>
             Creates a new <see cref="T:Rhino.Mocks.Expectations.AnyArgsExpectation"/> instance.
             </summary>
@@ -1960,7 +1960,7 @@
             Summary description for ArgsEqualExpectation.
             </summary>
         </member>
-        <member name="M:Rhino.Mocks.Expectations.ArgsEqualExpectation.#ctor(Castle.DynamicProxy.IInvocation,System.Object[],Rhino.Mocks.Impl.Range)">
+        <member name="M:Rhino.Mocks.Expectations.ArgsEqualExpectation.#ctor(Castle.Core.Interceptor.IInvocation,System.Object[],Rhino.Mocks.Impl.Range)">
             <summary>
             Creates a new <see cref="T:Rhino.Mocks.Expectations.ArgsEqualExpectation"/> instance.
             </summary>
@@ -2007,7 +2007,7 @@
             <param name="expectation">Expectation.</param>
             <param name="callback">Callback.</param>
         </member>
-        <member name="M:Rhino.Mocks.Expectations.CallbackExpectation.#ctor(Castle.DynamicProxy.IInvocation,System.Delegate,Rhino.Mocks.Impl.Range)">
+        <member name="M:Rhino.Mocks.Expectations.CallbackExpectation.#ctor(Castle.Core.Interceptor.IInvocation,System.Delegate,Rhino.Mocks.Impl.Range)">
             <summary>
             Creates a new <see cref="T:Rhino.Mocks.Expectations.CallbackExpectation"/> instance.
             </summary>
@@ -2042,7 +2042,7 @@
             Expect the method's arguments to match the contraints
             </summary>
         </member>
-        <member name="M:Rhino.Mocks.Expectations.ConstraintsExpectation.#ctor(Castle.DynamicProxy.IInvocation,Rhino.Mocks.Constraints.AbstractConstraint[],Rhino.Mocks.Impl.Range)">
+        <member name="M:Rhino.Mocks.Expectations.ConstraintsExpectation.#ctor(Castle.Core.Interceptor.IInvocation,Rhino.Mocks.Constraints.AbstractConstraint[],Rhino.Mocks.Impl.Range)">
             <summary>
             Creates a new <see cref="T:Rhino.Mocks.Expectations.ConstraintsExpectation"/> instance.
             </summary>
@@ -2079,93 +2079,6 @@
             </summary>
             <value></value>
         </member>
-        <member name="T:Rhino.Mocks.Impl.ConsoleLogger">
-            <summary>
-            Write rhino mocks log info to the console
-            </summary>
-        </member>
-        <member name="T:Rhino.Mocks.Interfaces.IExpectationLogger">
-            <summary>
-            Log expectations - allows to see what is going on inside Rhino Mocks
-            </summary>
-        </member>
-        <member name="M:Rhino.Mocks.Interfaces.IExpectationLogger.Log(System.String)">
-            <summary>
-            Logs the message
-            </summary>
-            <param name="message">The message.</param>
-        </member>
-        <member name="M:Rhino.Mocks.Interfaces.IExpectationLogger.LogRecordedExpectation(Castle.DynamicProxy.IInvocation,Rhino.Mocks.Interfaces.IExpectation)">
-            <summary>
-            Logs the expectation as is was recorded
-            </summary>
-            <param name="invocation">The invocation.</param>
-            <param name="expectation">The expectation.</param>
-        </member>
-        <member name="M:Rhino.Mocks.Interfaces.IExpectationLogger.LogReplayedExpectation(Castle.DynamicProxy.IInvocation,Rhino.Mocks.Interfaces.IExpectation)">
-            <summary>
-            Logs the expectation as it was recorded
-            </summary>
-            <param name="invocation">The invocation.</param>
-            <param name="expectation">The expectation.</param>
-        </member>
-        <member name="M:Rhino.Mocks.Interfaces.IExpectationLogger.LogUnexpectedMethodCall(Castle.DynamicProxy.IInvocation,System.String)">
-            <summary>
-            Logs the unexpected method call.
-            </summary>
-            <param name="invocation">The invocation.</param>
-            <param name="message">The message.</param>
-        </member>
-        <member name="M:Rhino.Mocks.Impl.ConsoleLogger.Log(System.String)">
-            <summary>
-            Logs the message
-            </summary>
-            <param name="message">The message.</param>
-        </member>
-        <member name="M:Rhino.Mocks.Impl.ConsoleLogger.LogRecordedExpectation(Castle.DynamicProxy.IInvocation,Rhino.Mocks.Interfaces.IExpectation)">
-            <summary>
-            Logs the expectation as is was recorded
-            </summary>
-            <param name="invocation">The invocation.</param>
-            <param name="expectation">The expectation.</param>
-        </member>
-        <member name="M:Rhino.Mocks.Impl.ConsoleLogger.LogReplayedExpectation(Castle.DynamicProxy.IInvocation,Rhino.Mocks.Interfaces.IExpectation)">
-            <summary>
-            Logs the expectation as it was recorded
-            </summary>
-            <param name="invocation">The invocation.</param>
-            <param name="expectation">The expectation.</param>
-        </member>
-        <member name="M:Rhino.Mocks.Impl.ConsoleLogger.LogUnexpectedMethodCall(Castle.DynamicProxy.IInvocation,System.String)">
-            <summary>
-            Logs the unexpected method call.
-            </summary>
-            <param name="invocation">The invocation.</param>
-            <param name="message">The message.</param>
-        </member>
-        <member name="T:Rhino.Mocks.Impl.ExpectationBuilder">
-            <summary>
-            Responsible for building expectations
-            </summary>
-        </member>
-        <member name="M:Rhino.Mocks.Impl.ExpectationBuilder.BuildDefaultExpectation(Castle.DynamicProxy.IInvocation,System.Reflection.MethodInfo,System.Object[],System.Func{Rhino.Mocks.Impl.Range})">
-            <summary>
-            Builds the default expectation.
-            </summary>
-            <param name="invocation">The invocation.</param>
-            <param name="method">The method.</param>
-            <param name="args">The args.</param>
-            <param name="callCallRangeExpectation">The call call range expectation.</param>
-            <returns></returns>
-        </member>
-        <member name="M:Rhino.Mocks.Impl.ExpectationBuilder.BuildParamExpectation(Castle.DynamicProxy.IInvocation,System.Reflection.MethodInfo)">
-            <summary>
-            Builds the param expectation.
-            </summary>
-            <param name="invocation">The invocation.</param>
-            <param name="method">The method.</param>
-            <returns></returns>
-        </member>
         <member name="T:Rhino.Mocks.Impl.Invocation.Actions.HandleEvent">
             <summary>
             </summary>
@@ -2174,7 +2087,7 @@
             <summary>
             </summary>
         </member>
-        <member name="M:Rhino.Mocks.Interfaces.IInvocationActionn.PerformAgainst(Castle.DynamicProxy.IInvocation)">
+        <member name="M:Rhino.Mocks.Interfaces.IInvocationActionn.PerformAgainst(Castle.Core.Interceptor.IInvocation)">
             <summary>
             </summary>
         </member>
@@ -2182,7 +2095,7 @@
             <summary>
             </summary>
         </member>
-        <member name="M:Rhino.Mocks.Impl.Invocation.Actions.HandleEvent.PerformAgainst(Castle.DynamicProxy.IInvocation)">
+        <member name="M:Rhino.Mocks.Impl.Invocation.Actions.HandleEvent.PerformAgainst(Castle.Core.Interceptor.IInvocation)">
             <summary>
             </summary>
         </member>
@@ -2194,7 +2107,7 @@
             <summary>
             </summary>
         </member>
-        <member name="M:Rhino.Mocks.Impl.Invocation.Actions.InvokeMethodAgainstMockedObject.PerformAgainst(Castle.DynamicProxy.IInvocation)">
+        <member name="M:Rhino.Mocks.Impl.Invocation.Actions.InvokeMethodAgainstMockedObject.PerformAgainst(Castle.Core.Interceptor.IInvocation)">
             <summary>
             </summary>
         </member>
@@ -2206,7 +2119,7 @@
             <summary>
             </summary>
         </member>
-        <member name="M:Rhino.Mocks.Impl.Invocation.Actions.InvokeProperty.PerformAgainst(Castle.DynamicProxy.IInvocation)">
+        <member name="M:Rhino.Mocks.Impl.Invocation.Actions.InvokeProperty.PerformAgainst(Castle.Core.Interceptor.IInvocation)">
             <summary>
             </summary>
         </member>
@@ -2214,7 +2127,7 @@
             <summary>
             </summary>
         </member>
-        <member name="M:Rhino.Mocks.Impl.Invocation.Actions.Proceed.PerformAgainst(Castle.DynamicProxy.IInvocation)">
+        <member name="M:Rhino.Mocks.Impl.Invocation.Actions.Proceed.PerformAgainst(Castle.Core.Interceptor.IInvocation)">
             <summary>
             </summary>
         </member>
@@ -2226,7 +2139,7 @@
             <summary>
             </summary>
         </member>
-        <member name="M:Rhino.Mocks.Impl.Invocation.Actions.RegularInvocation.PerformAgainst(Castle.DynamicProxy.IInvocation)">
+        <member name="M:Rhino.Mocks.Impl.Invocation.Actions.RegularInvocation.PerformAgainst(Castle.Core.Interceptor.IInvocation)">
             <summary>
             </summary>
         </member>
@@ -2234,15 +2147,15 @@
             <summary>
             </summary>
         </member>
-        <member name="M:Rhino.Mocks.Impl.Invocation.InvocationVisitor.#ctor(Rhino.Mocks.Impl.InvocationSpecifications.ISpecification{Castle.DynamicProxy.IInvocation},Rhino.Mocks.Interfaces.IInvocationActionn)">
+        <member name="M:Rhino.Mocks.Impl.Invocation.InvocationVisitor.#ctor(Rhino.Mocks.Impl.InvocationSpecifications.ISpecification{Castle.Core.Interceptor.IInvocation},Rhino.Mocks.Interfaces.IInvocationActionn)">
             <summary>
             </summary>
         </member>
-        <member name="M:Rhino.Mocks.Impl.Invocation.InvocationVisitor.CanWorkWith(Castle.DynamicProxy.IInvocation)">
+        <member name="M:Rhino.Mocks.Impl.Invocation.InvocationVisitor.CanWorkWith(Castle.Core.Interceptor.IInvocation)">
             <summary>
             </summary>
         </member>
-        <member name="M:Rhino.Mocks.Impl.Invocation.InvocationVisitor.RunAgainst(Castle.DynamicProxy.IInvocation)">
+        <member name="M:Rhino.Mocks.Impl.Invocation.InvocationVisitor.RunAgainst(Castle.Core.Interceptor.IInvocation)">
             <summary>
             </summary>
         </member>
@@ -2289,7 +2202,7 @@
             <summary>
             </summary>
         </member>
-        <member name="M:Rhino.Mocks.Impl.Invocation.Specifications.FollowsEventNamingStandard.IsSatisfiedBy(Castle.DynamicProxy.IInvocation)">
+        <member name="M:Rhino.Mocks.Impl.Invocation.Specifications.FollowsEventNamingStandard.IsSatisfiedBy(Castle.Core.Interceptor.IInvocation)">
             <summary>
             </summary>
         </member>
@@ -2297,7 +2210,7 @@
             <summary>
             </summary>
         </member>
-        <member name="M:Rhino.Mocks.Impl.Invocation.Specifications.IsAnEventInvocation.IsSatisfiedBy(Castle.DynamicProxy.IInvocation)">
+        <member name="M:Rhino.Mocks.Impl.Invocation.Specifications.IsAnEventInvocation.IsSatisfiedBy(Castle.Core.Interceptor.IInvocation)">
             <summary>
             </summary>
         </member>
@@ -2305,7 +2218,7 @@
             <summary>
             </summary>
         </member>
-        <member name="M:Rhino.Mocks.Impl.Invocation.Specifications.AnyInvocation.IsSatisfiedBy(Castle.DynamicProxy.IInvocation)">
+        <member name="M:Rhino.Mocks.Impl.Invocation.Specifications.AnyInvocation.IsSatisfiedBy(Castle.Core.Interceptor.IInvocation)">
             <summary>
             </summary>
         </member>
@@ -2313,7 +2226,7 @@
             <summary>
             </summary>
         </member>
-        <member name="M:Rhino.Mocks.Impl.Invocation.Specifications.IsAnInvocationOfAMethodBelongingToObject.IsSatisfiedBy(Castle.DynamicProxy.IInvocation)">
+        <member name="M:Rhino.Mocks.Impl.Invocation.Specifications.IsAnInvocationOfAMethodBelongingToObject.IsSatisfiedBy(Castle.Core.Interceptor.IInvocation)">
             <summary>
             </summary>
         </member>
@@ -2321,7 +2234,7 @@
             <summary>
             </summary>
         </member>
-        <member name="M:Rhino.Mocks.Impl.Invocation.Specifications.IsAnInvocationOnAMockedObject.IsSatisfiedBy(Castle.DynamicProxy.IInvocation)">
+        <member name="M:Rhino.Mocks.Impl.Invocation.Specifications.IsAnInvocationOnAMockedObject.IsSatisfiedBy(Castle.Core.Interceptor.IInvocation)">
             <summary>
             </summary>
         </member>
@@ -2333,7 +2246,7 @@
             <summary>
             </summary>
         </member>
-        <member name="M:Rhino.Mocks.Impl.Invocation.Specifications.IsAPropertyInvocation.IsSatisfiedBy(Castle.DynamicProxy.IInvocation)">
+        <member name="M:Rhino.Mocks.Impl.Invocation.Specifications.IsAPropertyInvocation.IsSatisfiedBy(Castle.Core.Interceptor.IInvocation)">
             <summary>
             </summary>
         </member>
@@ -2345,7 +2258,7 @@
             <summary>
             </summary>
         </member>
-        <member name="M:Rhino.Mocks.Impl.Invocation.Specifications.IsInvocationThatShouldTargetOriginal.IsSatisfiedBy(Castle.DynamicProxy.IInvocation)">
+        <member name="M:Rhino.Mocks.Impl.Invocation.Specifications.IsInvocationThatShouldTargetOriginal.IsSatisfiedBy(Castle.Core.Interceptor.IInvocation)">
             <summary>
             </summary>
         </member>
@@ -2354,7 +2267,7 @@
             Summary descritpion for NamedEventExistsOnDeclaringType
             </summary>
         </member>
-        <member name="M:Rhino.Mocks.Impl.Invocation.Specifications.NamedEventExistsOnDeclaringType.IsSatisfiedBy(Castle.DynamicProxy.IInvocation)">
+        <member name="M:Rhino.Mocks.Impl.Invocation.Specifications.NamedEventExistsOnDeclaringType.IsSatisfiedBy(Castle.Core.Interceptor.IInvocation)">
             <summary>
             </summary>
         </member>
@@ -2363,27 +2276,47 @@
             Doesn't log anything, just makes happy noises
             </summary>
         </member>
-        <member name="M:Rhino.Mocks.Impl.NullLogger.Log(System.String)">
+        <member name="T:Rhino.Mocks.Interfaces.IExpectationLogger">
             <summary>
-            Logs the message
+            Log expectations - allows to see what is going on inside Rhino Mocks
             </summary>
-            <param name="message">The message.</param>
         </member>
-        <member name="M:Rhino.Mocks.Impl.NullLogger.LogRecordedExpectation(Castle.DynamicProxy.IInvocation,Rhino.Mocks.Interfaces.IExpectation)">
+        <member name="M:Rhino.Mocks.Interfaces.IExpectationLogger.LogRecordedExpectation(Castle.Core.Interceptor.IInvocation,Rhino.Mocks.Interfaces.IExpectation)">
             <summary>
             Logs the expectation as is was recorded
             </summary>
             <param name="invocation">The invocation.</param>
             <param name="expectation">The expectation.</param>
         </member>
-        <member name="M:Rhino.Mocks.Impl.NullLogger.LogReplayedExpectation(Castle.DynamicProxy.IInvocation,Rhino.Mocks.Interfaces.IExpectation)">
+        <member name="M:Rhino.Mocks.Interfaces.IExpectationLogger.LogReplayedExpectation(Castle.Core.Interceptor.IInvocation,Rhino.Mocks.Interfaces.IExpectation)">
             <summary>
             Logs the expectation as it was recorded
             </summary>
             <param name="invocation">The invocation.</param>
             <param name="expectation">The expectation.</param>
         </member>
-        <member name="M:Rhino.Mocks.Impl.NullLogger.LogUnexpectedMethodCall(Castle.DynamicProxy.IInvocation,System.String)">
+        <member name="M:Rhino.Mocks.Interfaces.IExpectationLogger.LogUnexpectedMethodCall(Castle.Core.Interceptor.IInvocation,System.String)">
+            <summary>
+            Logs the unexpected method call.
+            </summary>
+            <param name="invocation">The invocation.</param>
+            <param name="message">The message.</param>
+        </member>
+        <member name="M:Rhino.Mocks.Impl.NullLogger.LogRecordedExpectation(Castle.Core.Interceptor.IInvocation,Rhino.Mocks.Interfaces.IExpectation)">
+            <summary>
+            Logs the expectation as is was recorded
+            </summary>
+            <param name="invocation">The invocation.</param>
+            <param name="expectation">The expectation.</param>
+        </member>
+        <member name="M:Rhino.Mocks.Impl.NullLogger.LogReplayedExpectation(Castle.Core.Interceptor.IInvocation,Rhino.Mocks.Interfaces.IExpectation)">
+            <summary>
+            Logs the expectation as it was recorded
+            </summary>
+            <param name="invocation">The invocation.</param>
+            <param name="expectation">The expectation.</param>
+        </member>
+        <member name="M:Rhino.Mocks.Impl.NullLogger.LogUnexpectedMethodCall(Castle.Core.Interceptor.IInvocation,System.String)">
             <summary>
             Logs the unexpected method call.
             </summary>
@@ -2413,7 +2346,7 @@
             Generates remoting proxies and provides utility functions
             </summary>
         </member>
-        <member name="M:Rhino.Mocks.Impl.RemotingMock.RemotingMockGenerator.CreateRemotingMock(System.Type,Castle.DynamicProxy.IInterceptor,Rhino.Mocks.Interfaces.IMockedObject)">
+        <member name="M:Rhino.Mocks.Impl.RemotingMock.RemotingMockGenerator.CreateRemotingMock(System.Type,Castle.Core.Interceptor.IInterceptor,Rhino.Mocks.Interfaces.IMockedObject)">
             <summary>
              Create the proxy using remoting
             </summary>
@@ -2454,27 +2387,21 @@
             </summary>
             <param name="writer">The writer.</param>
         </member>
-        <member name="M:Rhino.Mocks.Impl.TextWriterExpectationLogger.Log(System.String)">
-            <summary>
-            Logs the message
-            </summary>
-            <param name="message">The message.</param>
-        </member>
-        <member name="M:Rhino.Mocks.Impl.TextWriterExpectationLogger.LogRecordedExpectation(Castle.DynamicProxy.IInvocation,Rhino.Mocks.Interfaces.IExpectation)">
+        <member name="M:Rhino.Mocks.Impl.TextWriterExpectationLogger.LogRecordedExpectation(Castle.Core.Interceptor.IInvocation,Rhino.Mocks.Interfaces.IExpectation)">
             <summary>
             Logs the expectation as it was recorded
             </summary>
             <param name="invocation">The invocation.</param>
             <param name="expectation">The expectation.</param>
         </member>
-        <member name="M:Rhino.Mocks.Impl.TextWriterExpectationLogger.LogReplayedExpectation(Castle.DynamicProxy.IInvocation,Rhino.Mocks.Interfaces.IExpectation)">
+        <member name="M:Rhino.Mocks.Impl.TextWriterExpectationLogger.LogReplayedExpectation(Castle.Core.Interceptor.IInvocation,Rhino.Mocks.Interfaces.IExpectation)">
             <summary>
             Logs the expectation as it was recorded
             </summary>
             <param name="invocation">The invocation.</param>
             <param name="expectation">The expectation.</param>
         </member>
-        <member name="M:Rhino.Mocks.Impl.TextWriterExpectationLogger.LogUnexpectedMethodCall(Castle.DynamicProxy.IInvocation,System.String)">
+        <member name="M:Rhino.Mocks.Impl.TextWriterExpectationLogger.LogUnexpectedMethodCall(Castle.Core.Interceptor.IInvocation,System.String)">
             <summary>
             Logs the unexpected method call.
             </summary>
@@ -2497,7 +2424,7 @@
             Different actions on this mock
             </summary>
         </member>
-        <member name="M:Rhino.Mocks.Interfaces.IMockState.MethodCall(Castle.DynamicProxy.IInvocation,System.Reflection.MethodInfo,System.Object[])">
+        <member name="M:Rhino.Mocks.Interfaces.IMockState.MethodCall(Castle.Core.Interceptor.IInvocation,System.Reflection.MethodInfo,System.Object[])">
             <summary>
             Add a method call for this state' mock.
             </summary>
@@ -2576,7 +2503,7 @@
             <param name="repository">Repository.</param>
             <param name="mockedObject">The proxy that generates the method calls</param>
         </member>
-        <member name="M:Rhino.Mocks.Impl.RecordMockState.MethodCall(Castle.DynamicProxy.IInvocation,System.Reflection.MethodInfo,System.Object[])">
+        <member name="M:Rhino.Mocks.Impl.RecordMockState.MethodCall(Castle.Core.Interceptor.IInvocation,System.Reflection.MethodInfo,System.Object[])">
             <summary>
             Add a method call for this state' mock.
             </summary>
@@ -2696,7 +2623,7 @@
             </summary>
             <param name="previousState">The previous state for this method</param>
         </member>
-        <member name="M:Rhino.Mocks.Impl.ReplayMockState.MethodCall(Castle.DynamicProxy.IInvocation,System.Reflection.MethodInfo,System.Object[])">
+        <member name="M:Rhino.Mocks.Impl.ReplayMockState.MethodCall(Castle.Core.Interceptor.IInvocation,System.Reflection.MethodInfo,System.Object[])">
             <summary>
             Add a method call for this state' mock.
             </summary>
@@ -2704,7 +2631,7 @@
             <param name="method">The method that was called</param>
             <param name="args">The arguments this method was called with</param>
         </member>
-        <member name="M:Rhino.Mocks.Impl.ReplayMockState.DoMethodCall(Castle.DynamicProxy.IInvocation,System.Reflection.MethodInfo,System.Object[])">
+        <member name="M:Rhino.Mocks.Impl.ReplayMockState.DoMethodCall(Castle.Core.Interceptor.IInvocation,System.Reflection.MethodInfo,System.Object[])">
             <summary>
             Add a method call for this state' mock.
             This allows derived method to cleanly get a the setupresult behavior while adding
@@ -2758,7 +2685,7 @@
             </summary>
             <param name="previousState">The previous state for this method</param>
         </member>
-        <member name="M:Rhino.Mocks.Impl.StubReplayMockState.DoMethodCall(Castle.DynamicProxy.IInvocation,System.Reflection.MethodInfo,System.Object[])">
+        <member name="M:Rhino.Mocks.Impl.StubReplayMockState.DoMethodCall(Castle.Core.Interceptor.IInvocation,System.Reflection.MethodInfo,System.Object[])">
             <summary>
             Add a method call for this state' mock.
             </summary>
@@ -2789,27 +2716,21 @@
             <param name="logReplayed">if set to <c>true</c> [log replayed].</param>
             <param name="logUnexpected">if set to <c>true</c> [log unexpected].</param>
         </member>
-        <member name="M:Rhino.Mocks.Impl.TraceWriterExpectationLogger.Log(System.String)">
-            <summary>
-            Logs the message
-            </summary>
-            <param name="message">The message.</param>
-        </member>
-        <member name="M:Rhino.Mocks.Impl.TraceWriterExpectationLogger.LogRecordedExpectation(Castle.DynamicProxy.IInvocation,Rhino.Mocks.Interfaces.IExpectation)">
+        <member name="M:Rhino.Mocks.Impl.TraceWriterExpectationLogger.LogRecordedExpectation(Castle.Core.Interceptor.IInvocation,Rhino.Mocks.Interfaces.IExpectation)">
             <summary>
             Logs the expectation as is was recorded
             </summary>
             <param name="invocation">The invocation.</param>
             <param name="expectation">The expectation.</param>
         </member>
-        <member name="M:Rhino.Mocks.Impl.TraceWriterExpectationLogger.LogReplayedExpectation(Castle.DynamicProxy.IInvocation,Rhino.Mocks.Interfaces.IExpectation)">
+        <member name="M:Rhino.Mocks.Impl.TraceWriterExpectationLogger.LogReplayedExpectation(Castle.Core.Interceptor.IInvocation,Rhino.Mocks.Interfaces.IExpectation)">
             <summary>
             Logs the expectation as it was recorded
             </summary>
             <param name="invocation">The invocation.</param>
             <param name="expectation">The expectation.</param>
         </member>
-        <member name="M:Rhino.Mocks.Impl.TraceWriterExpectationLogger.LogUnexpectedMethodCall(Castle.DynamicProxy.IInvocation,System.String)">
+        <member name="M:Rhino.Mocks.Impl.TraceWriterExpectationLogger.LogUnexpectedMethodCall(Castle.Core.Interceptor.IInvocation,System.String)">
             <summary>
             Logs the unexpected method call.
             </summary>
@@ -2826,27 +2747,21 @@
             Allows to redirect output to a different location.
             </summary>
         </member>
-        <member name="M:Rhino.Mocks.Impl.TraceWriterWithStackTraceExpectationWriter.Log(System.String)">
-            <summary>
-            Logs the message
-            </summary>
-            <param name="message">The message.</param>
-        </member>
-        <member name="M:Rhino.Mocks.Impl.TraceWriterWithStackTraceExpectationWriter.LogRecordedExpectation(Castle.DynamicProxy.IInvocation,Rhino.Mocks.Interfaces.IExpectation)">
+        <member name="M:Rhino.Mocks.Impl.TraceWriterWithStackTraceExpectationWriter.LogRecordedExpectation(Castle.Core.Interceptor.IInvocation,Rhino.Mocks.Interfaces.IExpectation)">
             <summary>
             Logs the expectation as is was recorded
             </summary>
             <param name="invocation">The invocation.</param>
             <param name="expectation">The expectation.</param>
         </member>
-        <member name="M:Rhino.Mocks.Impl.TraceWriterWithStackTraceExpectationWriter.LogReplayedExpectation(Castle.DynamicProxy.IInvocation,Rhino.Mocks.Interfaces.IExpectation)">
+        <member name="M:Rhino.Mocks.Impl.TraceWriterWithStackTraceExpectationWriter.LogReplayedExpectation(Castle.Core.Interceptor.IInvocation,Rhino.Mocks.Interfaces.IExpectation)">
             <summary>
             Logs the expectation as it was recorded
             </summary>
             <param name="invocation">The invocation.</param>
             <param name="expectation">The expectation.</param>
         </member>
-        <member name="M:Rhino.Mocks.Impl.TraceWriterWithStackTraceExpectationWriter.LogUnexpectedMethodCall(Castle.DynamicProxy.IInvocation,System.String)">
+        <member name="M:Rhino.Mocks.Impl.TraceWriterWithStackTraceExpectationWriter.LogUnexpectedMethodCall(Castle.Core.Interceptor.IInvocation,System.String)">
             <summary>
             Logs the unexpected method call.
             </summary>
@@ -2880,7 +2795,7 @@
             the current method to the relevant delegate
             </summary>
         </member>
-        <member name="M:Rhino.Mocks.MethodInvocation.#ctor(Castle.DynamicProxy.IInvocation)">
+        <member name="M:Rhino.Mocks.MethodInvocation.#ctor(Castle.Core.Interceptor.IInvocation)">
             <summary>
             Initializes a new instance of the <see cref="T:Rhino.Mocks.MethodInvocation"/> class.
             </summary>
@@ -2902,9 +2817,9 @@
             </summary>
             <value>The return value.</value>
         </member>
-        <member name="T:Rhino.Mocks.IModeChanger">
+        <member name="T:Rhino.Mocks.MockRepository">
             <summary>
-             Interface which allows for the optional usage:
+             Adds optional new usage:
                using(mockRepository.Record()) {
                   Expect.Call(mock.Method()).Return(retVal);
                }
@@ -2913,6 +2828,569 @@
                }
              N.B. mockRepository.ReplayAll() and mockRepository.VerifyAll()
                   calls are taken care of by Record/Playback
+            </summary>
+            <summary>
+            Creates proxied instances of types.
+            </summary>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.GenerateStub``1(System.Object[])">
+            <summary>Generates a stub without needing a <see cref="T:Rhino.Mocks.MockRepository"/></summary>
+            <param name="argumentsForConstructor">Arguments for <typeparamref name="T"/>'s constructor</param>
+            <typeparam name="T">The <see cref="T:System.Type"/> of stub to create.</typeparam>
+            <returns>The stub</returns>
+            <seealso cref="M:Rhino.Mocks.MockRepository.Stub``1(System.Object[])"/>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.GenerateStub(System.Type,System.Object[])">
+            <summary>Generates a stub without needing a <see cref="T:Rhino.Mocks.MockRepository"/></summary>
+            <param name="type">The <see cref="T:System.Type"/> of stub.</param>
+            <param name="argumentsForConstructor">Arguments for the <paramref name="type"/>'s constructor.</param>
+            <returns>The stub</returns>
+            <seealso cref="M:Rhino.Mocks.MockRepository.Stub(System.Type,System.Object[])"/>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.GenerateMock``1(System.Object[])">
+            <summary>Generate a mock object without needing a <see cref="T:Rhino.Mocks.MockRepository"/></summary>
+            <typeparam name="T">type <see cref="T:System.Type"/> of mock object to create.</typeparam>
+            <param name="argumentsForConstructor">Arguments for <typeparamref name="T"/>'s constructor</param>
+            <returns>the mock object</returns>
+            <seealso cref="M:Rhino.Mocks.MockRepository.DynamicMock``1(System.Object[])"/>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.GenerateMock``2(System.Object[])">
+            <summary>Generate a multi-mock object without needing a <see cref="T:Rhino.Mocks.MockRepository"/></summary>
+            <typeparam name="T">The <c>typeof</c> object to generate a mock for.</typeparam>
+            <typeparam name="TMultiMockInterface1">A second interface to generate a multi-mock for.</typeparam>
+            <param name="argumentsForConstructor">Arguments for <typeparamref name="T"/>'s constructor</param>
+            <returns>the multi-mock object</returns>
+            <seealso cref="M:Rhino.Mocks.MockRepository.DynamicMultiMock(System.Type,System.Type[],System.Object[])"/>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.GenerateMock``3(System.Object[])">
+            <summary>Generate a multi-mock object without without needing a <see cref="T:Rhino.Mocks.MockRepository"/></summary>
+            <typeparam name="T">The <c>typeof</c> object to generate a mock for.</typeparam>
+            <typeparam name="TMultiMockInterface1">An interface to generate a multi-mock for.</typeparam>
+            <typeparam name="TMultiMockInterface2">A second interface to generate a multi-mock for.</typeparam>
+            <param name="argumentsForConstructor">Arguments for <typeparamref name="T"/>'s constructor</param>
+            <returns>the multi-mock object</returns>
+            <seealso cref="M:Rhino.Mocks.MockRepository.DynamicMultiMock(System.Type,System.Type[],System.Object[])"/>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.GenerateMock(System.Type,System.Type[],System.Object[])">
+            <summary>Creates a multi-mock without without needing a <see cref="T:Rhino.Mocks.MockRepository"/></summary>
+            <param name="type">The type of mock to create, this can be a class</param>
+            <param name="extraTypes">Any extra interfaces to add to the multi-mock, these can only be interfaces.</param>
+            <param name="argumentsForConstructor">Arguments for <paramref name="type"/>'s constructor</param>
+            <returns>the multi-mock object</returns>
+            <seealso cref="M:Rhino.Mocks.MockRepository.DynamicMultiMock(System.Type,System.Type[],System.Object[])"/>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.GenerateStrictMock``1(System.Object[])">
+            <summary>Creates a strict mock without without needing a <see cref="T:Rhino.Mocks.MockRepository"/></summary>
+            <param name="argumentsForConstructor">Any arguments required for the <typeparamref name="T"/>'s constructor</param>
+            <typeparam name="T">The type of mock object to create.</typeparam>
+            <returns>The mock object with strict replay semantics</returns>
+             <seealso cref="M:Rhino.Mocks.MockRepository.StrictMock``1(System.Object[])"/>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.GenerateStrictMock``2(System.Object[])">
+            <summary>Creates a strict multi-mock without needing a <see cref="T:Rhino.Mocks.MockRepository"/></summary>
+            <param name="argumentsForConstructor">Any arguments required for the <typeparamref name="T"/>'s constructor</param>
+            <typeparam name="T">The type of mock object to create, this can be a class.</typeparam>
+            <typeparam name="TMultiMockInterface1">An interface to generate a multi-mock for, this must be an interface!</typeparam>
+            <returns>The multi-mock object with strict replay semantics</returns>
+             <seealso cref="M:Rhino.Mocks.MockRepository.StrictMultiMock(System.Type,System.Type[],System.Object[])"/>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.GenerateStrictMock``3(System.Object[])">
+            <summary>Creates a strict multi-mock without needing a <see cref="T:Rhino.Mocks.MockRepository"/></summary>
+            <param name="argumentsForConstructor">Any arguments required for the <typeparamref name="T"/>'s constructor</param>
+            <typeparam name="T">The type of mock object to create, this can be a class.</typeparam>
+            <typeparam name="TMultiMockInterface1">An interface to generate a multi-mock for, this must be an interface!</typeparam>
+            <typeparam name="TMultiMockInterface2">A second interface to generate a multi-mock for, this must be an interface!</typeparam>
+            <returns>The multi-mock object with strict replay semantics</returns>
+            <seealso cref="M:Rhino.Mocks.MockRepository.StrictMultiMock(System.Type,System.Type[],System.Object[])"/>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.GenerateStrictMock(System.Type,System.Type[],System.Object[])">
+            <summary>Creates a strict multi-mock without needing a <see cref="T:Rhino.Mocks.MockRepository"/></summary>
+            <param name="type">The type of mock object to create, this can be a class</param>
+            <param name="extraTypes">Any extra interfaces to generate a multi-mock for, these must be interaces!</param>
+            <param name="argumentsForConstructor">Any arguments for the <paramref name="type"/>'s constructor</param>
+            <returns>The strict multi-mock object</returns>
+             <seealso cref="M:Rhino.Mocks.MockRepository.StrictMultiMock(System.Type,System.Type[],System.Object[])"/>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.GeneratePartialMock``1(System.Object[])">
+            <summary>
+            </summary>
+            <param name="argumentsForConstructor"></param>
+            <typeparam name="T"></typeparam>
+            <returns></returns>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.GeneratePartialMock``2(System.Object[])">
+            <summary>
+            </summary>
+            <param name="argumentsForConstructor"></param>
+            <typeparam name="T"></typeparam>
+            <typeparam name="TMultiMockInterface1"></typeparam>
+            <returns></returns>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.GeneratePartialMock``3(System.Object[])">
+            <summary>
+            </summary>
+            <param name="argumentsForConstructor"></param>
+            <typeparam name="T"></typeparam>
+            <typeparam name="TMultiMockInterface1"></typeparam>
+            <typeparam name="TMultiMockInterface2"></typeparam>
+            <returns></returns>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.GeneratePartialMock(System.Type,System.Type[],System.Object[])">
+            <summary>
+            </summary>
+            <param name="type"></param>
+            <param name="extraTypes"></param>
+            <param name="argumentsForConstructor"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.GenerateDynamicMockWithRemoting``1(System.Object[])">
+            <summary>
+            Generate a mock object with dynamic replay semantics and remoting without needing the mock repository
+            </summary>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.GenerateStrictMockWithRemoting``1(System.Object[])">
+            <summary>
+            Generate a mock object with strict replay semantics and remoting without needing the mock repository
+            </summary>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.CreateMockInReplay``1(System.Func{Rhino.Mocks.MockRepository,``0})">
+            <summary>Helper method to create a mock object without a repository instance and put the object back into replay mode.</summary>
+            <typeparam name="T">The type of mock object to create</typeparam>
+            <param name="createMock">A delegate that uses a mock repository instance to create the underlying mock</param>
+            <returns>The mock object in the replay mode.</returns>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.Record">
+            <summary>
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.Playback">
+            <summary>
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="F:Rhino.Mocks.MockRepository.generatorMap">
+            <summary>
+            This is a map of types to ProxyGenerators.
+            </summary>
+        </member>
+        <member name="F:Rhino.Mocks.MockRepository.lastRepository">
+            <summary>
+            This is used to record the last repository that has a method called on it.
+            </summary>
+        </member>
+        <member name="F:Rhino.Mocks.MockRepository.lastMockedObject">
+            <summary>
+            this is used to get to the last proxy on this repository.
+            </summary>
+        </member>
+        <member name="F:Rhino.Mocks.MockRepository.delegateProxies">
+            <summary>
+            For mock delegates, maps the proxy instance from intercepted invocations
+            back to the delegate that was originally returned to client code, if any.
+            </summary>
+        </member>
+        <member name="F:Rhino.Mocks.MockRepository.proxies">
+            <summary>
+            All the proxies in the mock repositories
+            </summary>
+        </member>
+        <member name="F:Rhino.Mocks.MockRepository.repeatableMethods">
+            <summary>
+            This is here because we can't put it in any of the recorders, since repeatable methods
+            have no orderring, and if we try to handle them using the usual manner, we would get into
+            wierd situations where repeatable method that was defined in an orderring block doesn't
+            exists until we enter this block.
+            </summary>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.#ctor">
+            <summary>
+            Creates a new <see cref="T:Rhino.Mocks.MockRepository"/> instance.
+            </summary>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.Ordered">
+            <summary>
+            Move the repository to ordered mode
+            </summary>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.Unordered">
+            <summary>
+            Move the repository to un-ordered mode
+            </summary>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.CreateMock(System.Type,System.Object[])">
+            <summary>
+            Creates a mock for the specified type.
+            </summary>
+            <param name="type">Type.</param>
+            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.StrictMock(System.Type,System.Object[])">
+            <summary>
+            Creates a strict mock for the specified type.
+            </summary>
+            <param name="type">Type.</param>
+            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.CreateMockWithRemoting(System.Type,System.Object[])">
+            <summary>
+            Creates a remoting mock for the specified type.
+            </summary>
+            <param name="type">Type.</param>
+            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.StrictMockWithRemoting(System.Type,System.Object[])">
+            <summary>
+            Creates a strict remoting mock for the specified type.
+            </summary>
+            <param name="type">Type.</param>
+            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.CreateMockWithRemoting``1(System.Object[])">
+            <summary>
+            Creates a remoting mock for the specified type.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
+            <returns></returns>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.StrictMockWithRemoting``1(System.Object[])">
+            <summary>
+            Creates a strict remoting mock for the specified type.
+            </summary>
+            <typeparam name="T"></typeparam>
+            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
+            <returns></returns>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.CreateMultiMock(System.Type,System.Type[])">
+            <summary>
+            Creates a mock from several types, with strict semantics.
+            Only <paramref name="mainType"/> may be a class.
+            </summary>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.StrictMultiMock(System.Type,System.Type[])">
+            <summary>
+            Creates a strict mock from several types, with strict semantics.
+            Only <paramref name="mainType"/> may be a class.
+            </summary>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.CreateMultiMock(System.Type,System.Type[],System.Object[])">
+            <summary>
+            Creates a mock from several types, with strict semantics.
+            Only <paramref name="mainType"/> may be a class.
+            </summary>
+            <param name="mainType">The main type to mock.</param>
+            <param name="extraTypes">Extra interface types to mock.</param>
+            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class.</param>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.StrictMultiMock(System.Type,System.Type[],System.Object[])">
+            <summary>
+            Creates a strict mock from several types, with strict semantics.
+            Only <paramref name="mainType"/> may be a class.
+            </summary>
+            <param name="mainType">The main type to mock.</param>
+            <param name="extraTypes">Extra interface types to mock.</param>
+            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class.</param>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.DynamicMultiMock(System.Type,System.Type[])">
+            <summary>
+            Creates a mock from several types, with dynamic semantics.
+            Only <paramref name="mainType"/> may be a class.
+            </summary>
+            <param name="mainType">The main type to mock.</param>
+            <param name="extraTypes">Extra interface types to mock.</param>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.DynamicMultiMock(System.Type,System.Type[],System.Object[])">
+            <summary>
+            Creates a mock from several types, with dynamic semantics.
+            Only <paramref name="mainType"/> may be a class.
+            </summary>
+            <param name="mainType">The main type to mock.</param>
+            <param name="extraTypes">Extra interface types to mock.</param>
+            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class.</param>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.DynamicMock(System.Type,System.Object[])">
+            <summary>Creates a dynamic mock for the specified type.</summary>
+            <param name="type">Type.</param>
+            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.DynamicMockWithRemoting(System.Type,System.Object[])">
+            <summary>Creates a dynamic mock for the specified type.</summary>
+            <param name="type">Type.</param>
+            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.DynamicMockWithRemoting``1(System.Object[])">
+            <summary>Creates a dynamic mock for the specified type.</summary>
+            <typeparam name="T"></typeparam>
+            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
+            <returns></returns>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.PartialMock(System.Type,System.Object[])">
+            <summary>Creates a mock object that defaults to calling the class methods if no expectation is set on the method.</summary>
+            <param name="type">Type.</param>
+            <param name="argumentsForConstructor">Arguments for the class' constructor.</param>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.PartialMultiMock(System.Type,System.Type[])">
+            <summary>Creates a mock object that defaults to calling the class methods.</summary>
+            <param name="type">Type.</param>
+            <param name="extraTypes">Extra interface types to mock.</param>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.PartialMultiMock(System.Type,System.Type[],System.Object[])">
+            <summary>Creates a mock object that defaults to calling the class methods.</summary>
+            <param name="type">Type.</param>
+            <param name="extraTypes">Extra interface types to mock.</param>
+            <param name="argumentsForConstructor">Arguments for the class' constructor.</param>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.RemotingMock(System.Type,Rhino.Mocks.MockRepository.CreateMockState)">
+            <summary>Creates a mock object using remoting proxies</summary>
+            <param name="type">Type to mock - must be MarshalByRefObject</param>
+            <returns>Mock object</returns>
+            <remarks>Proxy mock can mock non-virtual methods, but not static methods</remarks>
+            <param name="factory">Creates the mock state for this proxy</param>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.Replay(System.Object)">
+            <summary>
+            Cause the mock state to change to replay, any further call is compared to the 
+            ones that were called in the record state.
+            </summary>
+            <remarks>This method *cannot* be called from inside an ordering.</remarks>
+            <param name="obj">the object to move to replay state</param>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.ReplayCore(System.Object,System.Boolean)">
+            <summary>
+            Cause the mock state to change to replay, any further call is compared to the 
+            ones that were called in the record state.
+            </summary>
+            <param name="obj">the object to move to replay state</param>
+            <param name="checkInsideOrdering"></param>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.BackToRecord(System.Object)">
+            <summary>Move the mocked object back to record state.<para>You can (and it's recommended) to run {Verify()} before you use this method.</para></summary>
+            <remarks>Will delete all current expectations!</remarks>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.BackToRecord(System.Object,Rhino.Mocks.BackToRecordOptions)">
+            <summary>
+            Move the mocked object back to record state.
+            Optionally, can delete all current expectations, but allows more granularity about how
+            it would behave with regard to the object state.
+            </summary>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.Verify(System.Object)">
+            <summary>
+            Verify that all the expectations for this object were fulfilled.
+            </summary>
+            <param name="obj">the object to verify the expectations for</param>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.LastMethodCall``1(System.Object)">
+            <summary>
+            Get the method options for the last call on
+            mockedInstance.
+            </summary>
+            <param name="mockedInstance">The mock object</param>
+            <returns>Method options for the last call</returns>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.GetMockObjectFromInvocationProxy(System.Object)">
+            <summary>
+            Maps an invocation proxy back to the mock object instance that was originally
+            returned to client code which might have been a delegate to this proxy.
+            </summary>
+            <param name="invocationProxy">The mock object proxy from the intercepted invocation</param>
+            <returns>The mock object</returns>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.CreateMockObject(System.Type,Rhino.Mocks.MockRepository.CreateMockState,System.Type[],System.Object[])">
+            <summary>This is provided to allow advance extention functionality, where Rhino Mocks standard functionality is not enough.</summary>
+            <param name="type">The type to mock</param>
+            <param name="factory">Delegate that create the first state of the mocked object (usualy the record state).</param>
+            <param name="extras">Additional types to be implemented, this can be only interfaces </param>
+            <param name="argumentsForConstructor">optional arguments for the constructor</param>
+            <returns></returns>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.GetMockedObject(System.Object)">
+            <summary>
+             Method: GetMockedObject
+             Get an IProxy from a mocked object instance, or throws if the 
+             object is not a mock object.
+            </summary>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.GetMockedObjectOrNull(System.Object)">
+            <summary>
+            Method: GetMockedObjectOrNull
+            Get an IProxy from a mocked object instance, or null if the
+            object is not a mock object.
+            </summary>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.PopRecorder">
+            <summary>Pops the recorder.</summary>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.PushRecorder(Rhino.Mocks.Interfaces.IMethodRecorder)">
+            <summary>Pushes the recorder.</summary>
+            <param name="newRecorder">New recorder.</param>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.BackToRecordAll">
+            <summary>
+            All the mock objects in this repository will be moved
+            to record state.
+            </summary>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.BackToRecordAll(Rhino.Mocks.BackToRecordOptions)">
+            <summary>
+            All the mock objects in this repository will be moved
+            to record state.
+            </summary>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.ReplayAll">
+            <summary>
+            Replay all the mocks from this repository
+            </summary>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.VerifyAll">
+            <summary>
+            Verify all the mocks from this repository
+            </summary>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.GetProxyGenerator(System.Type)">
+            <summary>
+            Gets the proxy generator for a specific type. Having a single ProxyGenerator
+            with multiple types linearly degrades the performance so this implementation
+            keeps one ProxyGenerator per type. 
+            </summary>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.SetExceptionToBeThrownOnVerify(System.Object,Rhino.Mocks.Exceptions.ExpectationViolationException)">
+            <summary>Set the exception to be thrown when verified is called.</summary>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.CreateMock``1(System.Object[])">
+            <summary>
+            Creates a mock for the spesified type with strict mocking semantics.
+            <para>Strict semantics means that any call that wasn't explicitly recorded is considered an error and would cause an exception to be thrown.</para>
+            </summary>
+            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.StrictMock``1(System.Object[])">
+            <summary>
+            Creates a mock for the spesified type with strict mocking semantics.
+            <para>Strict semantics means that any call that wasn't explicitly recorded is considered an error and would cause an exception to be thrown.</para>
+            </summary>
+            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.DynamicMock``1(System.Object[])">
+            <summary>
+            Creates a dynamic mock for the specified type.
+            </summary>
+            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.CreateMultiMock``1(System.Type[])">
+            <summary>
+            Creates a mock object from several types.
+            </summary>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.StrictMultiMock``1(System.Type[])">
+            <summary>
+            Creates a strict mock object from several types.
+            </summary>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.DynamicMultiMock``1(System.Type[])">
+            <summary>
+            Create a mock object from several types with dynamic semantics.
+            </summary>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.PartialMultiMock``1(System.Type[])">
+            <summary>
+            Create a mock object from several types with partial semantics.
+            </summary>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.CreateMultiMock``1(System.Type[],System.Object[])">
+            <summary>
+            Create a mock object from several types with strict semantics.
+            </summary>
+            <param name="extraTypes">Extra interface types to mock.</param>
+            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.StrictMultiMock``1(System.Type[],System.Object[])">
+            <summary>
+            Create a strict mock object from several types with strict semantics.
+            </summary>
+            <param name="extraTypes">Extra interface types to mock.</param>
+            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.DynamicMultiMock``1(System.Type[],System.Object[])">
+            <summary>
+            Create a mock object from several types with dynamic semantics.
+            </summary>
+            <param name="extraTypes">Extra interface types to mock.</param>
+            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.PartialMultiMock``1(System.Type[],System.Object[])">
+            <summary>
+            Create a mock object from several types with partial semantics.
+            </summary>
+            <param name="extraTypes">Extra interface types to mock.</param>
+            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.PartialMock``1(System.Object[])">
+            <summary>
+            Create a mock object with from a class that defaults to calling the class methods
+            </summary>
+            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.Stub``1(System.Object[])">
+            <summary>
+            Create a stub object, one that has properties and events ready for use, and 
+            can have methods called on it. It requires an explicit step in order to create 
+            an expectation for a stub.
+            </summary>
+            <param name="argumentsForConstructor">The arguments for constructor.</param>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.Stub(System.Type,System.Object[])">
+            <summary>
+            Create a stub object, one that has properties and events ready for use, and
+            can have methods called on it. It requires an explicit step in order to create
+            an expectation for a stub.
+            </summary>
+            <param name="type">The type.</param>
+            <param name="argumentsForConstructor">The arguments for constructor.</param>
+            <returns>The stub</returns>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.IsInReplayMode(System.Object)">
+            <summary>
+            Returns true if the passed mock is currently in replay mode.
+            </summary>
+            <param name="mock">The mock to test.</param>
+            <returns>True if the mock is in replay mode, false otherwise.</returns>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.IsStub(System.Object)">
+            <summary>
+            Determines whether the specified proxy is a stub.
+            </summary>
+            <param name="proxy">The proxy.</param>
+        </member>
+        <member name="M:Rhino.Mocks.MockRepository.RegisterPropertyBehaviorOn(Rhino.Mocks.Interfaces.IMockedObject)">
+            <summary>
+            Register a call on a prperty behavior 
+            </summary>
+            <param name="instance"></param>
+        </member>
+        <member name="P:Rhino.Mocks.MockRepository.Recorder">
+            <summary>
+            Gets the recorder.
+            </summary>
+            <value></value>
+        </member>
+        <member name="P:Rhino.Mocks.MockRepository.Replayer">
+            <summary>
+            Gets the replayer for this repository.
+            </summary>
+            <value></value>
+        </member>
+        <member name="P:Rhino.Mocks.MockRepository.LastMockedObject">
+            <summary>
+            Gets the last proxy which had a method call.
+            </summary>
+        </member>
+        <member name="T:Rhino.Mocks.MockRepository.CreateMockState">
+            <summary>
+             Delegate: CreateMockState
+             This is used internally to cleanly handle the creation of different 
+             RecordMockStates.
             </summary>
         </member>
         <member name="T:Rhino.Mocks.RhinoMocksExtensions">
@@ -3152,13 +3630,6 @@
             <param name="mocks">The mock repository</param>
             <param name="mockToRecordExpectation">The actual mock object to assert expectations on.</param>
         </member>
-        <member name="M:Rhino.Mocks.RhinoMocksExtensions.AsMockObjectOrNull(System.Object)">
-            <summary>
-            Method: GetMockedObjectOrNull
-            Get an IProxy from a mocked object instance, or null if the
-            object is not a mock object.
-            </summary>
-        </member>
         <member name="T:Rhino.Mocks.RhinoMocksExtensions.VoidType">
             <summary>
             Fake type that disallow creating it.
@@ -3176,7 +3647,7 @@
             I am letting the runtime handle it.
             </summary>
         </member>
-        <member name="M:Rhino.Mocks.Utilities.GenericsUtil.GetRealType(System.Type,Castle.DynamicProxy.IInvocation)">
+        <member name="M:Rhino.Mocks.Utilities.GenericsUtil.GetRealType(System.Type,Castle.Core.Interceptor.IInvocation)">
             <summary>
             Gets the real type, including de-constructing and constructing the type of generic
             methods parameters.
@@ -4120,7 +4591,7 @@
             </summary>
             <param name="previousState">The previous state for this method</param>
         </member>
-        <member name="M:Rhino.Mocks.Impl.ReplayDynamicMockState.DoMethodCall(Castle.DynamicProxy.IInvocation,System.Reflection.MethodInfo,System.Object[])">
+        <member name="M:Rhino.Mocks.Impl.ReplayDynamicMockState.DoMethodCall(Castle.Core.Interceptor.IInvocation,System.Reflection.MethodInfo,System.Object[])">
             <summary>
             Add a method call for this state' mock.
             </summary>
@@ -4145,7 +4616,7 @@
             </summary>
             <param name="previousState">The previous state for this method</param>
         </member>
-        <member name="M:Rhino.Mocks.Impl.ReplayPartialMockState.DoMethodCall(Castle.DynamicProxy.IInvocation,System.Reflection.MethodInfo,System.Object[])">
+        <member name="M:Rhino.Mocks.Impl.ReplayPartialMockState.DoMethodCall(Castle.Core.Interceptor.IInvocation,System.Reflection.MethodInfo,System.Object[])">
             <summary>
             Add a method call for this state' mock.
             </summary>
@@ -4168,7 +4639,7 @@
             Creates a new <see cref="T:Rhino.Mocks.Impl.RhinoInterceptor"/> instance.
             </summary>
         </member>
-        <member name="M:Rhino.Mocks.Impl.RhinoInterceptor.Intercept(Castle.DynamicProxy.IInvocation)">
+        <member name="M:Rhino.Mocks.Impl.RhinoInterceptor.Intercept(Castle.Core.Interceptor.IInvocation)">
             <summary>
             Intercept a method call and direct it to the repository.
             </summary>
@@ -4188,21 +4659,6 @@
             If the obj is null, an ArgumentNullException with the passed name
             is thrown.
             </exception>
-        </member>
-        <member name="M:Rhino.Mocks.Impl.Validate.IsNotNull``1(System.Linq.Expressions.Expression{System.Func{``0}})">
-            <summary>
-            Validates that the passed argument is not null
-            </summary>
-            <typeparam name="T"></typeparam>
-            <param name="reference">The reference.</param>
-        </member>
-        <member name="M:Rhino.Mocks.Impl.Validate.IsNotNull``1(System.Linq.Expressions.Expression{System.Func{``0}},System.String)">
-            <summary>
-            Validates that the passed argument is not null
-            </summary>
-            <typeparam name="T"></typeparam>
-            <param name="reference">The reference.</param>
-            <param name="message">The message.</param>
         </member>
         <member name="M:Rhino.Mocks.Impl.Validate.ArgsEqual(System.Object[],System.Object[])">
             <summary>
@@ -4234,7 +4690,7 @@
             </summary>
             <param name="previous">The previous mock state, used to get the initial record state</param>
         </member>
-        <member name="M:Rhino.Mocks.Impl.VerifiedMockState.MethodCall(Castle.DynamicProxy.IInvocation,System.Reflection.MethodInfo,System.Object[])">
+        <member name="M:Rhino.Mocks.Impl.VerifiedMockState.MethodCall(Castle.Core.Interceptor.IInvocation,System.Reflection.MethodInfo,System.Object[])">
             <summary>
             Add a method call for this state' mock.
             </summary>
@@ -4295,7 +4751,7 @@
             Records the specified call with the specified args on the mocked object.
             </summary>
         </member>
-        <member name="M:Rhino.Mocks.Interfaces.IMethodRecorder.GetRecordedExpectation(Castle.DynamicProxy.IInvocation,System.Object,System.Reflection.MethodInfo,System.Object[])">
+        <member name="M:Rhino.Mocks.Interfaces.IMethodRecorder.GetRecordedExpectation(Castle.Core.Interceptor.IInvocation,System.Object,System.Reflection.MethodInfo,System.Object[])">
             <summary>
             Get the expectation for this method on this object with this arguments 
             </summary>
@@ -4380,7 +4836,7 @@
             This also removes it from the list of expectations, so it will never be considered again
             </summary>
         </member>
-        <member name="M:Rhino.Mocks.Interfaces.IMethodRecorder.UnexpectedMethodCall(Castle.DynamicProxy.IInvocation,System.Object,System.Reflection.MethodInfo,System.Object[])">
+        <member name="M:Rhino.Mocks.Interfaces.IMethodRecorder.UnexpectedMethodCall(Castle.Core.Interceptor.IInvocation,System.Object,System.Reflection.MethodInfo,System.Object[])">
             <summary>
             Get the expectation for this method on this object with this arguments 
             </summary>
@@ -4604,7 +5060,7 @@
             Records the specified call with the specified args on the mocked object.
             </summary>
         </member>
-        <member name="M:Rhino.Mocks.MethodRecorders.MethodRecorderBase.GetRecordedExpectation(Castle.DynamicProxy.IInvocation,System.Object,System.Reflection.MethodInfo,System.Object[])">
+        <member name="M:Rhino.Mocks.MethodRecorders.MethodRecorderBase.GetRecordedExpectation(Castle.Core.Interceptor.IInvocation,System.Object,System.Reflection.MethodInfo,System.Object[])">
             <summary>
             Get the expectation for this method on this object with this arguments 
             </summary>
@@ -4678,7 +5134,7 @@
             This also removes it from the list of expectations, so it will never be considered again
             </summary>
         </member>
-        <member name="M:Rhino.Mocks.MethodRecorders.MethodRecorderBase.UnexpectedMethodCall(Castle.DynamicProxy.IInvocation,System.Object,System.Reflection.MethodInfo,System.Object[])">
+        <member name="M:Rhino.Mocks.MethodRecorders.MethodRecorderBase.UnexpectedMethodCall(Castle.Core.Interceptor.IInvocation,System.Object,System.Reflection.MethodInfo,System.Object[])">
             <summary>
             Get the expectation for this method on this object with this arguments 
             </summary>
@@ -4698,7 +5154,7 @@
             Handle the real execution of this method for the derived class
             </summary>
         </member>
-        <member name="M:Rhino.Mocks.MethodRecorders.MethodRecorderBase.DoGetRecordedExpectation(Castle.DynamicProxy.IInvocation,System.Object,System.Reflection.MethodInfo,System.Object[])">
+        <member name="M:Rhino.Mocks.MethodRecorders.MethodRecorderBase.DoGetRecordedExpectation(Castle.Core.Interceptor.IInvocation,System.Object,System.Reflection.MethodInfo,System.Object[])">
             <summary>
             Handle the real execution of this method for the derived class
             </summary>
@@ -4786,7 +5242,7 @@
             <param name="method">Method.</param>
             <param name="expectation">Expectation.</param>
         </member>
-        <member name="M:Rhino.Mocks.MethodRecorders.UnorderedMethodRecorder.DoGetRecordedExpectation(Castle.DynamicProxy.IInvocation,System.Object,System.Reflection.MethodInfo,System.Object[])">
+        <member name="M:Rhino.Mocks.MethodRecorders.UnorderedMethodRecorder.DoGetRecordedExpectation(Castle.Core.Interceptor.IInvocation,System.Object,System.Reflection.MethodInfo,System.Object[])">
             <summary>
             Get the expectation for this method on this object with this arguments 
             </summary>
@@ -4842,7 +5298,7 @@
             Gets the next expected calls string.
             </summary>
         </member>
-        <member name="M:Rhino.Mocks.MethodRecorders.UnorderedMethodRecorder.UnexpectedMethodCall(Castle.DynamicProxy.IInvocation,System.Object,System.Reflection.MethodInfo,System.Object[])">
+        <member name="M:Rhino.Mocks.MethodRecorders.UnorderedMethodRecorder.UnexpectedMethodCall(Castle.Core.Interceptor.IInvocation,System.Object,System.Reflection.MethodInfo,System.Object[])">
             <summary>
             Create an exception for an unexpected method call.
             </summary>
@@ -4872,7 +5328,7 @@
             Handles the real getting of the recorded expectation or null.
             </summary>
         </member>
-        <member name="M:Rhino.Mocks.MethodRecorders.OrderedMethodRecorder.UnexpectedMethodCall(Castle.DynamicProxy.IInvocation,System.Object,System.Reflection.MethodInfo,System.Object[])">
+        <member name="M:Rhino.Mocks.MethodRecorders.OrderedMethodRecorder.UnexpectedMethodCall(Castle.Core.Interceptor.IInvocation,System.Object,System.Reflection.MethodInfo,System.Object[])">
             <summary>
             Get the expectation for this method on this object with this arguments 
             </summary>
@@ -4993,571 +5449,6 @@
             The current mocker
             </summary>
         </member>
-        <member name="T:Rhino.Mocks.MockRepository">
-            <summary>
-            Creates proxied instances of types.
-            </summary>
-        </member>
-        <member name="F:Rhino.Mocks.MockRepository.generatorMap">
-            <summary>
-            This is a map of types to ProxyGenerators.
-            </summary>
-        </member>
-        <member name="F:Rhino.Mocks.MockRepository.lastRepository">
-            <summary>
-            This is used to record the last repository that has a method called on it.
-            </summary>
-        </member>
-        <member name="F:Rhino.Mocks.MockRepository.lastMockedObject">
-            <summary>
-            this is used to get to the last proxy on this repository.
-            </summary>
-        </member>
-        <member name="F:Rhino.Mocks.MockRepository.delegateProxies">
-            <summary>
-            For mock delegates, maps the proxy instance from intercepted invocations
-            back to the delegate that was originally returned to client code, if any.
-            </summary>
-        </member>
-        <member name="F:Rhino.Mocks.MockRepository.proxies">
-            <summary>
-            All the proxies in the mock repositories
-            </summary>
-        </member>
-        <member name="F:Rhino.Mocks.MockRepository.repeatableMethods">
-            <summary>
-            This is here because we can't put it in any of the recorders, since repeatable methods
-            have no orderring, and if we try to handle them using the usual manner, we would get into
-            wierd situations where repeatable method that was defined in an orderring block doesn't
-            exists until we enter this block.
-            </summary>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.#ctor">
-            <summary>
-            Creates a new <see cref="T:Rhino.Mocks.MockRepository"/> instance.
-            </summary>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.Ordered">
-            <summary>
-            Move the repository to ordered mode
-            </summary>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.Unordered">
-            <summary>
-            Move the repository to un-ordered mode
-            </summary>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.CreateMock(System.Type,System.Object[])">
-            <summary>
-            Creates a mock for the specified type.
-            </summary>
-            <param name="type">Type.</param>
-            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.StrictMock(System.Type,System.Object[])">
-            <summary>
-            Creates a strict mock for the specified type.
-            </summary>
-            <param name="type">Type.</param>
-            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.CreateMockWithRemoting(System.Type,System.Object[])">
-            <summary>
-            Creates a remoting mock for the specified type.
-            </summary>
-            <param name="type">Type.</param>
-            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.StrictMockWithRemoting(System.Type,System.Object[])">
-            <summary>
-            Creates a strict remoting mock for the specified type.
-            </summary>
-            <param name="type">Type.</param>
-            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.CreateMockWithRemoting``1(System.Object[])">
-            <summary>
-            Creates a remoting mock for the specified type.
-            </summary>
-            <typeparam name="T"></typeparam>
-            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
-            <returns></returns>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.StrictMockWithRemoting``1(System.Object[])">
-            <summary>
-            Creates a strict remoting mock for the specified type.
-            </summary>
-            <typeparam name="T"></typeparam>
-            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
-            <returns></returns>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.CreateMultiMock(System.Type,System.Type[])">
-            <summary>
-            Creates a mock from several types, with strict semantics.
-            Only <paramref name="mainType"/> may be a class.
-            </summary>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.StrictMultiMock(System.Type,System.Type[])">
-            <summary>
-            Creates a strict mock from several types, with strict semantics.
-            Only <paramref name="mainType"/> may be a class.
-            </summary>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.CreateMultiMock(System.Type,System.Type[],System.Object[])">
-            <summary>
-            Creates a mock from several types, with strict semantics.
-            Only <paramref name="mainType"/> may be a class.
-            </summary>
-            <param name="mainType">The main type to mock.</param>
-            <param name="extraTypes">Extra interface types to mock.</param>
-            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class.</param>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.StrictMultiMock(System.Type,System.Type[],System.Object[])">
-            <summary>
-            Creates a strict mock from several types, with strict semantics.
-            Only <paramref name="mainType"/> may be a class.
-            </summary>
-            <param name="mainType">The main type to mock.</param>
-            <param name="extraTypes">Extra interface types to mock.</param>
-            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class.</param>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.DynamicMultiMock(System.Type,System.Type[])">
-            <summary>
-            Creates a mock from several types, with dynamic semantics.
-            Only <paramref name="mainType"/> may be a class.
-            </summary>
-            <param name="mainType">The main type to mock.</param>
-            <param name="extraTypes">Extra interface types to mock.</param>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.DynamicMultiMock(System.Type,System.Type[],System.Object[])">
-            <summary>
-            Creates a mock from several types, with dynamic semantics.
-            Only <paramref name="mainType"/> may be a class.
-            </summary>
-            <param name="mainType">The main type to mock.</param>
-            <param name="extraTypes">Extra interface types to mock.</param>
-            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class.</param>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.DynamicMock(System.Type,System.Object[])">
-            <summary>Creates a dynamic mock for the specified type.</summary>
-            <param name="type">Type.</param>
-            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.DynamicMockWithRemoting(System.Type,System.Object[])">
-            <summary>Creates a dynamic mock for the specified type.</summary>
-            <param name="type">Type.</param>
-            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.DynamicMockWithRemoting``1(System.Object[])">
-            <summary>Creates a dynamic mock for the specified type.</summary>
-            <typeparam name="T"></typeparam>
-            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
-            <returns></returns>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.PartialMock(System.Type,System.Object[])">
-            <summary>Creates a mock object that defaults to calling the class methods if no expectation is set on the method.</summary>
-            <param name="type">Type.</param>
-            <param name="argumentsForConstructor">Arguments for the class' constructor.</param>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.PartialMultiMock(System.Type,System.Type[])">
-            <summary>Creates a mock object that defaults to calling the class methods.</summary>
-            <param name="type">Type.</param>
-            <param name="extraTypes">Extra interface types to mock.</param>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.PartialMultiMock(System.Type,System.Type[],System.Object[])">
-            <summary>Creates a mock object that defaults to calling the class methods.</summary>
-            <param name="type">Type.</param>
-            <param name="extraTypes">Extra interface types to mock.</param>
-            <param name="argumentsForConstructor">Arguments for the class' constructor.</param>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.RemotingMock(System.Type,Rhino.Mocks.MockRepository.CreateMockState)">
-            <summary>Creates a mock object using remoting proxies</summary>
-            <param name="type">Type to mock - must be MarshalByRefObject</param>
-            <returns>Mock object</returns>
-            <remarks>Proxy mock can mock non-virtual methods, but not static methods</remarks>
-            <param name="factory">Creates the mock state for this proxy</param>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.Replay(System.Object)">
-            <summary>
-            Cause the mock state to change to replay, any further call is compared to the 
-            ones that were called in the record state.
-            </summary>
-            <remarks>This method *cannot* be called from inside an ordering.</remarks>
-            <param name="obj">the object to move to replay state</param>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.ReplayCore(System.Object,System.Boolean)">
-            <summary>
-            Cause the mock state to change to replay, any further call is compared to the 
-            ones that were called in the record state.
-            </summary>
-            <param name="obj">the object to move to replay state</param>
-            <param name="checkInsideOrdering"></param>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.BackToRecord(System.Object)">
-            <summary>Move the mocked object back to record state.<para>You can (and it's recommended) to run {Verify()} before you use this method.</para></summary>
-            <remarks>Will delete all current expectations!</remarks>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.BackToRecord(System.Object,Rhino.Mocks.BackToRecordOptions)">
-            <summary>
-            Move the mocked object back to record state.
-            Optionally, can delete all current expectations, but allows more granularity about how
-            it would behave with regard to the object state.
-            </summary>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.Verify(System.Object)">
-            <summary>
-            Verify that all the expectations for this object were fulfilled.
-            </summary>
-            <param name="obj">the object to verify the expectations for</param>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.LastMethodCall``1(System.Object)">
-            <summary>
-            Get the method options for the last call on
-            mockedInstance.
-            </summary>
-            <param name="mockedInstance">The mock object</param>
-            <returns>Method options for the last call</returns>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.GetMockObjectFromInvocationProxy(System.Object)">
-            <summary>
-            Maps an invocation proxy back to the mock object instance that was originally
-            returned to client code which might have been a delegate to this proxy.
-            </summary>
-            <param name="invocationProxy">The mock object proxy from the intercepted invocation</param>
-            <returns>The mock object</returns>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.CreateMockObject(System.Type,Rhino.Mocks.MockRepository.CreateMockState,System.Type[],System.Object[])">
-            <summary>This is provided to allow advance extention functionality, where Rhino Mocks standard functionality is not enough.</summary>
-            <param name="type">The type to mock</param>
-            <param name="factory">Delegate that create the first state of the mocked object (usualy the record state).</param>
-            <param name="extras">Additional types to be implemented, this can be only interfaces </param>
-            <param name="argumentsForConstructor">optional arguments for the constructor</param>
-            <returns></returns>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.GetMockedObject(System.Object)">
-            <summary>
-             Method: GetMockedObject
-             Get an IProxy from a mocked object instance, or throws if the 
-             object is not a mock object.
-            </summary>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.GetMockedObjectOrNull(System.Object)">
-            <summary>
-            Method: GetMockedObjectOrNull
-            Get an IProxy from a mocked object instance, or null if the
-            object is not a mock object.
-            </summary>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.PopRecorder">
-            <summary>Pops the recorder.</summary>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.PushRecorder(Rhino.Mocks.Interfaces.IMethodRecorder)">
-            <summary>Pushes the recorder.</summary>
-            <param name="newRecorder">New recorder.</param>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.BackToRecordAll">
-            <summary>
-            All the mock objects in this repository will be moved
-            to record state.
-            </summary>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.BackToRecordAll(Rhino.Mocks.BackToRecordOptions)">
-            <summary>
-            All the mock objects in this repository will be moved
-            to record state.
-            </summary>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.ReplayAll">
-            <summary>
-            Replay all the mocks from this repository
-            </summary>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.VerifyAll">
-            <summary>
-            Verify all the mocks from this repository
-            </summary>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.GetProxyGenerator(System.Type)">
-            <summary>
-            Gets the proxy generator for a specific type. Having a single ProxyGenerator
-            with multiple types linearly degrades the performance so this implementation
-            keeps one ProxyGenerator per type. 
-            </summary>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.SetExceptionToBeThrownOnVerify(System.Object,Rhino.Mocks.Exceptions.ExpectationViolationException)">
-            <summary>Set the exception to be thrown when verified is called.</summary>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.GenerateStub``1(System.Object[])">
-            <summary>Generates a stub without needing a <see cref="T:Rhino.Mocks.MockRepository"/></summary>
-            <param name="argumentsForConstructor">Arguments for <typeparamref name="T"/>'s constructor</param>
-            <typeparam name="T">The <see cref="T:System.Type"/> of stub to create.</typeparam>
-            <returns>The stub</returns>
-            <seealso cref="M:Rhino.Mocks.MockRepository.Stub``1(System.Object[])"/>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.GenerateStub(System.Type,System.Object[])">
-            <summary>Generates a stub without needing a <see cref="T:Rhino.Mocks.MockRepository"/></summary>
-            <param name="type">The <see cref="T:System.Type"/> of stub.</param>
-            <param name="argumentsForConstructor">Arguments for the <paramref name="type"/>'s constructor.</param>
-            <returns>The stub</returns>
-            <seealso cref="M:Rhino.Mocks.MockRepository.Stub(System.Type,System.Object[])"/>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.GenerateMock``1(System.Object[])">
-            <summary>Generate a mock object without needing a <see cref="T:Rhino.Mocks.MockRepository"/></summary>
-            <typeparam name="T">type <see cref="T:System.Type"/> of mock object to create.</typeparam>
-            <param name="argumentsForConstructor">Arguments for <typeparamref name="T"/>'s constructor</param>
-            <returns>the mock object</returns>
-            <seealso cref="M:Rhino.Mocks.MockRepository.DynamicMock``1(System.Object[])"/>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.GenerateMock``2(System.Object[])">
-            <summary>Generate a multi-mock object without needing a <see cref="T:Rhino.Mocks.MockRepository"/></summary>
-            <typeparam name="T">The <c>typeof</c> object to generate a mock for.</typeparam>
-            <typeparam name="TMultiMockInterface1">A second interface to generate a multi-mock for.</typeparam>
-            <param name="argumentsForConstructor">Arguments for <typeparamref name="T"/>'s constructor</param>
-            <returns>the multi-mock object</returns>
-            <seealso cref="M:Rhino.Mocks.MockRepository.DynamicMultiMock(System.Type,System.Type[],System.Object[])"/>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.GenerateMock``3(System.Object[])">
-            <summary>Generate a multi-mock object without without needing a <see cref="T:Rhino.Mocks.MockRepository"/></summary>
-            <typeparam name="T">The <c>typeof</c> object to generate a mock for.</typeparam>
-            <typeparam name="TMultiMockInterface1">An interface to generate a multi-mock for.</typeparam>
-            <typeparam name="TMultiMockInterface2">A second interface to generate a multi-mock for.</typeparam>
-            <param name="argumentsForConstructor">Arguments for <typeparamref name="T"/>'s constructor</param>
-            <returns>the multi-mock object</returns>
-            <seealso cref="M:Rhino.Mocks.MockRepository.DynamicMultiMock(System.Type,System.Type[],System.Object[])"/>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.GenerateMock(System.Type,System.Type[],System.Object[])">
-            <summary>Creates a multi-mock without without needing a <see cref="T:Rhino.Mocks.MockRepository"/></summary>
-            <param name="type">The type of mock to create, this can be a class</param>
-            <param name="extraTypes">Any extra interfaces to add to the multi-mock, these can only be interfaces.</param>
-            <param name="argumentsForConstructor">Arguments for <paramref name="type"/>'s constructor</param>
-            <returns>the multi-mock object</returns>
-            <seealso cref="M:Rhino.Mocks.MockRepository.DynamicMultiMock(System.Type,System.Type[],System.Object[])"/>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.GenerateStrictMock``1(System.Object[])">
-            <summary>Creates a strict mock without without needing a <see cref="T:Rhino.Mocks.MockRepository"/></summary>
-            <param name="argumentsForConstructor">Any arguments required for the <typeparamref name="T"/>'s constructor</param>
-            <typeparam name="T">The type of mock object to create.</typeparam>
-            <returns>The mock object with strict replay semantics</returns>
-             <seealso cref="M:Rhino.Mocks.MockRepository.StrictMock``1(System.Object[])"/>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.GenerateStrictMock``2(System.Object[])">
-            <summary>Creates a strict multi-mock without needing a <see cref="T:Rhino.Mocks.MockRepository"/></summary>
-            <param name="argumentsForConstructor">Any arguments required for the <typeparamref name="T"/>'s constructor</param>
-            <typeparam name="T">The type of mock object to create, this can be a class.</typeparam>
-            <typeparam name="TMultiMockInterface1">An interface to generate a multi-mock for, this must be an interface!</typeparam>
-            <returns>The multi-mock object with strict replay semantics</returns>
-             <seealso cref="M:Rhino.Mocks.MockRepository.StrictMultiMock(System.Type,System.Type[],System.Object[])"/>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.GenerateStrictMock``3(System.Object[])">
-            <summary>Creates a strict multi-mock without needing a <see cref="T:Rhino.Mocks.MockRepository"/></summary>
-            <param name="argumentsForConstructor">Any arguments required for the <typeparamref name="T"/>'s constructor</param>
-            <typeparam name="T">The type of mock object to create, this can be a class.</typeparam>
-            <typeparam name="TMultiMockInterface1">An interface to generate a multi-mock for, this must be an interface!</typeparam>
-            <typeparam name="TMultiMockInterface2">A second interface to generate a multi-mock for, this must be an interface!</typeparam>
-            <returns>The multi-mock object with strict replay semantics</returns>
-            <seealso cref="M:Rhino.Mocks.MockRepository.StrictMultiMock(System.Type,System.Type[],System.Object[])"/>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.GenerateStrictMock(System.Type,System.Type[],System.Object[])">
-            <summary>Creates a strict multi-mock without needing a <see cref="T:Rhino.Mocks.MockRepository"/></summary>
-            <param name="type">The type of mock object to create, this can be a class</param>
-            <param name="extraTypes">Any extra interfaces to generate a multi-mock for, these must be interaces!</param>
-            <param name="argumentsForConstructor">Any arguments for the <paramref name="type"/>'s constructor</param>
-            <returns>The strict multi-mock object</returns>
-             <seealso cref="M:Rhino.Mocks.MockRepository.StrictMultiMock(System.Type,System.Type[],System.Object[])"/>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.GeneratePartialMock``1(System.Object[])">
-            <summary>
-            </summary>
-            <param name="argumentsForConstructor"></param>
-            <typeparam name="T"></typeparam>
-            <returns></returns>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.GeneratePartialMock``2(System.Object[])">
-            <summary>
-            </summary>
-            <param name="argumentsForConstructor"></param>
-            <typeparam name="T"></typeparam>
-            <typeparam name="TMultiMockInterface1"></typeparam>
-            <returns></returns>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.GeneratePartialMock``3(System.Object[])">
-            <summary>
-            </summary>
-            <param name="argumentsForConstructor"></param>
-            <typeparam name="T"></typeparam>
-            <typeparam name="TMultiMockInterface1"></typeparam>
-            <typeparam name="TMultiMockInterface2"></typeparam>
-            <returns></returns>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.GeneratePartialMock(System.Type,System.Type[],System.Object[])">
-            <summary>
-            </summary>
-            <param name="type"></param>
-            <param name="extraTypes"></param>
-            <param name="argumentsForConstructor"></param>
-            <returns></returns>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.GenerateDynamicMockWithRemoting``1(System.Object[])">
-            <summary>
-            Generate a mock object with dynamic replay semantics and remoting without needing the mock repository
-            </summary>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.GenerateStrictMockWithRemoting``1(System.Object[])">
-            <summary>
-            Generate a mock object with strict replay semantics and remoting without needing the mock repository
-            </summary>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.CreateMockInReplay``1(System.Func{Rhino.Mocks.MockRepository,``0})">
-            <summary>Helper method to create a mock object without a repository instance and put the object back into replay mode.</summary>
-            <typeparam name="T">The type of mock object to create</typeparam>
-            <param name="createMock">A delegate that uses a mock repository instance to create the underlying mock</param>
-            <returns>The mock object in the replay mode.</returns>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.Record">
-            <summary>
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.Playback">
-            <summary>
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.CreateMock``1(System.Object[])">
-            <summary>
-            Creates a mock for the spesified type with strict mocking semantics.
-            <para>Strict semantics means that any call that wasn't explicitly recorded is considered an error and would cause an exception to be thrown.</para>
-            </summary>
-            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.StrictMock``1(System.Object[])">
-            <summary>
-            Creates a mock for the spesified type with strict mocking semantics.
-            <para>Strict semantics means that any call that wasn't explicitly recorded is considered an error and would cause an exception to be thrown.</para>
-            </summary>
-            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.DynamicMock``1(System.Object[])">
-            <summary>
-            Creates a dynamic mock for the specified type.
-            </summary>
-            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.CreateMultiMock``1(System.Type[])">
-            <summary>
-            Creates a mock object from several types.
-            </summary>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.StrictMultiMock``1(System.Type[])">
-            <summary>
-            Creates a strict mock object from several types.
-            </summary>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.DynamicMultiMock``1(System.Type[])">
-            <summary>
-            Create a mock object from several types with dynamic semantics.
-            </summary>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.PartialMultiMock``1(System.Type[])">
-            <summary>
-            Create a mock object from several types with partial semantics.
-            </summary>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.CreateMultiMock``1(System.Type[],System.Object[])">
-            <summary>
-            Create a mock object from several types with strict semantics.
-            </summary>
-            <param name="extraTypes">Extra interface types to mock.</param>
-            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.StrictMultiMock``1(System.Type[],System.Object[])">
-            <summary>
-            Create a strict mock object from several types with strict semantics.
-            </summary>
-            <param name="extraTypes">Extra interface types to mock.</param>
-            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.DynamicMultiMock``1(System.Type[],System.Object[])">
-            <summary>
-            Create a mock object from several types with dynamic semantics.
-            </summary>
-            <param name="extraTypes">Extra interface types to mock.</param>
-            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.PartialMultiMock``1(System.Type[],System.Object[])">
-            <summary>
-            Create a mock object from several types with partial semantics.
-            </summary>
-            <param name="extraTypes">Extra interface types to mock.</param>
-            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.PartialMock``1(System.Object[])">
-            <summary>
-            Create a mock object with from a class that defaults to calling the class methods
-            </summary>
-            <param name="argumentsForConstructor">Arguments for the class' constructor, if mocking a concrete class</param>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.Stub``1(System.Object[])">
-            <summary>
-            Create a stub object, one that has properties and events ready for use, and 
-            can have methods called on it. It requires an explicit step in order to create 
-            an expectation for a stub.
-            </summary>
-            <param name="argumentsForConstructor">The arguments for constructor.</param>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.Stub(System.Type,System.Object[])">
-            <summary>
-            Create a stub object, one that has properties and events ready for use, and
-            can have methods called on it. It requires an explicit step in order to create
-            an expectation for a stub.
-            </summary>
-            <param name="type">The type.</param>
-            <param name="argumentsForConstructor">The arguments for constructor.</param>
-            <returns>The stub</returns>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.IsInReplayMode(System.Object)">
-            <summary>
-            Returns true if the passed mock is currently in replay mode.
-            </summary>
-            <param name="mock">The mock to test.</param>
-            <returns>True if the mock is in replay mode, false otherwise.</returns>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.IsStub(System.Object)">
-            <summary>
-            Determines whether the specified proxy is a stub.
-            </summary>
-            <param name="proxy">The proxy.</param>
-        </member>
-        <member name="M:Rhino.Mocks.MockRepository.RegisterPropertyBehaviorOn(Rhino.Mocks.Interfaces.IMockedObject)">
-            <summary>
-            Register a call on a prperty behavior 
-            </summary>
-            <param name="instance"></param>
-        </member>
-        <member name="P:Rhino.Mocks.MockRepository.Recorder">
-            <summary>
-            Gets the recorder.
-            </summary>
-            <value></value>
-        </member>
-        <member name="P:Rhino.Mocks.MockRepository.Replayer">
-            <summary>
-            Gets the replayer for this repository.
-            </summary>
-            <value></value>
-        </member>
-        <member name="P:Rhino.Mocks.MockRepository.LastMockedObject">
-            <summary>
-            Gets the last proxy which had a method call.
-            </summary>
-        </member>
-        <member name="T:Rhino.Mocks.MockRepository.CreateMockState">
-            <summary>
-             Delegate: CreateMockState
-             This is used internally to cleanly handle the creation of different 
-             RecordMockStates.
-            </summary>
-        </member>
         <member name="T:Rhino.Mocks.RhinoMocks">
             <summary>
             Used for [assembly: InternalsVisibleTo(RhinoMocks.StrongName)]
@@ -5603,7 +5494,7 @@
             Utility class for working with method calls.
             </summary>
         </member>
-        <member name="M:Rhino.Mocks.Utilities.MethodCallUtil.StringPresentation(Castle.DynamicProxy.IInvocation,Rhino.Mocks.Utilities.MethodCallUtil.FormatArgumnet,System.Reflection.MethodInfo,System.Object[])">
+        <member name="M:Rhino.Mocks.Utilities.MethodCallUtil.StringPresentation(Castle.Core.Interceptor.IInvocation,Rhino.Mocks.Utilities.MethodCallUtil.FormatArgumnet,System.Reflection.MethodInfo,System.Object[])">
             <summary>
             Return the string representation of a method call and its arguments.
             </summary>
@@ -5613,7 +5504,7 @@
             <param name="format">Delegate to format the parameter</param>
             <returns>The string representation of this method call</returns>
         </member>
-        <member name="M:Rhino.Mocks.Utilities.MethodCallUtil.StringPresentation(Castle.DynamicProxy.IInvocation,System.Reflection.MethodInfo,System.Object[])">
+        <member name="M:Rhino.Mocks.Utilities.MethodCallUtil.StringPresentation(Castle.Core.Interceptor.IInvocation,System.Reflection.MethodInfo,System.Object[])">
             <summary>
             Return the string representation of a method call and its arguments.
             </summary>
@@ -5633,7 +5524,7 @@
             Utility to get the default value for a type
             </summary>
         </member>
-        <member name="M:Rhino.Mocks.Utilities.ReturnValueUtil.DefaultValue(System.Type,Castle.DynamicProxy.IInvocation)">
+        <member name="M:Rhino.Mocks.Utilities.ReturnValueUtil.DefaultValue(System.Type,Castle.Core.Interceptor.IInvocation)">
             <summary>
             The default value for a type.
             Null for reference types and void
