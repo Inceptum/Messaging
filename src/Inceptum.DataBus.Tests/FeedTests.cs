@@ -36,8 +36,8 @@ namespace Inceptum.DataBus.Tests
             {
                 using (subscribtion2)
                 {
-                    Assert.IsTrue(ev.WaitOne(500), "Subscribtion handler was not called");
-                    Assert.IsTrue(ev1.WaitOne(500), "Subscribtion handler was not called");
+                    Assert.IsTrue(ev.WaitOne(1000), "Subscribtion handler was not called");
+                    Assert.IsTrue(ev1.WaitOne(1000), "Subscribtion handler was not called");
                 }
             }
 
