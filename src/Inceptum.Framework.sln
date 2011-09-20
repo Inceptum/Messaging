@@ -1,19 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "libs", "libs", "{50390586-FC3F-406D-B66F-C593FE9700C3}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inceptum.Messaging", "Inceptum.Messaging\Inceptum.Messaging.csproj", "{87CC7D22-A809-40D3-80FB-E9D58109DC82}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inceptum.Messaging.Tests", "Inceptum.Messaging.Tests\Inceptum.Messaging.Tests.csproj", "{B370B3F0-31A7-4146-898C-C2928C025B99}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inceptum.AppHosting", "Inceptum.AppHosting\Inceptum.AppHosting.csproj", "{D622FE26-8D36-4AE7-9E7A-3E892AD985FF}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ibank", "ibank", "{CB79CEF5-60BB-45C5-B578-ADEEE4155509}"
-	ProjectSection(SolutionItems) = preProject
-		libs\ibank\Finam.Internet.Bank.Configuration.Client.dll = libs\ibank\Finam.Internet.Bank.Configuration.Client.dll
-		libs\ibank\Finam.Internet.Bank.Configuration.Client.pdb = libs\ibank\Finam.Internet.Bank.Configuration.Client.pdb
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inceptum.AppHosting.Tests", "Inceptum.AppHosting.Tests\Inceptum.AppHosting.Tests.csproj", "{DFBD0CB3-346C-4DD0-B3BD-626A419EEB6F}"
 EndProject
@@ -60,9 +52,6 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		{CB79CEF5-60BB-45C5-B578-ADEEE4155509} = {50390586-FC3F-406D-B66F-C593FE9700C3}
 	EndGlobalSection
 	GlobalSection(ExtensibilityAddIns) = postSolution
 		OpenWrap.VisualStudioIntegration2010 = 1;Ensures OpenWrap initialization when a solution is opened.;OpenWrap Visual Studio Solution Add-in
