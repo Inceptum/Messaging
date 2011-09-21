@@ -1,4 +1,0 @@
-﻿name: Rx-Providers
-version: 1.0.10621
-description: Reactive Extensions Providers Library used to build query providers and express complex event processing queries over those.
-depends: Rx-Main >= 1.0 and < 1.1

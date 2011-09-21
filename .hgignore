@@ -39,5 +39,7 @@ _UpgradeReport_Files*/
 _cache
 _cache\*
 
+wraps
+wraps\*
 syntax: regexp
 ^[^\/]*.wrap
