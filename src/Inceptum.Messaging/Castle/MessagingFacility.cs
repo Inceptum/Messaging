@@ -13,13 +13,23 @@ namespace Inceptum.Messaging.Castle
 {
     public class MessagingFacility : AbstractFacility
     {
-        private readonly JailStrategy m_JailStrategy;
-        private readonly IDictionary<string, TransportInfo> m_Transports;
+        private JailStrategy m_JailStrategy;
+        private IDictionary<string, TransportInfo> m_Transports;
         private readonly List<IHandler> m_SerializerWaitList = new List<IHandler>();
         private readonly List<IHandler> m_SerializerFactoryWaitList = new List<IHandler>();
         private ISerializationManager m_SerializationManager;
 
+        public JailStrategy JailStrategy
+        {
+            get { return m_JailStrategy; }
+            set { m_JailStrategy = value; }
+        }
 
+        public IDictionary<string, TransportInfo> Transports
+        {
+            get { return m_Transports; }
+            set { m_Transports = value; }
+        }
 
 
         public MessagingFacility()
@@ -31,6 +41,8 @@ namespace Inceptum.Messaging.Castle
             m_Transports = transports;
             m_JailStrategy = jailStrategy;
         }
+
+
 
         protected override void Init()
         {
