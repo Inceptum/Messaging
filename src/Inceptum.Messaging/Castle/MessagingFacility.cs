@@ -19,6 +19,13 @@ namespace Inceptum.Messaging.Castle
         private readonly List<IHandler> m_SerializerFactoryWaitList = new List<IHandler>();
         private ISerializationManager m_SerializationManager;
 
+
+
+
+        public MessagingFacility()
+        {
+        }
+
         public MessagingFacility(IDictionary<string, TransportInfo> transports,JailStrategy jailStrategy=null)
         {
             m_Transports = transports;
@@ -28,10 +35,15 @@ namespace Inceptum.Messaging.Castle
         protected override void Init()
         {
             Kernel.Register(
-                Component.For<IMessagingEngine>().ImplementedBy<MessagingEngine>().DependsOn(new {jailStrategy=m_JailStrategy??JailStrategy.None}),
-                Component.For<ISerializationManager>().ImplementedBy<SerializationManager>(),
-                Component.For<ITransportResolver>().ImplementedBy<TransportResolver>().DependsOn(new { transports = m_Transports })
+                Component.For<IMessagingEngine>().ImplementedBy<MessagingEngine>().DependsOn(
+                    new {jailStrategy = m_JailStrategy ?? JailStrategy.None}),
+                Component.For<ISerializationManager>().ImplementedBy<SerializationManager>()
                 );
+
+            if(m_Transports!=null)
+                Kernel.Register(
+                    Component.For<ITransportResolver>().ImplementedBy<TransportResolver>().DependsOn(new { transports = m_Transports })
+                    );
 
             m_SerializationManager = Kernel.Resolve<ISerializationManager>();
             Kernel.ComponentRegistered += onComponentRegistered;
