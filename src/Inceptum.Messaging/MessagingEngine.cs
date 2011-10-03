@@ -48,6 +48,8 @@ namespace Inceptum.Messaging
             get { return m_JailedTag != null; }
         }
 
+
+
         public ILogger Logger
         {
             get { return m_Logger; }
