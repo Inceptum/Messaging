@@ -13,7 +13,7 @@ namespace Inceptum.Messaging
         private readonly object m_SyncRoot = new object();
         private readonly TransportInfo m_TransportInfo;
         private volatile QueueConnection m_Connection;
-        private bool m_IsDisposed;
+        private volatile bool m_IsDisposed;
         private QueueSession m_Session;
         private Session m_TopicSession;
         private Action m_OnFailure;
@@ -43,6 +43,11 @@ namespace Inceptum.Messaging
         }
 
         #endregion
+
+        public bool IsDisposed
+        {
+            get { return m_IsDisposed; }
+        }
 
         public Sonic.Jms.Session GetSession(bool topic)
         {

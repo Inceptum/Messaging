@@ -44,9 +44,11 @@ namespace Inceptum.Messaging
             Transport transport;
             lock (m_Connections)
             {
-                if (!m_Connections.TryGetValue(transportInfo, out transport))
+                if (!m_Connections.TryGetValue(transportInfo, out transport) || transport==null || transport.IsDisposed)
                 {
                     transport = new Transport(transportInfo, () =>ProceesTarnsportFailure(transportId,transportInfo));
+                    if (m_Connections.ContainsKey(transportInfo))
+                        m_Connections.Remove(transportInfo);
                     m_Connections.Add(transportInfo, transport);
                 }
             }
