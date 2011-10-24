@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Sonic.Jms.Ext;
 using QueueConnection = Sonic.Jms.QueueConnection;
 using QueueConnectionFactory = Sonic.Jms.QueueConnectionFactory;

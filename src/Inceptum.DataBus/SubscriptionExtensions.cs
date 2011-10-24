@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Db.Aces.Platform.Transport.Tibco;
 
 namespace Inceptum.DataBus

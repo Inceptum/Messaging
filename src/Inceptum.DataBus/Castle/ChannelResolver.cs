@@ -1,4 +1,4 @@
-using Castle.Core;
+﻿using Castle.Core;
 using Castle.MicroKernel;
 using Castle.MicroKernel.Context;
 
