@@ -1,4 +1,4 @@
-using Sonic.Jms;
+﻿using Sonic.Jms;
 
 namespace Inceptum.Messaging
 {
