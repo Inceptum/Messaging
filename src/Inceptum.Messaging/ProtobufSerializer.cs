@@ -20,7 +20,7 @@ namespace Inceptum.Messaging
         {
             if (message == null) throw new ArgumentNullException("message");
             var bytesMessage = message as BytesMessage;
-            if (bytesMessage == null) throw new ArgumentException("message is expected to caontain BytesMessage", "message");
+            if (bytesMessage == null) throw new ArgumentException("message is expected to contain BytesMessage", "message");
             var buf = new byte[bytesMessage.getBodyLength()];
             bytesMessage.readBytes(buf);
 
