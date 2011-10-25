@@ -120,7 +120,7 @@ namespace Inceptum.Messaging
                 sendDestination = session.createTopic(destination.Substring(8));
             }
             else
-                throw new InvalidOperationException("Wrong destionation name: " + destination + ". Should start with 'queue://' or 'topic://'");
+                throw new InvalidOperationException("Wrong destination name: " + destination + ". Should start with 'queue://' or 'topic://'");
             return session;
         }
 
