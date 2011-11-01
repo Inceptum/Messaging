@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Reactive.Disposables;
@@ -120,7 +120,7 @@ namespace Inceptum.Messaging
                 sendDestination = session.createTopic(destination.Substring(8));
             }
             else
-                throw new InvalidOperationException("Wrong destionation name: " + destination + ". Should start with 'queue://' or 'topic://'");
+                throw new InvalidOperationException("Wrong destination name: " + destination + ". Should start with 'queue://' or 'topic://'");
             return session;
         }
 
@@ -188,26 +188,28 @@ namespace Inceptum.Messaging
 
 
         public IDisposable RegisterHandler<TRequest, TResponse>(Func<TRequest, TResponse> handler, string source, string transportId)
-            where TResponse : class
+                   where TResponse : class
         {
             var handle = new SerialDisposable();
             var transportWatcher = SubscribeOnTransportEvents((id, @event) =>
-                                                                  {
-                                                                      if (@event != TransportEvents.Failure)
-                                                                          return;
+            {
+                if (@event != TransportEvents.Failure)
+                    return;
 
-                                                                      lock (handle)
-                                                                      {
-                                                                          handle.Disposable = registerHandler(handler, source, transportId);
-                                                                      }
-                                                                  });
+                lock (handle)
+                {
+                    handle.Disposable = registerHandler(handler, source, transportId);
+                }
+            });
             lock (handle)
             {
                 handle.Disposable = registerHandler(handler, source, transportId);
             }
 
-            return new CompositeDisposable(transportWatcher,handle);
+            return new CompositeDisposable(transportWatcher, handle);
         }
+
+ 
 
         public IDisposable registerHandler<TRequest, TResponse>(Func<TRequest, TResponse> handler, string source, string transportId)
             where TResponse : class

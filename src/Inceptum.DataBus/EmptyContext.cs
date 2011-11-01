@@ -1,4 +1,4 @@
-namespace Inceptum.DataBus
+﻿namespace Inceptum.DataBus
 {
     public sealed class EmptyContext
     {

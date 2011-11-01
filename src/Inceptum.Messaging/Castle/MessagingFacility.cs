@@ -47,19 +47,18 @@ namespace Inceptum.Messaging.Castle
         protected override void Init()
         {
             Kernel.Register(
-                Component.For<IMessagingEngine>().ImplementedBy<MessagingEngine>().DependsOn(
-                    new {jailStrategy = m_JailStrategy ?? JailStrategy.None}),
+                Component.For<IMessagingEngine>().ImplementedBy<MessagingEngine>().DependsOn(new {jailStrategy = m_JailStrategy ?? JailStrategy.None}),
                 Component.For<ISerializationManager>().ImplementedBy<SerializationManager>()
                 );
 
-            if(m_Transports!=null)
-                Kernel.Register(
-                    Component.For<ITransportResolver>().ImplementedBy<TransportResolver>().DependsOn(new { transports = m_Transports })
-                    );
+            if (m_Transports != null)
+            {
+                Kernel.Register(Component.For<ITransportResolver>().ImplementedBy<TransportResolver>().DependsOn(new { transports = m_Transports }));
+            }
 
             m_SerializationManager = Kernel.Resolve<ISerializationManager>();
             Kernel.ComponentRegistered += onComponentRegistered;
-            Kernel.ComponentModelCreated+= ProcessModel;
+            Kernel.ComponentModelCreated += ProcessModel;
             //TODO: make optional
             Kernel.Register(Component.For<ISerializerFactory>().ImplementedBy<ProtobufSerializerFactory>());
         }
@@ -102,9 +101,7 @@ namespace Inceptum.Messaging.Castle
         private void registerSerializer(IHandler handler)
         {
             var type = handler.ComponentModel.ExtendedProperties["SerializableType"] as Type;
-            m_SerializationManager.RegisterSerializer(type,
-                                                      Kernel.Resolve(handler.ComponentModel.Name,
-                                                                     typeof (IMessageSerializer<>).MakeGenericType(type)));
+            m_SerializationManager.RegisterSerializer(type, Kernel.Resolve(handler.ComponentModel.Name, typeof (IMessageSerializer<>).MakeGenericType(type)));
         }
 
         private void onHandlerStateChanged(object source, EventArgs args)
