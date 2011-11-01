@@ -1,4 +1,4 @@
-namespace Inceptum.Messaging
+﻿namespace Inceptum.Messaging
 {
     public interface ISerializerFactory
     {
