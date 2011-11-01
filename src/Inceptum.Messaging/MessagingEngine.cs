@@ -180,27 +180,19 @@ namespace Inceptum.Messaging
                                                                           {
                                                                               if (@event != TransportEvents.Failure)
                                                                                   return;
-
-                                                                              lock (handle)
-                                                                              {
-                                                                                  handle.Disposable =
-                                                                                      registerHandlerWithRetry(handler, source,
-                                                                                                      transportId);
-                                                                              }
+                                                                              registerHandlerWithRetry(handler, source, transportId, handle);
                                                                           });
-            lock (handle)
-            {
-                handle.Disposable = registerHandlerWithRetry(handler, source, transportId);
-            }
+                
+           registerHandlerWithRetry(handler, source, transportId, handle);
 
             return new CompositeDisposable(transportWatcher, handle);
         }
 
-        public IDisposable registerHandlerWithRetry<TRequest, TResponse>(Func<TRequest, TResponse> handler,
-                                                                         string source, string transportId)
+        public void registerHandlerWithRetry<TRequest, TResponse>(Func<TRequest, TResponse> handler,
+                                                                         string source, string transportId, SerialDisposable handle)
             where TResponse : class
         {
-            var handle = new SerialDisposable();
+           
             lock (handle)
             {
                 try
@@ -215,12 +207,11 @@ namespace Inceptum.Messaging
                                                                           {
                                                                               lock (handle)
                                                                               {
-                                                                                  handle.Disposable = registerHandler(handler, source, transportId);
+                                                                                  registerHandlerWithRetry(handler, source, transportId,handle);
                                                                               }
                                                                           });
                 }
             }
-            return handle;
         }
 
 
