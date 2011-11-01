@@ -190,6 +190,28 @@ namespace Inceptum.Messaging
         public IDisposable RegisterHandler<TRequest, TResponse>(Func<TRequest, TResponse> handler, string source, string transportId)
             where TResponse : class
         {
+            var handle = new SerialDisposable();
+            var transportWatcher = SubscribeOnTransportEvents((id, @event) =>
+                                                                  {
+                                                                      if (@event != TransportEvents.Failure)
+                                                                          return;
+
+                                                                      lock (handle)
+                                                                      {
+                                                                          handle.Disposable = registerHandler(handler, source, transportId);
+                                                                      }
+                                                                  });
+            lock (handle)
+            {
+                handle.Disposable = registerHandler(handler, source, transportId);
+            }
+
+            return new CompositeDisposable(transportWatcher,handle);
+        }
+
+        public IDisposable registerHandler<TRequest, TResponse>(Func<TRequest, TResponse> handler, string source, string transportId)
+            where TResponse : class
+        {
             if (m_Disposing.WaitOne(0))
                 throw new InvalidOperationException("Engine is disposing");
 
@@ -197,9 +219,10 @@ namespace Inceptum.Messaging
             {
                 try
                 {
-                     Session session = m_TransportManager.GetSession(transportId);
+                    Session session = m_TransportManager.GetSession(transportId);
                     var replier = session.createProducer(null);
                     var requestSubscription = subscribe(source, transportId, m => handleRequest(m, handler, session, replier));
+                   
                     return createSonicHandle(() =>
                                                  {
                                                      replier.close();
@@ -236,11 +259,10 @@ namespace Inceptum.Messaging
                         else
                             receiver = session.createConsumer(tempDestination);
 
-//                        var receiver = session.createConsumer(tempDestination, JailedSelector);
                         var handle = createSonicHandle(() =>
                                                            {
                                                                receiver.close();
-                                                               tempDestination.Delete();
+                                                             //  tempDestination.Delete();
                                                            });
 
                         receiver.setMessageListener(new GenericMessageListener(message =>
