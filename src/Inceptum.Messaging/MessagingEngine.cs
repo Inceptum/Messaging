@@ -188,7 +188,29 @@ namespace Inceptum.Messaging
 
 
         public IDisposable RegisterHandler<TRequest, TResponse>(Func<TRequest, TResponse> handler, string source, string transportId)
-            where TResponse : class
+                   where TResponse : class
+        {
+            var handle = new SerialDisposable();
+            var transportWatcher = SubscribeOnTransportEvents((id, @event) =>
+            {
+                if (@event != TransportEvents.Failure)
+                    return;
+
+                lock (handle)
+                {
+                    handle.Disposable = registerHandler(handler, source, transportId);
+                }
+            });
+            lock (handle)
+            {
+                handle.Disposable = registerHandler(handler, source, transportId);
+            }
+
+            return new CompositeDisposable(transportWatcher, handle);
+        }
+
+
+        public IDisposable registerHandler<TRequest, TResponse>(Func<TRequest, TResponse> handler, string source, string transportId) where TResponse : class
         {
             if (m_Disposing.WaitOne(0))
                 throw new InvalidOperationException("Engine is disposing");
