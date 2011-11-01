@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Threading;
 using Castle.Core.Logging;
-using Inceptum.Core;
 using Inceptum.Core.Messaging;
 using Inceptum.Core.Utils;
 using Sonic.Jms;
@@ -13,7 +13,6 @@ namespace Inceptum.Messaging
 {
     public class MessagingEngine : IMessagingEngine
     {
-
         private const int MESSAGE_LIFESPAN = 1800000; // milliseconds (30 minutes)
         private const string JAILED_PROPERTY_NAME = "JAILED_TAG";
         private readonly ManualResetEvent m_Disposing = new ManualResetEvent(false);
@@ -30,16 +29,18 @@ namespace Inceptum.Messaging
         /// <param name="transportManager"></param>
         /// <param name="serializationManager"></param>
         /// <param name="jailStrategy"></param>
-        internal MessagingEngine(TransportManager transportManager, ISerializationManager serializationManager, JailStrategy jailStrategy = null)
+        internal MessagingEngine(TransportManager transportManager, ISerializationManager serializationManager,
+                                 JailStrategy jailStrategy = null)
         {
             m_JailedTag = (jailStrategy ?? JailStrategy.None).CreateTag();
             JailedSelector = JAILED_PROPERTY_NAME + " = \'" + m_JailedTag + "\'";
-            m_TransportManager =transportManager;
+            m_TransportManager = transportManager;
             m_SerializationManager = serializationManager;
-            
         }
-        public MessagingEngine(ITransportResolver transportResolver, ISerializationManager serializationManager, JailStrategy jailStrategy = null)
-            : this(new TransportManager(transportResolver),serializationManager,jailStrategy)
+
+        public MessagingEngine(ITransportResolver transportResolver, ISerializationManager serializationManager,
+                               JailStrategy jailStrategy = null)
+            : this(new TransportManager(transportResolver), serializationManager, jailStrategy)
         {
         }
 
@@ -47,7 +48,6 @@ namespace Inceptum.Messaging
         {
             get { return m_JailedTag != null; }
         }
-
 
 
         public ILogger Logger
@@ -63,16 +63,16 @@ namespace Inceptum.Messaging
         public IDisposable SubscribeOnTransportEvents(TrasnportEventHandler handler)
         {
             TrasnportEventHandler safeHandler = (transportId, @event) =>
-                                            {
-                                                try
-                                                {
-                                                    handler(transportId, @event);
-                                                }
-                                                catch (Exception ex)
-                                                {
-                                                    Logger.WarnFormat(ex, "transport events handler failed");
-                                                }
-                                            };
+                                                    {
+                                                        try
+                                                        {
+                                                            handler(transportId, @event);
+                                                        }
+                                                        catch (Exception ex)
+                                                        {
+                                                            Logger.WarnFormat(ex, "transport events handler failed");
+                                                        }
+                                                    };
             m_TransportManager.TransportEvents += safeHandler;
             return Disposable.Create(() => m_TransportManager.TransportEvents -= safeHandler);
         }
@@ -89,13 +89,14 @@ namespace Inceptum.Messaging
                 {
                     Destination sendDestination;
                     Session session = getSessionAndCreateDestination(destination, transportId, out sendDestination);
-                    var sender = session.createProducer(sendDestination);
-                    
+                    MessageProducer sender = session.createProducer(sendDestination);
+
                     using (Disposable.Create(sender.close))
                     {
-                        var serializedMessage = serializeMessage(message, session);
+                        Message serializedMessage = serializeMessage(message, session);
                         //TODO: arrange TTL
-                        sender.send(serializedMessage, DeliveryMode.NON_PERSISTENT, DefaultMessageProperties.DEFAULT_PRIORITY, MESSAGE_LIFESPAN);
+                        sender.send(serializedMessage, DeliveryMode.NON_PERSISTENT,
+                                    DefaultMessageProperties.DEFAULT_PRIORITY, MESSAGE_LIFESPAN);
                     }
                 }
                 catch (Exception e)
@@ -106,25 +107,7 @@ namespace Inceptum.Messaging
             }
         }
 
-        private Session getSessionAndCreateDestination (string destination, string transportId, out Destination sendDestination)
-        {
-            Session session;
-            if (destination.StartsWith("queue://", true, CultureInfo.InvariantCulture))
-            {
-                session = m_TransportManager.GetSession(transportId);
-                sendDestination = session.createQueue(destination.Substring(8));
-            }
-            else if (destination.StartsWith("topic://", true, CultureInfo.InvariantCulture))
-            {
-                session = m_TransportManager.GetSession(transportId, true);
-                sendDestination = session.createTopic(destination.Substring(8));
-            }
-            else
-                throw new InvalidOperationException("Wrong destination name: " + destination + ". Should start with 'queue://' or 'topic://'");
-            return session;
-        }
-
-        public IDisposable Subscribe<TMessage>(string source, string transportId, Action<TMessage> callback )
+        public IDisposable Subscribe<TMessage>(string source, string transportId, Action<TMessage> callback)
         {
             if (m_Disposing.WaitOne(0))
                 throw new InvalidOperationException("Engine is disposing");
@@ -145,7 +128,8 @@ namespace Inceptum.Messaging
 
 
         //NOTE: send via topic waits only first response.
-        public TResponse SendRequest<TRequest, TResponse>(TRequest request, string queue, string transportId, int timeout = 30000)
+        public TResponse SendRequest<TRequest, TResponse>(TRequest request, string queue, string transportId,
+                                                          int timeout = 30000)
         {
             if (m_Disposing.WaitOne(0))
                 throw new InvalidOperationException("Engine is disposing");
@@ -153,7 +137,7 @@ namespace Inceptum.Messaging
             using (m_RequestsTracker.Track())
             {
                 var responseRecieved = new ManualResetEvent(false);
-                var response = default(TResponse);
+                TResponse response = default(TResponse);
                 Exception exception = null;
 
                 using (SendRequestAsync<TRequest, TResponse>(request, queue, transportId,
@@ -168,7 +152,7 @@ namespace Inceptum.Messaging
                                                                      responseRecieved.Set();
                                                                  }))
                 {
-                    var waitResult = WaitHandle.WaitAny(new WaitHandle[] {m_Disposing, responseRecieved}, timeout);
+                    int waitResult = WaitHandle.WaitAny(new WaitHandle[] {m_Disposing, responseRecieved}, timeout);
                     switch (waitResult)
                     {
                         case 1:
@@ -187,31 +171,61 @@ namespace Inceptum.Messaging
         }
 
 
-        public IDisposable RegisterHandler<TRequest, TResponse>(Func<TRequest, TResponse> handler, string source, string transportId)
-                   where TResponse : class
+        public IDisposable RegisterHandler<TRequest, TResponse>(Func<TRequest, TResponse> handler, string source,
+                                                                string transportId)
+            where TResponse : class
         {
             var handle = new SerialDisposable();
-            var transportWatcher = SubscribeOnTransportEvents((id, @event) =>
-            {
-                if (@event != TransportEvents.Failure)
-                    return;
+            IDisposable transportWatcher = SubscribeOnTransportEvents((id, @event) =>
+                                                                          {
+                                                                              if (@event != TransportEvents.Failure)
+                                                                                  return;
 
-                lock (handle)
-                {
-                    handle.Disposable = registerHandler(handler, source, transportId);
-                }
-            });
+                                                                              lock (handle)
+                                                                              {
+                                                                                  handle.Disposable =
+                                                                                      registerHandlerWithRetry(handler, source,
+                                                                                                      transportId);
+                                                                              }
+                                                                          });
             lock (handle)
             {
-                handle.Disposable = registerHandler(handler, source, transportId);
+                handle.Disposable = registerHandlerWithRetry(handler, source, transportId);
             }
 
             return new CompositeDisposable(transportWatcher, handle);
         }
 
- 
+        public IDisposable registerHandlerWithRetry<TRequest, TResponse>(Func<TRequest, TResponse> handler,
+                                                                         string source, string transportId)
+            where TResponse : class
+        {
+            var handle = new SerialDisposable();
+            lock (handle)
+            {
+                try
+                {
+                    handle.Disposable = registerHandler(handler, source, transportId);
+                }
+                catch
+                {
+                    Logger.InfoFormat("Scheduling register handler attempt in 1 minute. Transport: {0}, Queue: {1}", transportId, source);
+                    handle.Disposable = Scheduler.ThreadPool.Schedule(DateTimeOffset.Now.AddMinutes(1),
+                                                                      () =>
+                                                                          {
+                                                                              lock (handle)
+                                                                              {
+                                                                                  handle.Disposable = registerHandler(handler, source, transportId);
+                                                                              }
+                                                                          });
+                }
+            }
+            return handle;
+        }
 
-        public IDisposable registerHandler<TRequest, TResponse>(Func<TRequest, TResponse> handler, string source, string transportId)
+
+        public IDisposable registerHandler<TRequest, TResponse>(Func<TRequest, TResponse> handler, string source,
+                                                                string transportId)
             where TResponse : class
         {
             if (m_Disposing.WaitOne(0))
@@ -222,9 +236,10 @@ namespace Inceptum.Messaging
                 try
                 {
                     Session session = m_TransportManager.GetSession(transportId);
-                    var replier = session.createProducer(null);
-                    var requestSubscription = subscribe(source, transportId, m => handleRequest(m, handler, session, replier));
-                   
+                    MessageProducer replier = session.createProducer(null);
+                    IDisposable requestSubscription = subscribe(source, transportId,
+                                                                m => handleRequest(m, handler, session, replier));
+
                     return createSonicHandle(() =>
                                                  {
                                                      replier.close();
@@ -239,7 +254,10 @@ namespace Inceptum.Messaging
             }
         }
 
-        public IDisposable SendRequestAsync<TRequest, TResponse>(TRequest request, string destination, string transportId, Action<TResponse> callback, Action<Exception> onFailure)
+
+        public IDisposable SendRequestAsync<TRequest, TResponse>(TRequest request, string destination,
+                                                                 string transportId, Action<TResponse> callback,
+                                                                 Action<Exception> onFailure)
         {
             if (m_Disposing.WaitOne(0))
                 throw new InvalidOperationException("Engine is disposing");
@@ -250,8 +268,8 @@ namespace Inceptum.Messaging
                 {
                     Destination requestDestination;
                     Session session = getSessionAndCreateDestination(destination, transportId, out requestDestination);
-                    var tempDestination = session.CreateTempDestination();
-                    var sender = session.createProducer(requestDestination);
+                    Destination tempDestination = session.CreateTempDestination();
+                    MessageProducer sender = session.createProducer(requestDestination);
 
                     using (Disposable.Create(sender.close))
                     {
@@ -261,17 +279,20 @@ namespace Inceptum.Messaging
                         else
                             receiver = session.createConsumer(tempDestination);
 
-                        var handle = createSonicHandle(() =>
-                                                           {
-                                                               receiver.close();
-                                                             //  tempDestination.Delete();
-                                                           });
+                        IDisposable handle = createSonicHandle(() =>
+                                                                   {
+                                                                       receiver.close();
+                                                                       //  tempDestination.Delete();
+                                                                   });
 
                         receiver.setMessageListener(new GenericMessageListener(message =>
                                                                                    {
                                                                                        try
                                                                                        {
-                                                                                           var responseMessage = m_SerializationManager.Deserialize<TResponse>(message);
+                                                                                           var responseMessage =
+                                                                                               m_SerializationManager.
+                                                                                                   Deserialize
+                                                                                                   <TResponse>(message);
                                                                                            callback(responseMessage);
                                                                                            handle.Dispose();
                                                                                        }
@@ -289,7 +310,8 @@ namespace Inceptum.Messaging
                 }
                 catch (Exception e)
                 {
-                    Logger.ErrorFormat(e, "Failed to register handler. Transport: {0}, Destination: {1}", transportId, destination);
+                    Logger.ErrorFormat(e, "Failed to register handler. Transport: {0}, Destination: {1}", transportId,
+                                       destination);
                     throw;
                 }
             }
@@ -301,7 +323,7 @@ namespace Inceptum.Messaging
             m_RequestsTracker.WaitAll();
             lock (m_SonicHandles)
             {
-                foreach (var sonicHandle in m_SonicHandles)
+                foreach (IDisposable sonicHandle in m_SonicHandles)
                 {
                     sonicHandle.Dispose();
                 }
@@ -310,9 +332,28 @@ namespace Inceptum.Messaging
         }
 
         #endregion
- 
 
-        private static Queue createSonicQueue(string name,Session sendSession)
+        private Session getSessionAndCreateDestination(string destination, string transportId,
+                                                       out Destination sendDestination)
+        {
+            Session session;
+            if (destination.StartsWith("queue://", true, CultureInfo.InvariantCulture))
+            {
+                session = m_TransportManager.GetSession(transportId);
+                sendDestination = session.createQueue(destination.Substring(8));
+            }
+            else if (destination.StartsWith("topic://", true, CultureInfo.InvariantCulture))
+            {
+                session = m_TransportManager.GetSession(transportId, true);
+                sendDestination = session.createTopic(destination.Substring(8));
+            }
+            else
+                throw new InvalidOperationException("Wrong destination name: " + destination +
+                                                    ". Should start with 'queue://' or 'topic://'");
+            return session;
+        }
+
+        private static Queue createSonicQueue(string name, Session sendSession)
         {
             if (name.StartsWith("queue://", true, CultureInfo.InvariantCulture))
                 return sendSession.createQueue(name.Substring(8));
@@ -330,7 +371,7 @@ namespace Inceptum.Messaging
         private IDisposable subscribe(string source, string transportId, Action<Message> callback)
         {
             Destination sonicSource;
-            Session session=getSessionAndCreateDestination(source, transportId, out sonicSource);
+            Session session = getSessionAndCreateDestination(source, transportId, out sonicSource);
 
             MessageConsumer receiver;
             if (Jailed)
@@ -362,14 +403,15 @@ namespace Inceptum.Messaging
             return handle;
         }
 
-        private void handleRequest<TRequest, TResponse>(Message message, Func<TRequest, TResponse> handler, Session session, MessageProducer replier)
+        private void handleRequest<TRequest, TResponse>(Message message, Func<TRequest, TResponse> handler,
+                                                        Session session, MessageProducer replier)
         {
             try
             {
                 var request = m_SerializationManager.Deserialize<TRequest>(message);
                 var replyQueue = message.getJMSReplyTo() as Queue;
                 TResponse response = handler(request);
-                var responseMessage = serializeMessage(response, session);
+                Message responseMessage = serializeMessage(response, session);
                 responseMessage.setJMSCorrelationID(message.getJMSMessageID());
                 if (replyQueue != null)
                 {
