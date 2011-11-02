@@ -231,11 +231,21 @@ namespace Inceptum.Messaging
                     IDisposable requestSubscription = subscribe(source, transportId,
                                                                 m => handleRequest(m, handler, session, replier));
 
-                    return createSonicHandle(() =>
-                                                 {
-                                                     replier.close();
-                                                     requestSubscription.Dispose();
-                                                 });
+                    var sonicHandle = createSonicHandle(() =>
+                                                            {
+                                                                try
+                                                                {
+                                                                    replier.close();
+                                                                    requestSubscription.Dispose();
+                                                                    Disposable.Create(() => Logger.InfoFormat("Handler was unregistered. Transport: {0}, Queue: {1}", transportId, source));
+                                                                }
+                                                                catch (Exception e)
+                                                                {
+                                                                    Logger.WarnFormat(e, "Failed to unregister handler. Transport: {0}, Queue: {1}", transportId, source);
+                                                                }
+                                                            });
+                    Logger.InfoFormat("Handler was successfully registered. Transport: {0}, Queue: {1}", transportId, source);
+                    return sonicHandle;
                 }
                 catch (Exception e)
                 {
