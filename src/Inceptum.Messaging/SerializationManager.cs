@@ -10,7 +10,7 @@ namespace Inceptum.Messaging
     public class SerializationManager : ISerializationManager
     {
         private readonly List<ISerializerFactory> m_SerializerFactories = new List<ISerializerFactory>();
-        private readonly ReaderWriterLockSlim m_SerializerLock = new ReaderWriterLockSlim();
+        private readonly ReaderWriterLockSlim m_SerializerLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
         private readonly Dictionary<Type, object> m_Serializers = new Dictionary<Type, object>();
 
         #region ISerializationManager Members
@@ -52,7 +52,10 @@ namespace Inceptum.Messaging
                 object oldSerializer;
                 if (m_Serializers.TryGetValue(targetType, out oldSerializer))
                 {
-                    throw new InvalidOperationException(String.Format("Can not register '{0}' as serializer for type '{1}'. '{1}' is already assigned with serializer '{2}'", serializerType, targetType, oldSerializer.GetType()));
+                    throw new InvalidOperationException(
+                        String.Format(
+                            "Can not register '{0}' as serializer for type '{1}'. '{1}' is already assigned with serializer '{2}'",
+                            serializerType, targetType, oldSerializer.GetType()));
                 }
 
                 m_SerializerLock.EnterWriteLock();
@@ -73,19 +76,31 @@ namespace Inceptum.Messaging
 
         #endregion
 
-        private IMessageSerializer<TMessage> extractSerializer<TMessage>()
+        private IMessageSerializer<TMessage> getSerializer<TMessage>()
+        {
+            object p;
+            Type targetType = typeof(TMessage);
+            if (m_Serializers.TryGetValue(targetType, out p))
+            {
+                return p as IMessageSerializer<TMessage>;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Extracts serializer for TMessage type
+        /// NORE: this method is internal only for testing purposes.
+        /// </summary>
+        /// <typeparam name="TMessage">Type of message serializer should be extracted for</typeparam>
+        /// <returns>Serializer for TMessage</returns>
+        internal IMessageSerializer<TMessage> extractSerializer<TMessage>()
         {
             m_SerializerLock.EnterReadLock();
             try
             {
-                object p;
-                Type targetType = typeof (TMessage);
-                if (m_Serializers.TryGetValue(targetType, out p))
-                {
-                    var serializer = p as IMessageSerializer<TMessage>;
-                    if (serializer != null)
-                        return serializer;
-                }
+                var messageSerializer = getSerializer<TMessage>();
+                if (messageSerializer != null)
+                    return messageSerializer;
             }
             finally
             {
@@ -100,13 +115,35 @@ namespace Inceptum.Messaging
             switch (serializers.Length)
             {
                 case 1:
-                    IMessageSerializer<TMessage> serializer = serializers[0];
-                    RegisterSerializer(typeof (TMessage), serializer);
-                    return serializer;
+                    m_SerializerLock.EnterUpgradeableReadLock();
+                    try
+                    {
+                        m_SerializerLock.EnterWriteLock();
+                        try
+                        {
+                            // double check if no other threads have already registered serializer for TMessage
+                            var messageSerializer = getSerializer<TMessage>();
+                            if (messageSerializer != null)
+                                return messageSerializer;
+
+                            IMessageSerializer<TMessage> serializer = serializers[0];
+                            RegisterSerializer(typeof (TMessage), serializer);
+                            return serializer;
+                        }
+                        finally
+                        {
+                            m_SerializerLock.ExitWriteLock();
+                        }
+                    }
+                    finally
+                    {
+                        m_SerializerLock.ExitUpgradeableReadLock();
+                    }
                 case 0:
                     throw new ProcessingException(string.Format("Serializer for type {0} not found", typeof (TMessage)));
                 default:
-                    throw new ProcessingException(string.Format("More than one serializer is available for for type {0}", typeof (TMessage)));
+                    throw new ProcessingException(
+                        string.Format("More than one serializer is available for for type {0}", typeof (TMessage)));
             }
         }
     }
