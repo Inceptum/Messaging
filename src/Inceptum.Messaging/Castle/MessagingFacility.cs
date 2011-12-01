@@ -13,13 +13,13 @@ namespace Inceptum.Messaging.Castle
 {
     public class MessagingFacility : AbstractFacility
     {
-        private JailStrategy m_JailStrategy;
+        private IDictionary<string, JailStrategy> m_JailStrategy;
         private IDictionary<string, TransportInfo> m_Transports;
         private readonly List<IHandler> m_SerializerWaitList = new List<IHandler>();
         private readonly List<IHandler> m_SerializerFactoryWaitList = new List<IHandler>();
         private ISerializationManager m_SerializationManager;
 
-        public JailStrategy JailStrategy
+        public IDictionary<string, JailStrategy> JailStrategy
         {
             get { return m_JailStrategy; }
             set { m_JailStrategy = value; }
@@ -36,7 +36,7 @@ namespace Inceptum.Messaging.Castle
         {
         }
 
-        public MessagingFacility(IDictionary<string, TransportInfo> transports,JailStrategy jailStrategy=null)
+        public MessagingFacility(IDictionary<string, TransportInfo> transports, IDictionary<string, JailStrategy> jailStrategy = null)
         {
             m_Transports = transports;
             m_JailStrategy = jailStrategy;
@@ -47,7 +47,7 @@ namespace Inceptum.Messaging.Castle
         protected override void Init()
         {
             Kernel.Register(
-                Component.For<IMessagingEngine>().ImplementedBy<MessagingEngine>().DependsOn(new {jailStrategy = m_JailStrategy ?? JailStrategy.None}),
+                Component.For<IMessagingEngine>().ImplementedBy<MessagingEngine>(),
                 Component.For<ISerializationManager>().ImplementedBy<SerializationManager>()
                 );
 
