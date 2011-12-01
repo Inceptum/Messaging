@@ -34,25 +34,32 @@ namespace Inceptum.Messaging
 
         public event TrasnportEventHandler TransportEvents;
 
-        public Session GetSession(string transportId, bool topic = false)
+        //public Session GetSession(string transportId, bool topic = false)
+        //{
+        //    //TODO: need to introduce TransportOutdated event when failover is required
+        //    //TODO: need to move resolving to engine - only once connection should be created for transport registered several time wiith different ids
+        //    var transport = GetTransport(transportId);
+        //    return transport.GetSession(topic);
+        //}
+        
+        public Transport GetTransport(string transportId)
         {
-            //TODO: need to introduce TransportOutdated event when failover is required
-            //TODO: need to move resolving to engine - only once connection should be created for transport registered several time wiith different ids
             var transportInfo = m_TransportResolver.GetTransport(transportId);
+            
             if (transportInfo == null)
                 throw new ConfigurationErrorsException(string.Format("Transport '{0}' is not resolvable", transportId));
             Transport transport;
             lock (m_Connections)
             {
-                if (!m_Connections.TryGetValue(transportInfo, out transport) || transport==null || transport.IsDisposed)
+                if (!m_Connections.TryGetValue(transportInfo, out transport) || transport == null || transport.IsDisposed)
                 {
-                    transport = new Transport(transportInfo, () =>ProceesTarnsportFailure(transportId,transportInfo));
+                    transport = new Transport(transportInfo, () => ProceesTarnsportFailure(transportId, transportInfo));
                     if (m_Connections.ContainsKey(transportInfo))
                         m_Connections.Remove(transportInfo);
                     m_Connections.Add(transportInfo, transport);
                 }
             }
-            return transport.GetSession(topic);
+            return transport;
         }
 
         internal virtual void ProceesTarnsportFailure(string transportId, TransportInfo transportInfo)
