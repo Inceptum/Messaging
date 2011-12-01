@@ -4,11 +4,6 @@ namespace Inceptum.Messaging
 {
     public class TransportInfo
     {
-        public TransportInfo(string broker, string login, string password)
-            :this (broker, login, password, null)
-        {
-        }
-
         public TransportInfo(string broker, string login, string password, string jailStrategyName)
         {
             if (string.IsNullOrEmpty((broker ?? "").Trim())) throw new ArgumentException("broker should be not empty string", "broker");
