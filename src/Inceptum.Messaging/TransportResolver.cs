@@ -25,8 +25,9 @@ namespace Inceptum.Messaging
             if(jailStrategies != null)
                 foreach (var jailStrategy in jailStrategies)
                 {
-                    if (!m_JailStrategies.ContainsKey(jailStrategy.Key))
+                    if (m_JailStrategies.ContainsKey(jailStrategy.Key))
                         throw new ArgumentOutOfRangeException("jailStrategies", string.Format("Jail strategy with key {0} already registered.", jailStrategy.Key));
+
                     m_JailStrategies.Add(jailStrategy.Key, jailStrategy.Value);
                 }
 
