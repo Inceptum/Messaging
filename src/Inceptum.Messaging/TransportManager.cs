@@ -49,14 +49,18 @@ namespace Inceptum.Messaging
             if (transportInfo == null)
                 throw new ConfigurationErrorsException(string.Format("Transport '{0}' is not resolvable", transportId));
             Transport transport;
-            lock (m_Connections)
+
+            if (!m_Connections.TryGetValue(transportInfo, out transport) || transport == null || transport.IsDisposed)
             {
-                if (!m_Connections.TryGetValue(transportInfo, out transport) || transport == null || transport.IsDisposed)
+                lock (m_Connections)
                 {
-                    transport = new Transport(transportInfo, () => ProceesTarnsportFailure(transportId, transportInfo));
-                    if (m_Connections.ContainsKey(transportInfo))
-                        m_Connections.Remove(transportInfo);
-                    m_Connections.Add(transportInfo, transport);
+                    if (!m_Connections.TryGetValue(transportInfo, out transport) || transport == null || transport.IsDisposed)
+                    {
+                        transport = new Transport(transportInfo, () => ProceesTarnsportFailure(transportId, transportInfo));
+                        if (m_Connections.ContainsKey(transportInfo))
+                            m_Connections.Remove(transportInfo);
+                        m_Connections.Add(transportInfo, transport);
+                    }
                 }
             }
             return transport;
