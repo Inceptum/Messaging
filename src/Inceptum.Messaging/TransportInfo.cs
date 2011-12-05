@@ -22,17 +22,18 @@ namespace Inceptum.Messaging
 
         public JailStrategy JailStrategy { get; internal set; }
 
+
         public bool Equals(TransportInfo other)
         {
-            return Equals(other.Broker, Broker) 
-                   && Equals(other.Login, Login) 
-                   && Equals(other.Password, Password)
-                   && Equals(other.JailStrategyName, JailStrategyName);
+            if (ReferenceEquals(null, other)) return false;
+            if (ReferenceEquals(this, other)) return true;
+            return Equals(other.Broker, Broker) && Equals(other.JailStrategyName, JailStrategyName) && Equals(other.Login, Login) && Equals(other.Password, Password);
         }
 
         public override bool Equals(object obj)
         {
             if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
             if (obj.GetType() != typeof (TransportInfo)) return false;
             return Equals((TransportInfo) obj);
         }
@@ -41,12 +42,22 @@ namespace Inceptum.Messaging
         {
             unchecked
             {
-                var result = (Broker != null ? Broker.GetHashCode() : 0);
-                result = (result * 397) ^ (Login != null ? Login.GetHashCode() : 0);
-                result = (result * 397) ^ (Password != null ? Password.GetHashCode() : 0);
-                result = (result * 397) ^ (JailStrategyName != null ? JailStrategyName.GetHashCode() : 0);
+                int result = (Broker != null ? Broker.GetHashCode() : 0);
+                result = (result*397) ^ (JailStrategyName != null ? JailStrategyName.GetHashCode() : 0);
+                result = (result*397) ^ (Login != null ? Login.GetHashCode() : 0);
+                result = (result*397) ^ (Password != null ? Password.GetHashCode() : 0);
                 return result;
             }
+        }
+
+        public static bool operator ==(TransportInfo left, TransportInfo right)
+        {
+            return Equals(left, right);
+        }
+
+        public static bool operator !=(TransportInfo left, TransportInfo right)
+        {
+            return !Equals(left, right);
         }
     }
 }
