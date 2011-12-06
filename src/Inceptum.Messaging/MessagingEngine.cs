@@ -88,7 +88,7 @@ namespace Inceptum.Messaging
                     {
                         Message serializedMessage = serializeMessage(message, session, transport);
                         //TODO: arrange TTL
-                        sender.send(serializedMessage, DeliveryMode.NON_PERSISTENT,
+                        sender.send(serializedMessage, DeliveryMode.PERSISTENT,
                                     DefaultMessageProperties.DEFAULT_PRIORITY, MESSAGE_LIFESPAN);
                     }
                 }
