@@ -102,6 +102,7 @@ namespace Inceptum.Messaging
 
         public IDisposable Subscribe<TMessage>(string source, string transportId, Action<TMessage> callback)
         {
+            if (source == null) throw new ArgumentNullException("source");
             if (m_Disposing.WaitOne(0))
                 throw new InvalidOperationException("Engine is disposing");
 

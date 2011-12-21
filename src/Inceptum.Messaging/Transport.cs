@@ -73,7 +73,9 @@ namespace Inceptum.Messaging
                 {
                     if (m_Connection == null)
                     {
-                        QueueConnectionFactory factory = (new Sonic.Jms.Cf.Impl.QueueConnectionFactory(m_TransportInfo.Broker));
+
+                        var factory = new Sonic.Jms.Cf.Impl.QueueConnectionFactory();
+                        (factory as Sonic.Jms.Ext.ConnectionFactory).setConnectionURLs(m_TransportInfo.Broker);
                         m_Connection = factory.createQueueConnection(m_TransportInfo.Login, m_TransportInfo.Password);
                         ((Connection)m_Connection).setConnectionStateChangeListener(new GenericConnectionStateChangeListener(connectionStateHandler));
                         ((Connection)m_Connection).setPingInterval(30);
