@@ -70,7 +70,8 @@ namespace Inceptum.Messaging
         {
             lock (m_Connections)
             {
-                m_Connections[transportInfo] = null;
+                //m_Connections[transportInfo] = null;
+                m_Connections.Remove(transportInfo);
             }
             var handler = TransportEvents;
             if (handler != null) handler(transportId, Core.Messaging.TransportEvents.Failure);
