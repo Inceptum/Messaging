@@ -289,7 +289,8 @@ namespace Inceptum.Messaging
 
                         Message requestMessage = serializeMessage(request, session, transport);
                         requestMessage.setJMSReplyTo(tempDestination);
-                        sender.send(requestMessage);
+                        sender.send(requestMessage, DeliveryMode.PERSISTENT,
+                                    DefaultMessageProperties.DEFAULT_PRIORITY, MESSAGE_LIFESPAN);
                         return handle;
                     }
                 }
