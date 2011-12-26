@@ -34,10 +34,12 @@ namespace Inceptum.Messaging
 
             foreach (var transportInfo in m_Transports)
             {
-                if(!m_JailStrategies.ContainsKey(transportInfo.Value.JailStrategyName??"None"))
+                JailStrategy strategy;
+                if(!m_JailStrategies.TryGetValue(transportInfo.Value.JailStrategyName??"None", out strategy))
                     throw new ArgumentOutOfRangeException("jailStrategies", string.Format("Incorrect jail strategy with name {1} set for transport {0}. Make sure jail strategy {1} is registered for transport configuration.", transportInfo.Key, transportInfo.Value.JailStrategyName));
 
-                transportInfo.Value.JailStrategy = m_JailStrategies[transportInfo.Value.JailStrategyName];
+
+                transportInfo.Value.JailStrategy = strategy;
             }
         }
 
