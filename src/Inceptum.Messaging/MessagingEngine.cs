@@ -110,7 +110,7 @@ namespace Inceptum.Messaging
             {
                 try
                 {
-                    return subscribe(source, transportId, m => processMessage(m, callback));
+                    return subscribe(source, transportId, m => processMessage(m, callback,source, transportId));
                 }
                 catch (Exception e)
                 {
@@ -384,7 +384,7 @@ namespace Inceptum.Messaging
             }
         }
 
-        private void processMessage<TMessage, TSonicMessage>(TSonicMessage sonicMessage, Action<TMessage> callback)
+        private void processMessage<TMessage, TSonicMessage>(TSonicMessage sonicMessage, Action<TMessage> callback, string source, string transportId)
             where TSonicMessage : Message
         {
             try
@@ -394,7 +394,7 @@ namespace Inceptum.Messaging
             }
             catch (Exception e)
             {
-                Logger.ErrorFormat(e, "Failed to handle message.");
+                Logger.ErrorFormat(e, "Failed to handle message. Transport: {0} Destination {1}",transportId,source);
             }
         }
     }
