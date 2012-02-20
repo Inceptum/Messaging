@@ -1,13 +1,16 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
+using System.Text;
 using System.Threading;
 using Castle.Core.Logging;
 using Inceptum.Core.Messaging;
 using Inceptum.Core.Utils;
 using Sonic.Jms;
+using Queue = Sonic.Jms.Queue;
 
 namespace Inceptum.Messaging
 {
@@ -110,7 +113,7 @@ namespace Inceptum.Messaging
             {
                 try
                 {
-                    return subscribe(source, transportId, m => processMessage(m, callback,source, transportId));
+                    return subscribe(source, transportId, m => processMessage(m, callback, source, transportId));
                 }
                 catch (Exception e)
                 {
@@ -387,15 +390,24 @@ namespace Inceptum.Messaging
         private void processMessage<TMessage, TSonicMessage>(TSonicMessage sonicMessage, Action<TMessage> callback, string source, string transportId)
             where TSonicMessage : Message
         {
-            try
-            {
-                var message = m_SerializationManager.Deserialize<TMessage>(sonicMessage);
-                callback(message);
-            }
-            catch (Exception e)
-            {
-                Logger.ErrorFormat(e, "Failed to handle message. Transport: {0} Destination {1}",transportId,source);
-            }
+        	TMessage message = default(TMessage);
+			try
+			{
+				message = m_SerializationManager.Deserialize<TMessage>(sonicMessage);
+			}
+			catch (Exception e)
+			{
+				Logger.ErrorFormat(e, "Failed to deserialize message. Transport: {0} Destination {1}. Message Type {2}.", transportId, source, typeof(TMessage).Name);
+			}
+
+        	try
+			{
+				callback(message);
+			}
+			catch (Exception e)
+			{
+				Logger.ErrorFormat(e, "Failed to handle message. Transport: {0} Destination {1}. Message Type {2}.", transportId, source, typeof(TMessage).Name);
+			}
         }
     }
 }
