@@ -16,7 +16,7 @@ namespace Inceptum.Messaging
 {
     public class MessagingEngine : IMessagingEngine
     {
-        private const int MESSAGE_LIFESPAN = 1800000; // milliseconds (30 minutes)
+        private const int MESSAGE_LIFESPAN = 0;// forever // 1800000; // milliseconds (30 minutes)
         private readonly ManualResetEvent m_Disposing = new ManualResetEvent(false);
         private readonly CountingTracker m_RequestsTracker = new CountingTracker();
         private readonly ISerializationManager m_SerializationManager;
