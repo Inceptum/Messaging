@@ -74,20 +74,39 @@ namespace Inceptum.Messaging
                     if (m_Connection == null)
                     {
 
-                        var factory = new Sonic.Jms.Cf.Impl.QueueConnectionFactory();
-                        (factory as Sonic.Jms.Ext.ConnectionFactory).setConnectionURLs(m_TransportInfo.Broker);
-                        m_Connection = factory.createQueueConnection(m_TransportInfo.Login, m_TransportInfo.Password);
-                        ((Connection)m_Connection).setConnectionStateChangeListener(new GenericConnectionStateChangeListener(connectionStateHandler));
-                        ((Connection)m_Connection).setPingInterval(30);
-                        //TODO: handle connection close
-                        //TODO: there should be more then 1 session per connectionl. Current implementation is temporary
-                        m_Connection.start();
-                        m_Session = (QueueSession) m_Connection.createQueueSession(false, SessionMode.AUTO_ACKNOWLEDGE);
-                        m_Session.setFlowControlDisabled(true);
-                        
-                        m_TopicSession = (Session) m_Connection.createSession(false, SessionMode.AUTO_ACKNOWLEDGE);
-                        m_TopicSession.setFlowControlDisabled(true);
-                    
+                        QueueConnection connection=null;
+                        QueueSession queueSession = null;
+                        Session topicSession = null;
+
+                        try
+                        {
+                            var factory = new Sonic.Jms.Cf.Impl.QueueConnectionFactory();
+                            (factory as Sonic.Jms.Ext.ConnectionFactory).setConnectionURLs(m_TransportInfo.Broker);
+                            connection = factory.createQueueConnection(m_TransportInfo.Login, m_TransportInfo.Password);
+                            ((Connection) connection).setConnectionStateChangeListener(
+                                new GenericConnectionStateChangeListener(connectionStateHandler));
+                            ((Connection) connection).setPingInterval(30);
+                            //TODO: handle connection close
+                            //TODO: there should be more then 1 session per connectionl. Current implementation is temporary
+                            connection.start();
+                            queueSession = (QueueSession) connection.createQueueSession(false, SessionMode.AUTO_ACKNOWLEDGE);
+                            queueSession.setFlowControlDisabled(true);
+
+                            topicSession = (Session) connection.createSession(false, SessionMode.AUTO_ACKNOWLEDGE);
+                            topicSession.setFlowControlDisabled(true);
+                        }
+                        catch(Exception e)
+                        {
+                            if(connection!=null)
+                                connection.close();
+                            m_Session = null;
+                            m_TopicSession = null;
+                            throw;
+                        }
+                        m_Connection = connection;
+                        m_Session = queueSession;
+                        m_TopicSession = topicSession;
+
                     }
                 }
             }
