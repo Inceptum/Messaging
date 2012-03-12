@@ -27,8 +27,20 @@ namespace Inceptum.Messaging
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
-            return Equals(other.Broker, Broker) && Equals(other.JailStrategyName, JailStrategyName) && Equals(other.Login, Login) && Equals(other.Password, Password);
+            return Equals(other.Broker, Broker) && Equals(other.Login, Login) && Equals(other.Password, Password) && Equals(other.JailStrategyName, JailStrategyName);
         }
+
+    
+        public static bool operator ==(TransportInfo left, TransportInfo right)
+        {
+            return Equals(left, right);
+        }
+
+        public static bool operator !=(TransportInfo left, TransportInfo right)
+        {
+            return !Equals(left, right);
+        }
+
 
         public override bool Equals(object obj)
         {
@@ -43,21 +55,11 @@ namespace Inceptum.Messaging
             unchecked
             {
                 int result = (Broker != null ? Broker.GetHashCode() : 0);
-                result = (result*397) ^ (JailStrategyName != null ? JailStrategyName.GetHashCode() : 0);
                 result = (result*397) ^ (Login != null ? Login.GetHashCode() : 0);
                 result = (result*397) ^ (Password != null ? Password.GetHashCode() : 0);
+                result = (result*397) ^ (JailStrategyName != null ? JailStrategyName.GetHashCode() : 0);
                 return result;
             }
-        }
-
-        public static bool operator ==(TransportInfo left, TransportInfo right)
-        {
-            return Equals(left, right);
-        }
-
-        public static bool operator !=(TransportInfo left, TransportInfo right)
-        {
-            return !Equals(left, right);
         }
     }
 }
