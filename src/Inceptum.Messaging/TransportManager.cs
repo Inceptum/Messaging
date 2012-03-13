@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
+using System.Threading;
+using Castle.Core.Logging;
 using Inceptum.Core.Messaging;
 using Sonic.Jms;
 
@@ -36,8 +38,18 @@ namespace Inceptum.Messaging
         private readonly Dictionary<TransportInfo, ResolvedTransport> m_Connections = new Dictionary<TransportInfo, ResolvedTransport>();
         private readonly ITransportResolver m_TransportResolver;
 
-        public TransportManager(ITransportResolver transportResolver)
+        readonly ManualResetEvent m_IsDisposed=new ManualResetEvent(false);
+        private ILogger m_Logger;
+
+        public TransportManager(ITransportResolver transportResolver):this(transportResolver, NullLogger.Instance)
         {
+            
+        }
+       
+
+        public TransportManager(ITransportResolver transportResolver, ILogger logger)
+        {
+            m_Logger = logger;
             if (transportResolver == null) throw new ArgumentNullException("transportResolver");
             m_TransportResolver = transportResolver;
         }
@@ -46,12 +58,14 @@ namespace Inceptum.Messaging
 
         public void Dispose()
         {
+            m_IsDisposed.Set();
             lock (m_Connections)
             {
                 foreach (var transport in m_Connections.Values.Select(t=>t.Transport).Distinct())
                 {
                     transport.Dispose();
                 }
+                m_Connections.Clear();
             }
         }
 
@@ -69,19 +83,21 @@ namespace Inceptum.Messaging
         
         public Transport GetTransport(string transportId)
         {
+            if (m_IsDisposed.WaitOne(0))
+            throw new ObjectDisposedException(string.Format("Can not create transport {0}. TransportManager instance is disposed",transportId));
+
+
             var transportInfo = m_TransportResolver.GetTransport(transportId);
             
             if (transportInfo == null)
                 throw new ConfigurationErrorsException(string.Format("Transport '{0}' is not resolvable", transportId));
             ResolvedTransport transport;
 
-            bool newTransport = false;
-
-            if (!m_Connections.TryGetValue(transportInfo, out transport) || transport == null || transport.Transport.IsDisposed)
+            if (!m_Connections.TryGetValue(transportInfo, out transport)  )
             {
                 lock (m_Connections)
                 {
-                    if (!m_Connections.TryGetValue(transportInfo, out transport) || transport == null || transport.Transport.IsDisposed)
+                    if (!m_Connections.TryGetValue(transportInfo, out transport))
                     {
                         transport = new ResolvedTransport();
                         if (m_Connections.ContainsKey(transportInfo))
@@ -89,12 +105,12 @@ namespace Inceptum.Messaging
                         m_Connections.Add(transportInfo, transport);
                     }
                 }
-                newTransport = true;
+             
             }
 
             lock (transport)
             {
-                if (newTransport)
+                if (transport.Transport==null)
                     transport.AssignTransport(new Transport(transportInfo, () => ProcessTransportFailure(transportInfo)));
                 transport.AddId(transportId);
                 return transport.Transport;
