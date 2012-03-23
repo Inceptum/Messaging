@@ -7,25 +7,21 @@ namespace Inceptum.Messaging
 {
     internal class ProtobufSerializer<TMessage> : IMessageSerializer<TMessage>
     {
-        public Message Serialize(TMessage message, Session sendSession)
+
+
+
+        public byte[] Serialize(TMessage message)
         {
-            BytesMessage m = sendSession.createBytesMessage();
             var s = new MemoryStream();
             Serializer.Serialize(s, message);
-            m.writeBytes(s.ToArray());
-            return m;
+            return s.ToArray();
+            
         }
 
-        public TMessage Deserialize(Message message)
+        public TMessage Deserialize(byte[] message)
         {
-            if (message == null) throw new ArgumentNullException("message");
-            var bytesMessage = message as BytesMessage;
-            if (bytesMessage == null) throw new ArgumentException("message is expected to contain BytesMessage", "message");
-            var buf = new byte[bytesMessage.getBodyLength()];
-            bytesMessage.readBytes(buf);
-
             var memStream = new MemoryStream();
-            memStream.Write(buf, 0, buf.Length);
+            memStream.Write(message, 0, message.Length);
             memStream.Seek(0, SeekOrigin.Begin);
             return Serializer.Deserialize<TMessage>(memStream);
         }
