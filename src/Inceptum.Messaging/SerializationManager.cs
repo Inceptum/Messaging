@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
-using Sonic.Jms;
 
 namespace Inceptum.Messaging
 {
@@ -17,7 +15,7 @@ namespace Inceptum.Messaging
 
         public byte[] Serialize<TMessage>(TMessage message)
         {
-            return extractSerializer<TMessage>().Serialize(message);
+            return ExtractSerializer<TMessage>().Serialize(message);
         }
 
 
@@ -30,7 +28,7 @@ namespace Inceptum.Messaging
         /// <exception cref="NotSupportedException">Unknown business object type.</exception>
         public TMessage Deserialize<TMessage>(byte[] message)
         {
-            return extractSerializer<TMessage>().Deserialize(message);
+            return ExtractSerializer<TMessage>().Deserialize(message);
         }
 
         public void RegisterSerializerFactory(ISerializerFactory serializerFactory)
@@ -92,7 +90,7 @@ namespace Inceptum.Messaging
         /// </summary>
         /// <typeparam name="TMessage">Type of message serializer should be extracted for</typeparam>
         /// <returns>Serializer for TMessage</returns>
-        internal IMessageSerializer<TMessage> extractSerializer<TMessage>()
+        internal IMessageSerializer<TMessage> ExtractSerializer<TMessage>()
         {
             m_SerializerLock.EnterReadLock();
             try
