@@ -37,11 +37,7 @@ namespace Inceptum.Messaging
             : this(new TransportManager(transportResolver), serializationManager)
         {
         }
-
-        //public bool Jailed
-        //{
-        //    get { return m_JailedTag != null; }
-        //}
+ 
 
 
         public ILogger Logger
@@ -50,8 +46,7 @@ namespace Inceptum.Messaging
             set { m_Logger = value; }
         }
 
-        //internal string JailedSelector { get; private set; }
-
+     
         #region IMessagingEngine Members
 
         public IDisposable SubscribeOnTransportEvents(TrasnportEventHandler handler)
@@ -221,7 +216,7 @@ namespace Inceptum.Messaging
                 try
                 {
                     var transport = m_TransportManager.GetTransport(transportId);
-                    Sonic.Jms.Session session; // TODO[MT]: this out parameter only needed for handleRequest
+                    Session session; // TODO[MT]: this out parameter only needed for handleRequest
                     MessageProducer replier = transport.CreateProducer(out session);
 
                     IDisposable requestSubscription = subscribe(source, transportId,
