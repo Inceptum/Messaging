@@ -15,9 +15,9 @@ namespace Inceptum.Messaging
 
         #region ISerializationManager Members
 
-        public Message Serialize<TMessage>(TMessage message, Session sendSession)
+        public byte[] Serialize<TMessage>(TMessage message)
         {
-            return extractSerializer<TMessage>().Serialize(message, sendSession);
+            return extractSerializer<TMessage>().Serialize(message);
         }
 
 
@@ -28,9 +28,8 @@ namespace Inceptum.Messaging
         /// <param name="message">The sonic message.</param>
         /// <returns></returns>
         /// <exception cref="NotSupportedException">Unknown business object type.</exception>
-        public TMessage Deserialize<TMessage>(Message message)
+        public TMessage Deserialize<TMessage>(byte[] message)
         {
-            Debug.Assert(message != null);
             return extractSerializer<TMessage>().Deserialize(message);
         }
 

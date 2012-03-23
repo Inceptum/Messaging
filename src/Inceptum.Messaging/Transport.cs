@@ -150,12 +150,9 @@ namespace Inceptum.Messaging
 
         private MessageConsumer createConsumer(Destination sonicSource, Sonic.Jms.Session session)
         {
-            MessageConsumer receiver;
-            if (Jailed)
-                receiver = session.createConsumer(sonicSource, JailedSelector);
-            else
-                receiver = session.createConsumer(sonicSource);
-            return receiver;
+            return  Jailed 
+                ? session.createConsumer(sonicSource, JailedSelector) 
+                : session.createConsumer(sonicSource);
         }
 
         public Sonic.Jms.MessageProducer CreateProducer(out Sonic.Jms.Session session)

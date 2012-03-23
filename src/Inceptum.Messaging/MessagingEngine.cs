@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
+using System.Diagnostics;
 using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
-using System.Text;
 using System.Threading;
 using Castle.Core.Logging;
 using Inceptum.Core.Messaging;
@@ -83,14 +81,13 @@ namespace Inceptum.Messaging
             {
                 try
                 {
-                    Sonic.Jms.Session session;
+                    Session session;
                     var transport = m_TransportManager.GetTransport(transportId);
                     var sender = transport.CreateProducer(destination, out session);
 
                     using (Disposable.Create(sender.close))
                     {
-                        Message serializedMessage = serializeMessage(message, session, transport);
-                        //TODO: arrange TTL
+                        var serializedMessage = serializeMessage(message, session, transport);
                         sender.send(serializedMessage, DeliveryMode.PERSISTENT,
                                     DefaultMessageProperties.DEFAULT_PRIORITY, MESSAGE_LIFESPAN);
                     }
@@ -280,7 +277,7 @@ namespace Inceptum.Messaging
                                                             {
                                                                 try
                                                                 {
-                                                                    var responseMessage = m_SerializationManager.Deserialize<TResponse>(message);
+                                                                    var responseMessage = deserializeMessage<TResponse>(message);
                                                                     callback(responseMessage);
                                                                     handle.Dispose();
                                                                 }
@@ -306,6 +303,18 @@ namespace Inceptum.Messaging
             }
         }
 
+        private TMessage deserializeMessage<TMessage>(Message message)
+        {
+            Debug.Assert(message != null);
+            if (message == null) throw new ArgumentNullException("message");
+            var bytesMessage = message as BytesMessage;
+            if (bytesMessage == null) throw new ArgumentException("message is expected to contain BytesMessage", "message");
+            var buf = new byte[bytesMessage.getBodyLength()];
+            bytesMessage.readBytes(buf);
+
+            return m_SerializationManager.Deserialize<TMessage>(buf);
+        }
+
         public void Dispose()
         {
             m_Disposing.Set();
@@ -321,19 +330,14 @@ namespace Inceptum.Messaging
         }
 
         #endregion
-        
-        private static Queue createSonicQueue(string name, Session sendSession)
-        {
-            if (name.StartsWith("queue://", true, CultureInfo.InvariantCulture))
-                return sendSession.createQueue(name.Substring(8));
-            throw new InvalidOperationException("Wrong queue name: " + name + ". Should start with 'queue://'");
-        }
-
+  
         private Message serializeMessage<TMessage>(TMessage message, Session session, Transport transport)
         {
-            Message serializedMessage = m_SerializationManager.Serialize(message, session);
-            
-            return transport.JailMessage(serializedMessage);
+            BytesMessage sonicMessage = session.createBytesMessage();
+            byte[] bytes = m_SerializationManager.Serialize(message);
+            sonicMessage.writeBytes(bytes);
+
+            return transport.JailMessage(sonicMessage);
         }
 
         private IDisposable subscribe(string source, string transportId, Action<Message> callback)
@@ -371,7 +375,7 @@ namespace Inceptum.Messaging
         {
             try
             {
-                var request = m_SerializationManager.Deserialize<TRequest>(message);
+                var request = deserializeMessage<TRequest>(message);
                 var replyQueue = message.getJMSReplyTo() as Queue;
                 TResponse response = handler(request);
                 Message responseMessage = serializeMessage(response, session, transport);
@@ -393,7 +397,7 @@ namespace Inceptum.Messaging
         	TMessage message = default(TMessage);
 			try
 			{
-				message = m_SerializationManager.Deserialize<TMessage>(sonicMessage);
+				message =deserializeMessage<TMessage>(sonicMessage);
 			}
 			catch (Exception e)
 			{

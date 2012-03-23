@@ -5,8 +5,8 @@ namespace Inceptum.Messaging
 {
     public interface ISerializationManager
     {
-        Message Serialize<TMessage>(TMessage message, Session sendSession);
-        TMessage Deserialize<TMessage>(Message message);
+        byte[] Serialize<TMessage>(TMessage message);
+        TMessage Deserialize<TMessage>(byte[] message);
         void RegisterSerializer(Type targetType, object serializer);
         void RegisterSerializerFactory(ISerializerFactory serializerFactory);
     }
