@@ -58,7 +58,11 @@
     <Compile Include="ResponseSubscriber.cs" />
     <Compile Include="SerializationManager.cs" />
     <Compile Include="SubscriptionManager.cs" />
-    <Compile Include="Transport.cs" />
+    <Compile Include="Transports\IProcessingGroup.cs" />
+    <Compile Include="Transports\ProcessingGroup.cs" />
+    <Compile Include="Transports\QueueProcessingGroup.cs" />
+    <Compile Include="Transports\TopicProcessingGroup.cs" />
+    <Compile Include="Transports\Transport.cs" />
     <Compile Include="TransportInfo.cs" />
     <Compile Include="TransportManager.cs" />
     <Compile Include="TransportResolver.cs" />
