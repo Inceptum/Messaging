@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using Castle.Core.Logging;
 using Inceptum.Core.Messaging;
+using Inceptum.Messaging.Transports;
 using Sonic.Jms;
 
 namespace Inceptum.Messaging
@@ -35,7 +36,7 @@ namespace Inceptum.Messaging
         }
 
 
-        private readonly Dictionary<TransportInfo, ResolvedTransport> m_Connections = new Dictionary<TransportInfo, ResolvedTransport>();
+        private readonly Dictionary<TransportInfo, ResolvedTransport> m_Transports = new Dictionary<TransportInfo, ResolvedTransport>();
         private readonly ITransportResolver m_TransportResolver;
 
         readonly ManualResetEvent m_IsDisposed=new ManualResetEvent(false);
@@ -59,13 +60,13 @@ namespace Inceptum.Messaging
         public void Dispose()
         {
             m_IsDisposed.Set();
-            lock (m_Connections)
+            lock (m_Transports)
             {
-                foreach (var transport in m_Connections.Values.Select(t=>t.Transport).Distinct())
+                foreach (var transport in m_Transports.Values.Select(t=>t.Transport).Distinct())
                 {
                     transport.Dispose();
                 }
-                m_Connections.Clear();
+                m_Transports.Clear();
             }
         }
 
@@ -73,14 +74,6 @@ namespace Inceptum.Messaging
 
         public event TrasnportEventHandler TransportEvents;
 
-        //public Session GetSession(string transportId, bool topic = false)
-        //{
-        //    //TODO: need to introduce TransportOutdated event when failover is required
-        //    //TODO: need to move resolving to engine - only once connection should be created for transport registered several time wiith different ids
-        //    var transport = GetTransport(transportId);
-        //    return transport.GetSession(topic);
-        //}
-        
         public Transport GetTransport(string transportId)
         {
             if (m_IsDisposed.WaitOne(0))
@@ -93,16 +86,16 @@ namespace Inceptum.Messaging
                 throw new ConfigurationErrorsException(string.Format("Transport '{0}' is not resolvable", transportId));
             ResolvedTransport transport;
 
-            if (!m_Connections.TryGetValue(transportInfo, out transport)  )
+            if (!m_Transports.TryGetValue(transportInfo, out transport)  )
             {
-                lock (m_Connections)
+                lock (m_Transports)
                 {
-                    if (!m_Connections.TryGetValue(transportInfo, out transport))
+                    if (!m_Transports.TryGetValue(transportInfo, out transport))
                     {
                         transport = new ResolvedTransport();
-                        if (m_Connections.ContainsKey(transportInfo))
-                            m_Connections.Remove(transportInfo);
-                        m_Connections.Add(transportInfo, transport);
+                        if (m_Transports.ContainsKey(transportInfo))
+                            m_Transports.Remove(transportInfo);
+                        m_Transports.Add(transportInfo, transport);
                     }
                 }
              
@@ -120,11 +113,11 @@ namespace Inceptum.Messaging
         internal virtual void ProcessTransportFailure(TransportInfo transportInfo)
         {
             ResolvedTransport transport;
-            lock (m_Connections)
+            lock (m_Transports)
             {
-                if(!m_Connections.TryGetValue(transportInfo, out transport))
+                if(!m_Transports.TryGetValue(transportInfo, out transport))
                     return;
-                m_Connections.Remove(transportInfo);
+                m_Transports.Remove(transportInfo);
             }
 
             var handler = TransportEvents;
