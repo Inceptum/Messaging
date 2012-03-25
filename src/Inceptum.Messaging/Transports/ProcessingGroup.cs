@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Reactive.Disposables;
 using System.Runtime.CompilerServices;
 using Sonic.Jms;
@@ -51,25 +52,27 @@ namespace Inceptum.Messaging.Transports
 
         protected string JailedSelector
         {
-            get ; private set; }
+            get ; private set;
+        }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public void Send(string destination, byte[] message)
+        public void Send(string destination, BinaryMessage message)
         {
             send(destination, message);
         }
 
-        private void send(string destination, byte[] message, Action<Message> tuneMessage = null)
+        private void send(string destination, BinaryMessage message, Action<Message> tuneMessage = null)
         {
             send(createDestination(destination), message,tuneMessage);
         }
-        private void send(Destination destination, byte[] message, Action<Message> tuneMessage = null)
+        private void send(Destination destination, BinaryMessage message, Action<Message> tuneMessage = null)
         {
             
            
             var bytesMessage = m_Session.createBytesMessage();
-            bytesMessage.writeBytes(message);
+            bytesMessage.writeBytes(message.Bytes??new byte[0]);
             bytesMessage.setStringProperty(MessagingEngine.JAILED_PROPERTY_NAME, m_JailedTag);
+            bytesMessage.setJMSType(message.Type);
             if (tuneMessage != null)
                 tuneMessage(bytesMessage);
             var producer = m_Session.createProducer(destination);
@@ -85,15 +88,26 @@ namespace Inceptum.Messaging.Transports
 
                 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public IDisposable Subscribe(string destination, Action<Message> callback)
+        public IDisposable Subscribe(string destination, Action<BinaryMessage> callback, string messageType)
+        {
+            return subscribe(destination, message => callback(new BinaryMessage(message)), messageType);
+        }
+
+
+        private IDisposable subscribe(string destination, Action<Message> callback, string messageType)
         {
             IDisposable subscription = null;
             
             ensureSessionIsCreated();
 
             var dest = createDestination(destination);
-            var consumer = m_JailedTag == null ? m_Session.createConsumer(dest) : m_Session.createConsumer(dest,JailedSelector );
+            var selectors = new []
+                              {
+                                  messageType!=null?"JMSType = '"+messageType+"'":null,
+                                  m_JailedTag!=null?JailedSelector:null
+                              }.Where(x=>x!=null).ToArray();
 
+            var consumer = selectors.Length==0?m_Session.createConsumer(dest) : m_Session.createConsumer(dest, string.Join(" AND ",selectors));
             consumer.setMessageListener(new GenericMessageListener(callback));
              
             subscription = Disposable.Create(() =>
@@ -142,7 +156,7 @@ namespace Inceptum.Messaging.Transports
         }
 
          [MethodImpl(MethodImplOptions.Synchronized)]
-        public IDisposable SendRequest(string destination, byte[] message, Action<Message> callback)
+        public IDisposable SendRequest(string destination, BinaryMessage message, Action<BinaryMessage> callback)
         {
             ensureSessionIsCreated();
             var temporaryQueue = m_Session.createTemporaryQueue();
@@ -170,7 +184,7 @@ namespace Inceptum.Messaging.Transports
             consumer.setMessageListener(new GenericMessageListener(m =>
                                                                        {
                                                                            subscription.Dispose();
-                                                                           callback(m);
+                                                                           callback(new BinaryMessage(m));
                                                                        } ));
 
             send(destination, message, m => m.setJMSReplyTo(temporaryQueue));
@@ -179,21 +193,22 @@ namespace Inceptum.Messaging.Transports
         }
 
          [MethodImpl(MethodImplOptions.Synchronized)]
-        public IDisposable RegisterHandler(string destination,   Func<Message,byte[]> handler)
+         public IDisposable RegisterHandler(string destination, Func<BinaryMessage, BinaryMessage> handler, string messageType)
         {
 
             //TODO: implement in more appropriate way. Processing should not freeze session thread. Response producer is created and destroyed for each message it is also not good idea
             ensureSessionIsCreated();
-            var subscription=Subscribe(destination, request =>
-                                       {
-                                           var jmsCorrelationId = request.getJMSCorrelationID();
-                                           var responseBytes = handler(request);
-                                           lock (this)
-                                           {
-                                               send(request.getJMSReplyTo(), responseBytes,
-                                                    message => message.setJMSCorrelationID(jmsCorrelationId));
-                                           }
-                                       });
+            var subscription=subscribe(destination, request =>
+                                                        {
+
+                                                            var jmsCorrelationId = request.getJMSCorrelationID();
+                                                            var responseBytes = handler(new BinaryMessage(request));
+                                                            lock (this)
+                                                            {
+                                                                send(request.getJMSReplyTo(), responseBytes,
+                                                                     message => message.setJMSCorrelationID(jmsCorrelationId));
+                                                            }
+                                                        }, messageType);
             return subscription;
         }
 

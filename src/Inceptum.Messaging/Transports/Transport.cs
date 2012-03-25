@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Reactive.Disposables;
 using Sonic.Jms.Ext;
 using Connection = Sonic.Jms.Ext.Connection;
-using Message = Sonic.Jms.Message;
 using QueueConnection = Sonic.Jms.QueueConnection;
 
 
@@ -67,28 +65,28 @@ namespace Inceptum.Messaging.Transports
         }
 
 
-        public void Send(string destination, byte[] message, string processingGroup = null)
+        public void Send(string destination, BinaryMessage message, string processingGroup = null)
         {
             var group = getProcessingGroup(destination, processingGroup);
             group.Send(destination, message);
         }
 
-        public IDisposable SendRequest(string destination, byte[] message, Action<Message> callback, string processingGroup = null)
+        public IDisposable SendRequest(string destination, BinaryMessage message, Action<BinaryMessage> callback, string processingGroup = null)
         {
             var group = getProcessingGroup(destination, processingGroup);
             return group.SendRequest(destination, message, callback);
         }
 
-        public IDisposable RegisterHandler(string destination, Func<Message, byte[]> handler, string processingGroup = null)
-        {
+        public IDisposable RegisterHandler(string destination, Func<BinaryMessage, BinaryMessage> handler, string messageType, string processingGroup = null)
+        { 
             var group = getProcessingGroup(destination, processingGroup);
-            return group.RegisterHandler(destination, handler);
+            return group.RegisterHandler(destination, handler,messageType);
         }
 
-        public IDisposable Subscribe(string destination, Action<Message> callback, string processingGroup = null)
+        public IDisposable Subscribe(string destination, Action<BinaryMessage> callback, string messageType, string processingGroup = null)
         {
             var group = getProcessingGroup(destination, processingGroup);
-            return group.Subscribe(destination, callback);
+            return group.Subscribe(destination, callback, messageType);
         }
 
         private IProcessingGroup getProcessingGroup(string destination, string processingGroup)
