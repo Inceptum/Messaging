@@ -19,7 +19,7 @@ namespace Inceptum.Messaging.Transports
 
         protected override QueueSession CreateSession()
         {
-            return (QueueSession)Connection.createQueueSession(false, SessionMode.CLIENT_ACKNOWLEDGE);
+            return (QueueSession)Connection.createQueueSession(false, SessionMode.AUTO_ACKNOWLEDGE);
         }
 
         
