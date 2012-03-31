@@ -58,6 +58,7 @@ namespace Inceptum.Messaging.Transports
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Send(string destination, BinaryMessage message)
         {
+            ensureSessionIsCreated();
             send(destination, message);
         }
 
@@ -90,24 +91,22 @@ namespace Inceptum.Messaging.Transports
         [MethodImpl(MethodImplOptions.Synchronized)]
         public IDisposable Subscribe(string destination, Action<BinaryMessage> callback, string messageType)
         {
-            return subscribe(destination, message => callback(new BinaryMessage(message)), messageType);
+            ensureSessionIsCreated();
+
+            return subscribe(createDestination(destination), message => callback(new BinaryMessage(message)), messageType);
         }
 
 
-        private IDisposable subscribe(string destination, Action<Message> callback, string messageType)
+        private IDisposable subscribe(Destination destination, Action<Message> callback, string messageType)
         {
             IDisposable subscription = null;
-            
-            ensureSessionIsCreated();
-
-            var dest = createDestination(destination);
             var selectors = new []
                               {
                                   messageType!=null?"JMSType = '"+messageType+"'":null,
                                   m_JailedTag!=null?JailedSelector:null
                               }.Where(x=>x!=null).ToArray();
 
-            var consumer = selectors.Length==0?m_Session.createConsumer(dest) : m_Session.createConsumer(dest, string.Join(" AND ",selectors));
+            var consumer = selectors.Length==0?m_Session.createConsumer(destination) : m_Session.createConsumer(destination, string.Join(" AND ",selectors));
             consumer.setMessageListener(new GenericMessageListener(callback));
              
             subscription = Disposable.Create(() =>
@@ -131,74 +130,38 @@ namespace Inceptum.Messaging.Transports
             return subscription;
         }
 
-        private void ensureSessionIsCreated()
-        {
-            if (m_Session == null)
-            {
-                m_Session = CreateSession();
-                //TODO: need to enable for prod environments
-                m_Session.setFlowControlDisabled(true);
-            }
-        }
-
-        protected abstract Destination CreateDestination(string name);
-        private Destination createDestination(string name)
-        {
-            ensureSessionIsCreated();
-            return CreateDestination(name);
-        }
-        protected abstract TSession CreateSession();
-
-        public  Destination CreateTempDestination()
-        {
-            ensureSessionIsCreated();
-            return Session.createTemporaryQueue();
-        }
-
-         [MethodImpl(MethodImplOptions.Synchronized)]
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public IDisposable SendRequest(string destination, BinaryMessage message, Action<BinaryMessage> callback)
         {
             ensureSessionIsCreated();
             var temporaryQueue = m_Session.createTemporaryQueue();
-            var consumer = m_Session.createConsumer(temporaryQueue);
 
-            IDisposable subscription=Disposable.Empty;
-
-            subscription = Disposable.Create(() =>
-            {
-                consumer.close();
-                // ReSharper disable AccessToModifiedClosure
-                // Closure.
-
-                m_Subscriptions.Remove(subscription);
-                if (m_Subscriptions.Count == 0)
-                {
-                    m_Session.close();
-                    m_Session = null;
-                }
-
-                // ReSharper restore AccessToModifiedClosure
-            });
+            IDisposable subscription = Disposable.Empty;
+            subscription = subscribe(temporaryQueue, m =>
+                                                {
+                                                    try
+                                                    {
+                                                        callback(new BinaryMessage(m));
+                                                    }
+                                                    finally
+                                                    {
+// ReSharper disable AccessToModifiedClosure
+                                                        subscription.Dispose();
+// ReSharper restore AccessToModifiedClosure
+                                                        temporaryQueue.delete();                                                            
+                                                    }
+                                                }, null);
             m_Subscriptions.Add(subscription);
-
-            consumer.setMessageListener(new GenericMessageListener(m =>
-                                                                       {
-                                                                           subscription.Dispose();
-                                                                           callback(new BinaryMessage(m));
-                                                                       } ));
-
             send(destination, message, m => m.setJMSReplyTo(temporaryQueue));
-
             return subscription;
         }
 
-         [MethodImpl(MethodImplOptions.Synchronized)]
-         public IDisposable RegisterHandler(string destination, Func<BinaryMessage, BinaryMessage> handler, string messageType)
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public IDisposable RegisterHandler(string destination, Func<BinaryMessage, BinaryMessage> handler, string messageType)
         {
-
-            //TODO: implement in more appropriate way. Processing should not freeze session thread. Response producer is created and destroyed for each message it is also not good idea
             ensureSessionIsCreated();
-            var subscription=subscribe(destination, request =>
+            //TODO: implement in more appropriate way. Processing should not freeze session thread. Response producer is created and destroyed for each message it is also not good idea
+            var subscription = subscribe(createDestination(destination), request =>
                                                         {
 
                                                             var jmsCorrelationId = request.getJMSCorrelationID();
@@ -222,6 +185,30 @@ namespace Inceptum.Messaging.Transports
                 m_Session = null;
             }
         }
+
+        public  Destination CreateTempDestination()
+        {
+            ensureSessionIsCreated();
+            return Session.createTemporaryQueue();
+        }
+
+        private void ensureSessionIsCreated()
+        {
+            if (m_Session == null)
+            {
+                m_Session = CreateSession();
+                //TODO: need to enable for prod environments
+                m_Session.setFlowControlDisabled(true);
+            }
+        }
+
+        protected abstract Destination CreateDestination(string name);
+        private Destination createDestination(string name)
+        {
+            ensureSessionIsCreated();
+            return CreateDestination(name);
+        }
+        protected abstract TSession CreateSession();
     }
 
 }
