@@ -72,8 +72,8 @@ namespace Inceptum.DataBus.Messaging
 
         private IDisposable subscribeObserver(IObserver<TData> observer, TContext context, Action notefySubscribed)
         {
-            string subscriptionSource = GetSubscriptionSource(context);
-            var subscriptionTransportId = GetSubscriptionTransportId(context);
+            var subscriptionEndpoint = GetSubscriptionEndpoint(context);
+            
             //Create a subject holding data
             var dataFeed = new Subject<TData>();
             var subscribtion = new SafeCompositeDisposable();
@@ -84,14 +84,17 @@ namespace Inceptum.DataBus.Messaging
                     observer.OnCompleted
                     ));
             var subscribing = new MultipleAssignmentDisposable();
-            subscribing.Disposable =
-                Scheduler.TaskPool.Schedule((() =>
-                {
-                    if (subscribtion.IsDisposing || subscribtion.IsDisposed)
-                        return;
-                    subscribing.Disposable = Subscribe(dataFeed, context, subscriptionSource,subscriptionTransportId, notefySubscribed);
-                }
-                    ));
+        	
+			subscribing.Disposable = Scheduler
+        		.TaskPool
+        		.Schedule((() =>
+        		           	{
+        		           		if (subscribtion.IsDisposing || subscribtion.IsDisposed)
+        		           			return;
+        		           		subscribing.Disposable = Subscribe(dataFeed, context, subscriptionEndpoint, notefySubscribed);
+        		           	}
+        		          ));
+
             subscribtion.Add(subscribing);
             return subscribtion;
         }
@@ -106,26 +109,24 @@ namespace Inceptum.DataBus.Messaging
             return null;
         }
 
-        protected virtual IDisposable Subscribe(Subject<TData> dataFeed, TContext context, string subscriptionSource, string subscriptionTransportId, Action notifySubscribed)
+        protected virtual IDisposable Subscribe(Subject<TData> dataFeed, TContext context, Endpoint endpoint, Action notifySubscribed)
         {
-            var subscribeForFeedData = SubscribeForFeedData(dataFeed, context, subscriptionSource, subscriptionTransportId);
+            var subscribeForFeedData = SubscribeForFeedData(dataFeed, context, endpoint);
             notifySubscribed();
             return subscribeForFeedData;
         }
 
-        protected IDisposable SubscribeForFeedData(Subject<TData> dataFeed, TContext context, string subscriptionSource,string subscriptionTransportId)
+        protected IDisposable SubscribeForFeedData(Subject<TData> dataFeed, TContext context, Endpoint endpoint)
         {
             try
             {
                 Logger.DebugFormat("Subscribing for context: {0}", GetContextLogRepresentationString(context));
 
-                //Subscribe data sbject for messaging data flow
-                IDisposable engineSubscription = m_MessagingEngine.Subscribe<TMessage>(subscriptionSource, subscriptionTransportId,
-                                                                              message => processMessage(dataFeed, message, context)
-                                                                              /*,ex => processSubscriptionError(ex, dataFeed)*/);
+                //Subscribe data subject for messaging data flow
+                IDisposable engineSubscription = m_MessagingEngine.Subscribe<TMessage>(endpoint, message => processMessage(dataFeed, message, context));
                 m_MessagingEngine.SubscribeOnTransportEvents((trasnportId, @event) =>
                                                                  {
-                                                                     if(trasnportId==subscriptionTransportId)
+																	 if (trasnportId == endpoint.TransportId)
                                                                          dataFeed.OnError(new TransportException(string.Format("Transport {0} failed",trasnportId)));
                                                                  });
                 m_EngineSubscriptions.Add(engineSubscription);
@@ -140,22 +141,11 @@ namespace Inceptum.DataBus.Messaging
             }
             catch (Exception ex)
             {
-                Logger.Debug(string.Format("Initial subscription failed. Context: {0};   Subscription data: {1}", GetContextLogRepresentationString(context), subscriptionSource), ex);
+				Logger.Debug(string.Format("Initial subscription failed. Context: {0};   Subscription data: {1}", GetContextLogRepresentationString(context), endpoint.Destination), ex);
                 dataFeed.OnError(ex);
                 return Disposable.Empty;
             }
         }
-
-/*
-        private static void processSubscriptionError(Exception ex, IObserver<TData> dataFeed)
-        {
-            if (ex is TransportOutdatedException)
-                dataFeed.OnCompleted();
-            else
-                dataFeed.OnError(ex);
-        }
-*/
-
 
         private void processMessage(Subject<TData> dataFeed, TMessage message, TContext context)
         {
@@ -177,20 +167,17 @@ namespace Inceptum.DataBus.Messaging
 
 
         /// <summary>
-        /// Gets the subscription source.
+        /// Gets the subscription endpoint source.
         /// </summary>
         /// <param name="context">The context.</param>
         /// <returns></returns>
-        protected abstract string GetSubscriptionSource(TContext context);        
-        
-        
-        /// <summary>
-        /// Gets the subscription transport id.
-        /// </summary>
-        /// <param name="context">The context.</param>
-        /// <returns></returns>
-        protected abstract string GetSubscriptionTransportId(TContext context);
+        protected abstract Endpoint GetSubscriptionEndpoint(TContext context);        
 
+		/// <summary>
+		/// Can provide for
+		/// </summary>
+		/// <param name="context"></param>
+		/// <returns></returns>
         public virtual bool CanProvideFor(TContext context)
         {
             return true;

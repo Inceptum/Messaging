@@ -68,9 +68,9 @@ namespace Inceptum.Messaging
             return Disposable.Create(() => m_TransportManager.TransportEvents -= safeHandler);
         }
 
-        public void Send<TMessage>(TMessage message, string destination, string transportId)
+        public void Send<TMessage>(TMessage message, Endpoint endpoint)
         {
-            if (destination == null) throw new ArgumentNullException("destination");
+            if (endpoint.Destination == null) throw new ArgumentNullException("endpoint.Destination");
             if (m_Disposing.WaitOne(0))
                 throw new InvalidOperationException("Engine is disposing");
 
@@ -78,22 +78,22 @@ namespace Inceptum.Messaging
             {
                 try
                 {
-                    Transport transport = m_TransportManager.GetTransport(transportId);
+					Transport transport = m_TransportManager.GetTransport(endpoint.TransportId);
                     var serializedMessage = serializeMessage(message);
-                    transport.Send(destination, serializedMessage);
+					transport.Send(endpoint.Destination, serializedMessage);
                 }
                 catch (Exception e)
                 {
-                    Logger.ErrorFormat(e, "Failed to send message. Transport: {0}, Queue: {1}", transportId, destination);
+					Logger.ErrorFormat(e, "Failed to send message. Transport: {0}, Queue: {1}", endpoint.TransportId, endpoint.Destination);
                     throw;
                 }
             }
         }
 
 
-        public IDisposable Subscribe<TMessage>(string destination, string transportId, Action<TMessage> callback, bool sharedDestination=false )
+		public IDisposable Subscribe<TMessage>(Endpoint endpoint, Action<TMessage> callback)
         {
-            if (destination == null) throw new ArgumentNullException("destination");
+			if (endpoint.Destination == null) throw new ArgumentNullException("endpoint.Destination");
             if (m_Disposing.WaitOne(0))
                 throw new InvalidOperationException("Engine is disposing");
 
@@ -101,11 +101,11 @@ namespace Inceptum.Messaging
             {
                 try
                 {
-                    return subscribe(destination, transportId, m => processMessage(m, callback, destination, transportId),sharedDestination?getMessageType(typeof(TMessage)):null);
+					return subscribe(endpoint.Destination, endpoint.TransportId, m => processMessage(m, callback, endpoint), endpoint.SharedDestination ? getMessageType(typeof(TMessage)) : null);
                 }
                 catch (Exception e)
                 {
-                    Logger.ErrorFormat(e, "Failed to subscribe. Transport: {0}, Queue: {1}", transportId, destination);
+                    Logger.ErrorFormat(e, "Failed to subscribe. Transport: {0}, Queue: {1}",  endpoint.TransportId, endpoint.Destination);
                     throw;
                 }
             }
@@ -113,7 +113,7 @@ namespace Inceptum.Messaging
 
 
         //NOTE: send via topic waits only first response.
-        public TResponse SendRequest<TRequest, TResponse>(TRequest request, string queue, string transportId,
+		public TResponse SendRequest<TRequest, TResponse>(TRequest request, Endpoint endpoint,
                                                           int timeout = 30000)
         {
             if (m_Disposing.WaitOne(0))
@@ -125,7 +125,7 @@ namespace Inceptum.Messaging
                 TResponse response = default(TResponse);
                 Exception exception = null;
 
-                using (SendRequestAsync<TRequest, TResponse>(request, queue, transportId,
+				using (SendRequestAsync<TRequest, TResponse>(request, endpoint,
                                                              r =>
                                                                  {
                                                                      response = r;
@@ -156,26 +156,23 @@ namespace Inceptum.Messaging
         }
 
 
-        public IDisposable RegisterHandler<TRequest, TResponse>(Func<TRequest, TResponse> handler, string destination,
-                                                                string transportId, bool sharedDestination = false)
-            where TResponse : class
-        {
-            var handle = new SerialDisposable();
-            IDisposable transportWatcher = SubscribeOnTransportEvents((id, @event) =>
-                                                                          {
-                                                                              if (@event != TransportEvents.Failure)
-                                                                                  return;
-                                                                              registerHandlerWithRetry(handler, destination, transportId,handle,sharedDestination);
-                                                                          });
+		public IDisposable RegisterHandler<TRequest, TResponse>(Func<TRequest, TResponse> handler, Endpoint endpoint)
+			where TResponse : class
+		{
+			var handle = new SerialDisposable();
+			IDisposable transportWatcher = SubscribeOnTransportEvents((id, @event) =>
+			                                                          	{
+			                                                          		if (@event != TransportEvents.Failure)
+			                                                          			return;
+			                                                          		registerHandlerWithRetry(handler, endpoint, handle);
+			                                                          	});
 
-            registerHandlerWithRetry(handler, destination, transportId, handle, sharedDestination);
+			registerHandlerWithRetry(handler, endpoint, handle);
 
-            return new CompositeDisposable(transportWatcher, handle);
-        }
+			return new CompositeDisposable(transportWatcher, handle);
+		}
 
-        public IDisposable SendRequestAsync<TRequest, TResponse>(TRequest request, string destination,
-                                                                 string transportId, Action<TResponse> callback,
-                                                                 Action<Exception> onFailure)
+    	public IDisposable SendRequestAsync<TRequest, TResponse>(TRequest request, Endpoint endpoint, Action<TResponse> callback, Action<Exception> onFailure)
         {
             if (m_Disposing.WaitOne(0))
                 throw new InvalidOperationException("Engine is disposing");
@@ -184,8 +181,8 @@ namespace Inceptum.Messaging
             {
                 try
                 {
-                    Transport transport = m_TransportManager.GetTransport(transportId);
-                    IDisposable subscription = transport.SendRequest(destination,serializeMessage(request),
+                    Transport transport = m_TransportManager.GetTransport( endpoint.TransportId);
+                    IDisposable subscription = transport.SendRequest(endpoint.Destination,serializeMessage(request),
                                                                      message =>
                                                                          {
                                                                              try
@@ -202,8 +199,8 @@ namespace Inceptum.Messaging
                 }
                 catch (Exception e)
                 {
-                    Logger.ErrorFormat(e, "Failed to register handler. Transport: {0}, Destination: {1}", transportId,
-                                       destination);
+                    Logger.ErrorFormat(e, "Failed to register handler. Transport: {0}, Destination: {1}",  endpoint.TransportId,
+                                       endpoint.Destination);
                     throw;
                 }
             }
@@ -226,35 +223,33 @@ namespace Inceptum.Messaging
 
         #endregion
 
-        public void registerHandlerWithRetry<TRequest, TResponse>(Func<TRequest, TResponse> handler,
-                                                                  string destination, string transportId,
-                                                                  SerialDisposable handle, bool sharedDestination)
+        public void registerHandlerWithRetry<TRequest, TResponse>(Func<TRequest, TResponse> handler, Endpoint endpoint, SerialDisposable handle)
             where TResponse : class
         {
             lock (handle)
             {
                 try
                 {
-                    handle.Disposable = registerHandler(handler, destination, transportId, sharedDestination);
+                    handle.Disposable = registerHandler(handler, endpoint);
                 }
                 catch
                 {
                     Logger.InfoFormat("Scheduling register handler attempt in 1 minute. Transport: {0}, Queue: {1}",
-                                      transportId, destination);
-                    handle.Disposable = Scheduler.ThreadPool.Schedule(DateTimeOffset.Now.AddMinutes(1),
-                                                                      () =>
-                                                                          {
-                                                                              lock (handle)
-                                                                              {
-                                                                                  registerHandlerWithRetry(handler,destination,transportId,handle,sharedDestination);
-                                                                              }
-                                                                          });
+                                       endpoint.TransportId, endpoint.Destination);
+                	handle.Disposable = Scheduler.ThreadPool.Schedule(DateTimeOffset.Now.AddMinutes(1),
+                	                                                  () =>
+                	                                                  	{
+                	                                                  		lock (handle)
+                	                                                  		{
+                	                                                  			registerHandlerWithRetry(handler, endpoint, handle);
+                	                                                  		}
+                	                                                  	});
                 }
             }
         }
 
 
-        public IDisposable registerHandler<TRequest, TResponse>(Func<TRequest, TResponse> handler, string destination, string transportId, bool sharedDestination)
+		public IDisposable registerHandler<TRequest, TResponse>(Func<TRequest, TResponse> handler, Endpoint endpoint)
             where TResponse : class
         {
             if (m_Disposing.WaitOne(0))
@@ -264,42 +259,37 @@ namespace Inceptum.Messaging
             {
                 try
                 {
-                    Transport transport = m_TransportManager.GetTransport(transportId);
-                    IDisposable subscription = transport.RegisterHandler(destination, requestMessage =>
-                                                                                     {
-                                                                                         var message =
-                                                                                             deserializeMessage
-                                                                                                 <TRequest>(
-                                                                                                     requestMessage);
-                                                                                         TResponse response =
-                                                                                             handler(message);
-                                                                                         return serializeMessage(response);
-                                                                                     }, sharedDestination?getMessageType(typeof(TRequest)):null);
-                    IDisposable sonicHandle = createSonicHandle(() =>
-                                                                    {
-                                                                        try
-                                                                        {
-                                                                            subscription.Dispose();
-                                                                            Disposable.Create(
-                                                                                () =>
-                                                                                Logger.InfoFormat(
-                                                                                    "Handler was unregistered. Transport: {0}, Queue: {1}",
-                                                                                    transportId, destination));
-                                                                        }
-                                                                        catch (Exception e)
-                                                                        {
-                                                                            Logger.WarnFormat(e,
-                                                                                              "Failed to unregister handler. Transport: {0}, Queue: {1}",
-                                                                                              transportId, destination);
-                                                                        }
-                                                                    });
-                    Logger.InfoFormat("Handler was successfully registered. Transport: {0}, Queue: {1}", transportId,
-                                      destination);
+                    var transport = m_TransportManager.GetTransport( endpoint.TransportId);
+                	var subscription = transport.RegisterHandler(endpoint.Destination,
+                	                                                     requestMessage =>
+                	                                                     	{
+                	                                                     		var message = deserializeMessage<TRequest>(requestMessage);
+                	                                                     		TResponse response = handler(message);
+                	                                                     		return serializeMessage(response);
+                	                                                     	},
+                	                                                     endpoint.SharedDestination
+                	                                                     	? getMessageType(typeof (TRequest))
+                	                                                     	: null
+                		);
+                	var sonicHandle = createSonicHandle(() =>
+                	                                            	{
+                	                                            		try
+                	                                            		{
+                	                                            			subscription.Dispose();
+                	                                            			Disposable.Create(() => Logger.InfoFormat("Handler was unregistered. Transport: {0}, Queue: {1}", endpoint.TransportId, endpoint.Destination));
+                	                                            		}
+                	                                            		catch (Exception e)
+                	                                            		{
+                	                                            			Logger.WarnFormat(e, "Failed to unregister handler. Transport: {0}, Queue: {1}", endpoint.TransportId, endpoint.Destination);
+                	                                            		}
+                	                                            	});
+
+                    Logger.InfoFormat("Handler was successfully registered. Transport: {0}, Queue: {1}",  endpoint.TransportId, endpoint.Destination);
                     return sonicHandle;
                 }
                 catch (Exception e)
                 {
-                    Logger.ErrorFormat(e, "Failed to register handler. Transport: {0}, Queue: {1}", transportId, destination);
+                    Logger.ErrorFormat(e, "Failed to register handler. Transport: {0}, Queue: {1}",  endpoint.TransportId, endpoint.Destination);
                     throw;
                 }
             }
@@ -315,19 +305,15 @@ namespace Inceptum.Messaging
 
         private string getMessageType(Type type)
         {
-            return m_MessageTypeMapping.GetOrAdd(type, clrType =>
-                                                                               {
-                                                                                   var typeName =
-                                                                                       clrType.GetCustomAttributes(false)
-                                                                                           .Select(
-                                                                                               a =>
-                                                                                               a as
-                                                                                               ProtoBuf.ProtoContractAttribute)
-                                                                                           .Where(a => a != null).Select(
-                                                                                               a => a.Name)
-                                                                                           .FirstOrDefault();
-                                                                                   return typeName ?? clrType.Name;
-                                                                               });
+        	return m_MessageTypeMapping.GetOrAdd(type, clrType =>
+        	                                           	{
+        	                                           		var typeName = clrType.GetCustomAttributes(false)
+        	                                           			.Select(a => a as ProtoBuf.ProtoContractAttribute)
+        	                                           			.Where(a => a != null)
+        	                                           			.Select(a => a.Name)
+        	                                           			.FirstOrDefault();
+        	                                           		return typeName ?? clrType.Name;
+        	                                           	});
         }
 
         private TMessage deserializeMessage<TMessage>(BinaryMessage message)
@@ -365,8 +351,7 @@ namespace Inceptum.Messaging
         }
 
 
-        private void processMessage<TMessage>(BinaryMessage sonicMessage, Action<TMessage> callback,
-                                                             string destination, string transportId)
+        private void processMessage<TMessage>(BinaryMessage sonicMessage, Action<TMessage> callback, Endpoint endpoint)
         {
             TMessage message = default(TMessage);
             try
@@ -376,7 +361,7 @@ namespace Inceptum.Messaging
             catch (Exception e)
             {
                 Logger.ErrorFormat(e, "Failed to deserialize message. Transport: {0} Destination {1}. Message Type {2}.",
-                                   transportId, destination, typeof (TMessage).Name);
+								    endpoint.TransportId, endpoint.Destination, typeof(TMessage).Name);
             }
 
             try
@@ -386,7 +371,7 @@ namespace Inceptum.Messaging
             catch (Exception e)
             {
                 Logger.ErrorFormat(e, "Failed to handle message. Transport: {0} Destination {1}. Message Type {2}.",
-                                   transportId, destination, typeof (TMessage).Name);
+									endpoint.TransportId, endpoint.Destination, typeof(TMessage).Name);
             }
         }
     }
