@@ -2,6 +2,6 @@
 {
     public interface IDataBus
     {
-        IChannel<TData> Channel<TData>(string channelName);
+        IChannel<TData> Channel<TData>(string channelName = null);
     }
 }

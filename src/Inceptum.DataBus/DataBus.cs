@@ -30,7 +30,7 @@ namespace Inceptum.DataBus
 
         #region IDataBus Members
 
-        public IChannel<TData> Channel<TData>(string channelName)
+        public IChannel<TData> Channel<TData>(string channelName = null)
         {
             return new ChannelDescriptor<TData>(this, channelName);
         }
@@ -71,7 +71,7 @@ namespace Inceptum.DataBus
         {
             if (string.IsNullOrEmpty(channelName))
                 throw new ArgumentException("'channelName' should be not empty string", "channelName");
-            if (feedProvider == null)
+			if (feedProvider == null)
                 throw new ArgumentNullException("feedProvider");
             IDisposable obj;
             Channel<TData, TContext> channel;
