@@ -19,21 +19,19 @@ namespace Inceptum.DataBus.Castle
 
         public void ProcessModel(IKernel kernel, ComponentModel model)
         {
-            foreach (var feedProviderType in model.Services.Where(s => s.IsImplementationOf(typeof(IFeedProvider<,>))))
-            {
-            
-            var attr = Helper.GetAttribute<ChannelAttribute>(model.Implementation);
-            var isDataBusPart =  attr != null && !string.IsNullOrEmpty(attr.Name);
-            model.ExtendedProperties["IsChannel"] = isDataBusPart;
+			foreach (var feedProviderType in model.Services.Where(s => s.IsImplementationOf(typeof(IFeedProvider<,>))))
+			{
+				model.ExtendedProperties["IsChannel"] = true;
+				setAllChannelDependencyNotOptional(model);
 
-            setAllChannelDependencyNotOptional(model);
-            if (!isDataBusPart)
-                return;
-            model.ExtendedProperties["ChannelName"] = attr.Name;
+				var attr = Helper.GetAttribute<ChannelAttribute>(model.Implementation);
+				var channelName = attr == null || string.IsNullOrEmpty(attr.Name)
+				                     	? feedProviderType.GetGenericArguments()[0].FullName
+				                     	: attr.Name;
+				model.ExtendedProperties["ChannelName"] = channelName;
 
-            createProxyChannel(feedProviderType,model, kernel, attr.Name);
-
-            }
+				createProxyChannel(feedProviderType, model, kernel, channelName);
+			}
         }
 
         private void createProxyChannel(Type feedProviderType,ComponentModel model, IKernel kernel, string channelName)

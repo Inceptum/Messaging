@@ -10,11 +10,14 @@ namespace Inceptum.DataBus.Castle
 
         internal ChannelDescriptor( DataBus bus, string channelName)
         {
-            _channelName = channelName;
-            _bus = bus;
+        	_channelName = string.IsNullOrEmpty(channelName)
+        	               	? _channelName = typeof (TData).FullName
+        	               	: channelName;
+
+        	_bus = bus;
         }
 
-        /// <summary>
+    	/// <summary>
         /// Handles feed selection with fluent API 
         /// </summary>
         /// <returns></returns>

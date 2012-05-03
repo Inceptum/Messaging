@@ -60,6 +60,43 @@ namespace Inceptum.DataBus.Tests
             Assert.IsNotNull(myOtherChannelFeed, "Channel was not registered");
         }
 
+		[Test]
+		public void ChannelDependencyResolving_WithoutName_Test()
+		{
+			IWindsorContainer container = new WindsorContainer();
+			container.AddFacility<ChannelRegistrationFacility>();
+			container.Register(AllTypes.FromAssembly(GetType().Assembly).BasedOn(typeof(IFeedProvider<,>)).WithService.FromInterface());
+			var bus = container.Resolve<IDataBus>();
+			Assert.IsNotNull(bus, "Facility have not registered DataBus as component");
+			IObservable<int> myOtherChannelFeed = bus.Channel<int>().Feed(5);
+			Assert.IsNotNull(myOtherChannelFeed, "Channel was not registered");
+		}
+
+		[Test]
+		public void ChannelDependencyResolving_WithoutAttr_Test()
+		{
+			IWindsorContainer container = new WindsorContainer();
+			container.AddFacility<ChannelRegistrationFacility>();
+			container.Register(AllTypes.FromAssembly(GetType().Assembly).BasedOn(typeof(IFeedProvider<,>)).WithService.FromInterface());
+			var bus = container.Resolve<IDataBus>();
+			Assert.IsNotNull(bus, "Facility have not registered DataBus as component");
+			IObservable<long> myOtherChannelFeed = bus.Channel<long>().Feed(5L);
+			Assert.IsNotNull(myOtherChannelFeed, "Channel was not registered");
+		}
+
+		[Test]
+		public void ChannelDependencyResolving_CustomFeedProviderWithoutAttr_Test()
+		{
+			IWindsorContainer container = new WindsorContainer();
+			container.AddFacility<ChannelRegistrationFacility>();
+			container.Register(AllTypes.FromAssembly(GetType().Assembly).BasedOn(typeof(IFeedProvider<,>)).WithService.FromInterface());
+			var bus = container.Resolve<IDataBus>();
+			Assert.IsNotNull(bus, "Facility have not registered DataBus as component");
+			IObservable<DateTime> myOtherChannelFeed = bus.Channel<DateTime>().Feed(5);
+			Assert.IsNotNull(myOtherChannelFeed, "Channel was not registered");
+		}
+
+
         [Test]
         [ExpectedException(typeof (InvalidOperationException)/*, ExpectedMessage = "FeedProvider 'Inceptum.DataBus.Tests.FeedProviderWithNotResolvableDependency' can not be resolved"*/)]
         public void ChannelDependencyResolvingFailureTest()

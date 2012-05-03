@@ -134,6 +134,54 @@ namespace Inceptum.DataBus.Tests
         }
     }
 
+	[Channel]
+	public class NotNamedChannelFeed : IFeedProvider<int, int>
+	{
+		public bool CanProvideFor(int context)
+		{
+			return true;
+		}
+
+		public IObservable<int> CreateFeed(int c)
+		{
+			return Observable.Range(1, c);
+		}
+
+		public IEnumerable<int> OnFeedLost(int context)
+		{
+			return new int[0];
+		}
+
+		public IFeedResubscriptionPolicy GetResubscriptionPolicy(int context)
+		{
+			return null;
+		}
+	}
+
+	public class WithoutAttributeChannelFeed : IFeedProvider<long, long>
+	{
+		public bool CanProvideFor(long context)
+		{
+			return true;
+		}
+
+		public IObservable<long> CreateFeed(long c)
+		{
+			return Observable.ToObservable(new long[1] {c});
+		}
+
+		public IEnumerable<long> OnFeedLost(long context)
+		{
+			return new long[0];
+		}
+
+		public IFeedResubscriptionPolicy GetResubscriptionPolicy(long context)
+		{
+			return null;
+		}
+	}
+
+
     [Channel("FeedWithExplicitlyNamedDependencyChannel")]
     public class FeedWithExplicitlyNamedDependency : IFeedProvider<int, string>
     {
@@ -161,4 +209,31 @@ namespace Inceptum.DataBus.Tests
             return null;
         }
     }
+
+	public interface ICustomFeedProvider<T, TData, TContext> : IFeedProvider<TData, TContext>
+	{
+	}
+
+	public class CustromFeedProviderWithoutAttributeChannelFeed : ICustomFeedProvider<decimal,DateTime, int>
+	{
+		public bool CanProvideFor(int context)
+		{
+			return true;
+		}
+
+		public IObservable<DateTime> CreateFeed(int c)
+		{
+			return Observable.ToObservable(new DateTime[1] { DateTime.Now.AddDays(c) });
+		}
+
+		public IEnumerable<DateTime> OnFeedLost(int context)
+		{
+			return new DateTime[0];
+		}
+
+		public IFeedResubscriptionPolicy GetResubscriptionPolicy(int context)
+		{
+			return null;
+		}
+	}
 }
