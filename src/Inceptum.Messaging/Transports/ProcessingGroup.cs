@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Runtime.CompilerServices;
@@ -131,29 +132,23 @@ namespace Inceptum.Messaging.Transports
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public IDisposable SendRequest(string destination, BinaryMessage message, Action<BinaryMessage> callback)
+        public RequestHandle SendRequest(string destination, BinaryMessage message, Action<BinaryMessage> callback)
         {
             ensureSessionIsCreated();
-            var temporaryQueue = m_Session.createTemporaryQueue();
+            TemporaryQueue temporaryQueue = m_Session.createTemporaryQueue();
+            var request = new RequestHandle(callback,temporaryQueue.delete, cb => subscribe(temporaryQueue,cb,null) );
 
-            IDisposable subscription = Disposable.Empty;
-            subscription = subscribe(temporaryQueue, m =>
-                                                {
-                                                    try
-                                                    {
-                                                        callback(new BinaryMessage(m));
-                                                    }
-                                                    finally
-                                                    {
-// ReSharper disable AccessToModifiedClosure
-                                                        subscription.Dispose();
-// ReSharper restore AccessToModifiedClosure
-                                                        temporaryQueue.delete();                                                            
-                                                    }
-                                                }, null);
-            m_Subscriptions.Add(subscription);
+     /*       var subscription = subscribe(temporaryQueue, m => callback(new BinaryMessage(m)), null);
+
+            IDisposable request = Disposable.Create(() =>
+                                                        {
+                                                            subscription.Dispose();
+                                                            temporaryQueue.delete();
+                                                        }
+                                                    );*/
+            m_Subscriptions.Add(request);
             send(destination, message, m => m.setJMSReplyTo(temporaryQueue));
-            return subscription;
+            return request;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]

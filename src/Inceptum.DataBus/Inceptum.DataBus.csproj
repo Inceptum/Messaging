@@ -64,7 +64,13 @@
     <Compile Include="IFeedProvider.cs" />
     <Compile Include="IFeedResubscriptionPolicy.cs" />
     <Compile Include="ImportChannelAttribute.cs" />
+    <Compile Include="Messaging\HeartbeatInfo.cs" />
+    <Compile Include="Messaging\HeartbeatLostException.cs" />
+    <Compile Include="Messaging\HeartbeatsHandler.cs" />
+    <Compile Include="Messaging\MessagingFeedProvider.cs" />
     <Compile Include="Messaging\MessagingFeedProviderBase.cs" />
+    <Compile Include="Messaging\MessagingFeedWithHbProviderBase.cs" />
+    <Compile Include="Messaging\MessagingFeedWithInitializationBase.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SafeCompositeDisposable.cs" />
     <Compile Include="SubscriptionExtensions.cs" />

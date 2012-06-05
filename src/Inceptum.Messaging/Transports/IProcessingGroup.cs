@@ -27,7 +27,7 @@ namespace Inceptum.Messaging.Transports
     {
         IDisposable Subscribe(string destination, Action<BinaryMessage> callback, string messageType);
         void Send(string destination, BinaryMessage message);
-        IDisposable SendRequest(string destination, BinaryMessage message, Action<BinaryMessage> callback);
+        RequestHandle SendRequest(string destination, BinaryMessage message, Action<BinaryMessage> callback);
         IDisposable RegisterHandler(string destination, Func<BinaryMessage, BinaryMessage> handler, string messageType);
     }
 }
