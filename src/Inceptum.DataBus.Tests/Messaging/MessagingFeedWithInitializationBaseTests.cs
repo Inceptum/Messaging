@@ -22,14 +22,19 @@ namespace Inceptum.DataBus.Tests.Messaging
             {
             }
 
-            public abstract DataBusMessagingEndpoint GetSubscriptionDataImpl(TContext context);
+            public abstract Endpoint GetEndpointImpl(TContext context);
+            public abstract Endpoint GetInitEndpointImpl(TContext context);
             public abstract TData ExtractInitialDataImpl(TInitResponse response, TContext context);
             public abstract IDisposable InitializeFeedImpl(Subject<TData> dataFeed, TInitResponse response, TContext context);
             public abstract TInitRequest GetInitRequestImpl(TContext context);
 
-            protected override DataBusMessagingEndpoint GetEndpoint(TContext context)
+            protected override Endpoint GetEndpoint(TContext context)
             {
-                return GetSubscriptionDataImpl(context);
+                return GetEndpointImpl(context);
+            }
+            protected override Endpoint GetInitEndpoint(TContext context)
+            {
+                return GetInitEndpointImpl(context);
             }
 
             protected override IEnumerable<TData> ExtractInitialData(TInitResponse response, TContext context)
@@ -66,7 +71,9 @@ namespace Inceptum.DataBus.Tests.Messaging
             transportEngine.Expect(e => e.Subscribe<int>(new Endpoint(), m => { })).IgnoreArguments().Return(Disposable.Empty).Repeat.Once();
 
             var feedProvider = MockRepository.GeneratePartialMock<MessagingFeedWithInitializationMock<int, string, object, object>>(transportEngine);
-            feedProvider.Expect(p => p.GetSubscriptionDataImpl("feedContext")).Return(new Endpoint("dummyTransportId", "dummySubj"));
+            feedProvider.Expect(p => p.GetEndpointImpl("feedContext")).Return(new Endpoint("dummyTransportId", "dummySubj"));
+            feedProvider.Expect(p => p.GetInitEndpointImpl("feedContext")).Return(new Endpoint("dummyTransportId", "dummyInitSubj"));
+
             feedProvider.Expect(p => p.GetInitRequestImpl("feedContext")).Return(initCommand);
             feedProvider.Expect(p => p.InitializeFeedImpl(null, null, null)).IgnoreArguments().Return(null);
             feedProvider.Expect(p => p.ExtractInitialDataImpl(dummyResponse, "feedContext")).Return(777);
@@ -105,7 +112,8 @@ namespace Inceptum.DataBus.Tests.Messaging
             transportEngine.Expect(e => e.Subscribe<int>(new Endpoint(), m => { })).IgnoreArguments().Return(Disposable.Empty).Repeat.Once();
 
             var feedProvider = MockRepository.GeneratePartialMock<MessagingFeedWithInitializationMock<int, string, object, object>>(transportEngine);
-            feedProvider.Expect(p => p.GetSubscriptionDataImpl("feedContext")).Return(new Endpoint("dummyTransportId", "dummySubj"));
+            feedProvider.Expect(p => p.GetEndpointImpl("feedContext")).Return(new Endpoint("dummyTransportId", "dummySubj"));
+            feedProvider.Expect(p => p.GetInitEndpointImpl("feedContext")).Return(new Endpoint("dummyTransportId", "dummyInitSubj"));
             feedProvider.Expect(p => p.GetInitRequestImpl("feedContext")).Return(initCommand);
             feedProvider.Expect(p => p.InitializeFeedImpl(null, null, null)).IgnoreArguments().Return(null);
             feedProvider.Expect(p => p.ExtractInitialDataImpl(dummyResponse, "feedContext")).Return(777);
@@ -130,7 +138,9 @@ namespace Inceptum.DataBus.Tests.Messaging
             transportEngine.Expect(e => e.SendRequestAsync<object, object>(null, new Endpoint(), o => { }, ex => { })).IgnoreArguments().Throw(exception);
             var feedProvider = MockRepository.GeneratePartialMock<MessagingFeedWithInitializationMock<int, string, object, object>>(transportEngine);
 
-            feedProvider.Expect(p => p.GetSubscriptionDataImpl("feedContext")).Return(new Endpoint("dummyTransportId", "dummySubj"));
+            feedProvider.Expect(p => p.GetEndpointImpl("feedContext")).Return(new Endpoint("dummyTransportId", "dummySubj"));
+            feedProvider.Expect(p => p.GetInitEndpointImpl("feedContext")).Return(new Endpoint("dummyTransportId", "dummyInitSubj"));
+
             feedProvider.Expect(p => p.GetInitRequestImpl("feedContext")).Return(initCommand);
 
 

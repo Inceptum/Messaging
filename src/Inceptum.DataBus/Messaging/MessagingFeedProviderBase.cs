@@ -11,6 +11,13 @@ using Inceptum.Core.Messaging;
 
 namespace Inceptum.DataBus.Messaging
 {
+    public abstract class MessagingFeedProviderBase<TData, TContext> : MessagingFeedProviderBase<TData, TData, TContext>
+    {
+        protected MessagingFeedProviderBase(IMessagingEngine messagingEngine)
+            : base(messagingEngine)
+        {
+        }
+    }
 
     /// <summary>
     /// Base class for SONIC feed providers
@@ -64,8 +71,6 @@ namespace Inceptum.DataBus.Messaging
 
         private IDisposable subscribeObserver(IObserver<TData> observer, TContext context, Action notefySubscribed)
         {
-            var subscriptionEndpoint = GetEndpoint(context);
-            
             //Create a subject holding data
             var dataFeed = new Subject<TData>();
             var subscribtion = new SafeCompositeDisposable();
@@ -83,7 +88,7 @@ namespace Inceptum.DataBus.Messaging
         		           	{
         		           		if (subscribtion.IsDisposing || subscribtion.IsDisposed)
         		           			return;
-        		           		subscribing.Disposable = Subscribe(dataFeed, context, subscriptionEndpoint, notefySubscribed);
+        		           		subscribing.Disposable = Subscribe(dataFeed, context,  notefySubscribed);
         		           	}
         		          ));
 
@@ -101,9 +106,9 @@ namespace Inceptum.DataBus.Messaging
             return null;
         }
 
-        protected virtual IDisposable Subscribe(Subject<TData> dataFeed, TContext context, DataBusMessagingEndpoint endpoint, Action notifySubscribed)
+        protected virtual IDisposable Subscribe(Subject<TData> dataFeed, TContext context,  Action notifySubscribed)
         {
-            var subscribeForFeedData = SubscribeForFeedData(dataFeed, context, endpoint.FeedEndpoint);
+            var subscribeForFeedData = SubscribeForFeedData(dataFeed, context, GetEndpoint(context));
             notifySubscribed();
             return subscribeForFeedData;
         }
@@ -163,7 +168,7 @@ namespace Inceptum.DataBus.Messaging
         /// </summary>
         /// <param name="context">The context.</param>
         /// <returns></returns>
-        protected abstract DataBusMessagingEndpoint GetEndpoint(TContext context);        
+        protected abstract Endpoint GetEndpoint(TContext context);        
 
 		/// <summary>
 		/// Can provide for

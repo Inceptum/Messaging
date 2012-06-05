@@ -43,23 +43,34 @@ namespace Inceptum.DataBus.Messaging
             InitTimeout = initTimeout;
         }
 
-        protected override sealed IDisposable Subscribe(Subject<TData> dataFeed, TContext context, DataBusMessagingEndpoint endpoint, Action notifySubscribed)
+        protected virtual Endpoint GetInitEndpoint(TContext context)
+        {
+            var endpoint = GetEndpoint(context);
+            return new Endpoint
+                       {
+                           Destination = endpoint.Destination+".init",
+                           SharedDestination = false,
+                           TransportId = endpoint.TransportId
+                       };
+        }
+
+        protected override sealed IDisposable Subscribe(Subject<TData> dataFeed, TContext context,   Action notifySubscribed)
         {
             var subscribtion = new SafeCompositeDisposable();
-            Logger.DebugFormat("Sending init command. Context: {0};   Endpoint: {1}", GetContextLogRepresentationString(context), endpoint.InitEndpoint);
-            sendInitCommand(context, endpoint, dataFeed, subscribtion, notifySubscribed);
+            sendInitCommand(context,  GetInitEndpoint(context), dataFeed, subscribtion, notifySubscribed);
             return subscribtion;
         }
 
-        private void sendInitCommand(TContext context, DataBusMessagingEndpoint endpoint, Subject<TData> dataFeed, SafeCompositeDisposable subscription, Action notefySubscribed)
+        private void sendInitCommand(TContext context, Endpoint endpoint, Subject<TData> dataFeed, SafeCompositeDisposable subscription, Action notefySubscribed)
         {
             try
             {
-                TInitRequest initRequest= GetInitRequest(context);
+                Logger.DebugFormat("Sending init command. Context: {0};   Endpoint: {1}", GetContextLogRepresentationString(context), endpoint);
+                TInitRequest initRequest = GetInitRequest(context);
                 MessagingEngine.SendRequestAsync<TInitRequest,TInitResponse>(
                     initRequest,
-                    endpoint.InitEndpoint,
-                    response => initSubscribtionCallback(response, dataFeed, context, endpoint.FeedEndpoint, subscription, notefySubscribed),
+                    endpoint,
+                    response => initSubscribtionCallback(response, dataFeed, context, GetEndpoint(context), subscription, notefySubscribed),
                     exception =>{
                             if (subscription.IsDisposing || subscription.IsDisposed)
                                 return;
