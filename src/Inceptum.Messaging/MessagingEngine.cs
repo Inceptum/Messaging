@@ -25,6 +25,8 @@ namespace Inceptum.Messaging
         //TODO: verify logging. I've added param but never tested
         private ILogger m_Logger = NullLogger.Instance;
         readonly ConcurrentDictionary<Type, string> m_MessageTypeMapping = new ConcurrentDictionary<Type, string>();
+        private readonly SchedulingBackgroundWorker m_RequestTimeoutManager;
+        readonly Dictionary<RequestHandle, Action<Exception>> m_ActualRequests = new Dictionary<RequestHandle, Action<Exception>>();
 
         /// <summary>
         /// ctor for tests
@@ -35,6 +37,8 @@ namespace Inceptum.Messaging
         {
             m_TransportManager = transportManager;
             m_SerializationManager = serializationManager;
+            m_RequestTimeoutManager = new SchedulingBackgroundWorker("RequestTimeoutManager", () => stopTimeoutedRequests());
+            createSonicHandle(() => stopTimeoutedRequests(true));
         }
 
         public MessagingEngine(ITransportResolver transportResolver, ISerializationManager serializationManager)
@@ -113,8 +117,7 @@ namespace Inceptum.Messaging
 
 
         //NOTE: send via topic waits only first response.
-		public TResponse SendRequest<TRequest, TResponse>(TRequest request, Endpoint endpoint,
-                                                          int timeout = 30000)
+        public TResponse SendRequest<TRequest, TResponse>(TRequest request, Endpoint endpoint, long timeout)
         {
             if (m_Disposing.WaitOne(0))
                 throw new InvalidOperationException("Engine is disposing");
@@ -135,19 +138,20 @@ namespace Inceptum.Messaging
                                                                  {
                                                                      exception = ex;
                                                                      responseRecieved.Set();
-                                                                 }))
+                                                                 },timeout))
                 {
-                    int waitResult = WaitHandle.WaitAny(new WaitHandle[] {m_Disposing, responseRecieved}, timeout);
+                    int waitResult = WaitHandle.WaitAny(new WaitHandle[] {m_Disposing, responseRecieved});
                     switch (waitResult)
                     {
                         case 1:
                             if (exception == null)
                                 return response;
+                            if(exception is TimeoutException)
+                                throw exception;//StackTrace is replaced bat it is ok here.
                             throw new ProcessingException("Failed to process response", exception);
                         case 0:
                             throw new ProcessingException("Request was cancelled due to engine dispose", exception);
-                        case WaitHandle.WaitTimeout:
-                            throw new TimeoutException();
+ 
                         default:
                             throw new InvalidOperationException();
                     }
@@ -155,8 +159,94 @@ namespace Inceptum.Messaging
             }
         }
 
+ 
 
-		public IDisposable RegisterHandler<TRequest, TResponse>(Func<TRequest, TResponse> handler, Endpoint endpoint)
+        private void stopTimeoutedRequests(bool stopAll=false)
+        {
+            lock (m_ActualRequests)
+            {
+                var timeouted = stopAll
+                            ?m_ActualRequests .ToArray()
+                            :m_ActualRequests.Where(r => r.Key.DueDate <= DateTime.Now || r.Key.IsComplete).ToArray();
+
+                Array.ForEach(timeouted, r =>
+                {
+                    r.Key.Dispose();
+                    if (!r.Key.IsComplete)
+                    {
+                        r.Value(new TimeoutException("Request has timed out")); 
+                    }
+                    m_ActualRequests.Remove(r.Key);
+                });
+            }
+        }
+
+ 
+
+
+        public IDisposable SendRequestAsync<TRequest, TResponse>(TRequest request, Endpoint endpoint, Action<TResponse> callback, Action<Exception> onFailure, long timeout)
+        {
+            if (m_Disposing.WaitOne(0))
+                throw new InvalidOperationException("Engine is disposing");
+
+            using (m_RequestsTracker.Track())
+            {
+                try
+                {
+                    Transport transport = m_TransportManager.GetTransport( endpoint.TransportId);
+
+
+                    //IDisposable handle = null;
+                    RequestHandle requestHandle = transport.SendRequest(endpoint.Destination, serializeMessage(request),
+                                                                     message =>
+                                                                     {
+                                                                         try
+                                                                         {
+                                                                             var responseMessage = deserializeMessage<TResponse>(message);
+                                                                             callback(responseMessage);
+                                                                         }
+                                                                         catch (Exception e)
+                                                                         {
+                                                                             onFailure(e);
+                                                                         }
+                                                                         finally
+                                                                         {
+                                                                             m_RequestTimeoutManager.Schedule(1);
+                                                                         }
+
+                                                                         /*finally
+                                                                         {
+                                                                             lock (gate)
+                                                                             {
+                                                                                 //Consuming code disposes subscription only to cancel request, so need to dispose it manually 
+                                                                                 handle.Dispose();
+                                                                             }
+                                                                         }*/
+                                                                     });
+
+
+
+                    //handle = createSonicHandle(requestHandle.Dispose);
+                    lock (m_ActualRequests)
+                    {
+                        requestHandle.DueDate = DateTime.Now.AddMilliseconds(timeout);
+                        m_ActualRequests.Add(requestHandle, onFailure);
+                        m_RequestTimeoutManager.Schedule(timeout);
+                    }
+                    //return handle;
+                    return requestHandle;
+
+                }
+                catch (Exception e)
+                {
+                    Logger.ErrorFormat(e, "Failed to register handler. Transport: {0}, Destination: {1}",  endpoint.TransportId,
+                                       endpoint.Destination);
+                    throw;
+                }
+            }
+        }
+
+        public IDisposable RegisterHandler<TRequest, TResponse>(Func<TRequest, TResponse> handler, Endpoint endpoint)
 			where TResponse : class
 		{
 			var handle = new SerialDisposable();
@@ -172,40 +262,6 @@ namespace Inceptum.Messaging
 			return new CompositeDisposable(transportWatcher, handle);
 		}
 
-    	public IDisposable SendRequestAsync<TRequest, TResponse>(TRequest request, Endpoint endpoint, Action<TResponse> callback, Action<Exception> onFailure)
-        {
-            if (m_Disposing.WaitOne(0))
-                throw new InvalidOperationException("Engine is disposing");
-
-            using (m_RequestsTracker.Track())
-            {
-                try
-                {
-                    Transport transport = m_TransportManager.GetTransport( endpoint.TransportId);
-                    IDisposable subscription = transport.SendRequest(endpoint.Destination,serializeMessage(request),
-                                                                     message =>
-                                                                         {
-                                                                             try
-                                                                             {
-                                                                                 var responseMessage = deserializeMessage<TResponse>(message);
-                                                                                 callback(responseMessage);
-                                                                             }
-                                                                             catch (Exception e)
-                                                                             {
-                                                                                 onFailure(e);
-                                                                             }
-                                                                         });
-                    return createSonicHandle(subscription.Dispose);
-                }
-                catch (Exception e)
-                {
-                    Logger.ErrorFormat(e, "Failed to register handler. Transport: {0}, Destination: {1}",  endpoint.TransportId,
-                                       endpoint.Destination);
-                    throw;
-                }
-            }
-        }
-
 
         public void Dispose()
         {
@@ -213,9 +269,10 @@ namespace Inceptum.Messaging
             m_RequestsTracker.WaitAll();
             lock (m_SonicHandles)
             {
-                foreach (IDisposable sonicHandle in m_SonicHandles)
+
+                while (m_SonicHandles.Any())
                 {
-                    sonicHandle.Dispose();
+                    m_SonicHandles.First().Dispose();
                 }
             }
             m_TransportManager.Dispose();

@@ -61,6 +61,7 @@
     <Compile Include="Transports\IProcessingGroup.cs" />
     <Compile Include="Transports\ProcessingGroup.cs" />
     <Compile Include="Transports\QueueProcessingGroup.cs" />
+    <Compile Include="Transports\RequestHandle.cs" />
     <Compile Include="Transports\TopicProcessingGroup.cs" />
     <Compile Include="Transports\Transport.cs" />
     <Compile Include="TransportInfo.cs" />

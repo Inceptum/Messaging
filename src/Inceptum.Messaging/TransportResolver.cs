@@ -20,7 +20,6 @@ namespace Inceptum.Messaging
         {
             if (transports == null) throw new ArgumentNullException("transports");
             m_Transports = new Dictionary<string, TransportInfo>(transports);
-            //m_Transports.Add("tr", new TransportInfo("msk-mqesb1.office.finam.ru:2507", "ibank.backend", "mmm000")); 
 
             if(jailStrategies != null)
                 foreach (var jailStrategy in jailStrategies)

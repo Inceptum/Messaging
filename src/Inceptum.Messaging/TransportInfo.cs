@@ -61,5 +61,10 @@ namespace Inceptum.Messaging
                 return result;
             }
         }
+
+        public override string ToString()
+        {
+            return string.Format("Broker: {0}, Login: {1}", Broker, Login);
+        }
     }
 }

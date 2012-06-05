@@ -44,10 +44,16 @@
     <Compile Include="ChannelWithDependency.cs" />
     <Compile Include="DataBusTests.cs" />
     <Compile Include="FeedTests.cs" />
+    <Compile Include="Messaging\MessagingFeedWithInitializationBaseTests.cs" />
+    <Compile Include="Messaging\ValueWaiter.cs" />
     <Compile Include="MyFeedProvider.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Inceptum.Core\Inceptum.Core.csproj">
+      <Project>{6119133D-5984-4E3C-B93A-B0956FBA8B79}</Project>
+      <Name>Inceptum.Core</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Inceptum.DataBus\Inceptum.DataBus.csproj">
       <Project>{7F5DD1AC-CA1A-488A-9053-03F4CBAF7D92}</Project>
       <Name>Inceptum.DataBus</Name>

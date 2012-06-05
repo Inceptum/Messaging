@@ -71,7 +71,7 @@ namespace Inceptum.Messaging.Transports
             group.Send(destination, message);
         }
 
-        public IDisposable SendRequest(string destination, BinaryMessage message, Action<BinaryMessage> callback, string processingGroup = null)
+        public RequestHandle SendRequest(string destination, BinaryMessage message, Action<BinaryMessage> callback, string processingGroup = null)
         {
             var group = getProcessingGroup(destination, processingGroup);
             return group.SendRequest(destination, message, callback);

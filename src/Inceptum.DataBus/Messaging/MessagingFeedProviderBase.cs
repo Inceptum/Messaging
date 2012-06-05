@@ -11,50 +11,15 @@ using Inceptum.Core.Messaging;
 
 namespace Inceptum.DataBus.Messaging
 {
-	/// <summary>
-	/// Messaging feed provider
-	/// </summary>
-	public class MessagingFeedProvider<TData, TContext> : MessagingFeedProviderBase<TData, TContext>
-	{
-		private readonly Endpoint m_Endpoint;
-
-		/// <summary>
-		/// Creates new instance of MessagingFeedProvider
-		/// </summary>
-		/// <param name="messagingEngine">Messaging engine</param>
-		/// <param name="endpoint">Endpoint</param>
-		public MessagingFeedProvider(IMessagingEngine messagingEngine, Endpoint endpoint)
-			: base(messagingEngine)
-		{
-			m_Endpoint = endpoint;
-		}
-
-		/// <summary>
-		/// Returns feed provider endpoint
-		/// </summary>
-		protected override Endpoint GetSubscriptionEndpoint(TContext context)
-		{
-			return m_Endpoint;
-		}
-	}
-
-    public abstract class MessagingFeedProviderBase<TData, TContext> : MessagingFeedProviderBase<TData, TData, TContext>
-    {
-        protected MessagingFeedProviderBase(IMessagingEngine messagingEngine)
-            : base(messagingEngine)
-        {
-        }
-    }
 
     /// <summary>
-    /// Base class for TIBCO feed providers
+    /// Base class for SONIC feed providers
     /// </summary>
     /// <typeparam name="TData">The type of the data.</typeparam>
     /// <typeparam name="TContext">The type of the context.</typeparam>
     /// <typeparam name="TMessage">The type of message recieved from tibco</typeparam>
     public abstract class MessagingFeedProviderBase<TData, TMessage, TContext> : IFeedProvider<TData, TContext>, IDisposable
     {
-     //   private readonly EngineSubscriber<TContext, TMessage> _dataFeedSubscriber;
         private readonly CompositeDisposable m_EngineSubscriptions;
         private readonly IMessagingEngine m_MessagingEngine;
         private ILogger m_Logger = NullLogger.Instance;
@@ -99,7 +64,7 @@ namespace Inceptum.DataBus.Messaging
 
         private IDisposable subscribeObserver(IObserver<TData> observer, TContext context, Action notefySubscribed)
         {
-            var subscriptionEndpoint = GetSubscriptionEndpoint(context);
+            var subscriptionEndpoint = GetEndpoint(context);
             
             //Create a subject holding data
             var dataFeed = new Subject<TData>();
@@ -136,9 +101,9 @@ namespace Inceptum.DataBus.Messaging
             return null;
         }
 
-        protected virtual IDisposable Subscribe(Subject<TData> dataFeed, TContext context, Endpoint endpoint, Action notifySubscribed)
+        protected virtual IDisposable Subscribe(Subject<TData> dataFeed, TContext context, DataBusMessagingEndpoint endpoint, Action notifySubscribed)
         {
-            var subscribeForFeedData = SubscribeForFeedData(dataFeed, context, endpoint);
+            var subscribeForFeedData = SubscribeForFeedData(dataFeed, context, endpoint.FeedEndpoint);
             notifySubscribed();
             return subscribeForFeedData;
         }
@@ -147,7 +112,7 @@ namespace Inceptum.DataBus.Messaging
         {
             try
             {
-                Logger.DebugFormat("Subscribing for context: {0}", GetContextLogRepresentationString(context));
+                Logger.DebugFormat("Subscribing for context: {0};  Endpoint: {1}", GetContextLogRepresentationString(context), endpoint);
 
                 //Subscribe data subject for messaging data flow
                 IDisposable engineSubscription = m_MessagingEngine.Subscribe<TMessage>(endpoint, message => processMessage(dataFeed, message, context));
@@ -162,13 +127,13 @@ namespace Inceptum.DataBus.Messaging
                 {
                     engineSubscription.Dispose();
                     m_EngineSubscriptions.Remove(engineSubscription);
-                    Logger.DebugFormat("Unsubscribed from context: {0}", GetContextLogRepresentationString(context));
+                    Logger.DebugFormat("Unsubscribed from context: {0};  Endpoint: {1}", GetContextLogRepresentationString(context),endpoint);
                 });
                 return subscription;
             }
             catch (Exception ex)
             {
-				Logger.Debug(string.Format("Initial subscription failed. Context: {0};   Subscription data: {1}", GetContextLogRepresentationString(context), endpoint.Destination), ex);
+				Logger.Debug(string.Format("Initial subscription failed. Context: {0};   Endpoint: {1}", GetContextLogRepresentationString(context), endpoint), ex);
                 dataFeed.OnError(ex);
                 return Disposable.Empty;
             }
@@ -198,7 +163,7 @@ namespace Inceptum.DataBus.Messaging
         /// </summary>
         /// <param name="context">The context.</param>
         /// <returns></returns>
-        protected abstract Endpoint GetSubscriptionEndpoint(TContext context);        
+        protected abstract DataBusMessagingEndpoint GetEndpoint(TContext context);        
 
 		/// <summary>
 		/// Can provide for
