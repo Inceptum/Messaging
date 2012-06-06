@@ -266,6 +266,7 @@ namespace Inceptum.Messaging
         public void Dispose()
         {
             m_Disposing.Set();
+            m_RequestTimeoutManager.Dispose();
             m_RequestsTracker.WaitAll();
             lock (m_SonicHandles)
             {
