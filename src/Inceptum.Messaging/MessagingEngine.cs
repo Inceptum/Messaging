@@ -74,7 +74,7 @@ namespace Inceptum.Messaging
 
         public void Send<TMessage>(TMessage message, Endpoint endpoint)
         {
-            if (endpoint.Destination == null) throw new ArgumentNullException("endpoint.Destination");
+            if (endpoint.Destination == null) throw new ArgumentException("Destination can not be null");
             if (m_Disposing.WaitOne(0))
                 throw new InvalidOperationException("Engine is disposing");
 
@@ -97,7 +97,7 @@ namespace Inceptum.Messaging
 
 		public IDisposable Subscribe<TMessage>(Endpoint endpoint, Action<TMessage> callback)
         {
-			if (endpoint.Destination == null) throw new ArgumentNullException("endpoint.Destination");
+			if (endpoint.Destination == null) throw new ArgumentException("Destination can not be null");
             if (m_Disposing.WaitOne(0))
                 throw new InvalidOperationException("Engine is disposing");
 
@@ -193,10 +193,7 @@ namespace Inceptum.Messaging
             {
                 try
                 {
-                    Transport transport = m_TransportManager.GetTransport( endpoint.TransportId);
-
-
-                    //IDisposable handle = null;
+                    var transport = m_TransportManager.GetTransport( endpoint.TransportId);
                     RequestHandle requestHandle = transport.SendRequest(endpoint.Destination, serializeMessage(request),
                                                                      message =>
                                                                      {
@@ -213,27 +210,15 @@ namespace Inceptum.Messaging
                                                                          {
                                                                              m_RequestTimeoutManager.Schedule(1);
                                                                          }
-
-                                                                         /*finally
-                                                                         {
-                                                                             lock (gate)
-                                                                             {
-                                                                                 //Consuming code disposes subscription only to cancel request, so need to dispose it manually 
-                                                                                 handle.Dispose();
-                                                                             }
-                                                                         }*/
                                                                      });
 
 
-
-                    //handle = createSonicHandle(requestHandle.Dispose);
                     lock (m_ActualRequests)
                     {
                         requestHandle.DueDate = DateTime.Now.AddMilliseconds(timeout);
                         m_ActualRequests.Add(requestHandle, onFailure);
                         m_RequestTimeoutManager.Schedule(timeout);
                     }
-                    //return handle;
                     return requestHandle;
 
                 }

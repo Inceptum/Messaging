@@ -1,4 +1,4 @@
-﻿/*using System;
+﻿using System;
 using System.Runtime.Serialization;
 
 namespace Inceptum.DataBus.Messaging
@@ -24,4 +24,4 @@ namespace Inceptum.DataBus.Messaging
         {
         }
     }
-}*/
+}

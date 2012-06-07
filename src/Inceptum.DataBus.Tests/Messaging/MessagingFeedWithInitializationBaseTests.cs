@@ -59,18 +59,18 @@ namespace Inceptum.DataBus.Tests.Messaging
         public void SubscribtionFinishedCallbackTest()
         {
             var initCommand = new object(); 
-            var transportEngine = MockRepository.GenerateMock<IMessagingEngine>();
+            var messagingEngine = MockRepository.GenerateMock<IMessagingEngine>();
             var dummyResponse = new object();
 
             var initSubscribtionCallback = new ValueWaiter<MulticastDelegate>();
-            transportEngine.Expect(e => e.SendRequestAsync<object,object>(null, new Endpoint(), o => { }, exception =>{ })).IgnoreArguments()
+            messagingEngine.Expect(e => e.SendRequestAsync<object,object>(null, new Endpoint(), o => { }, exception =>{ })).IgnoreArguments()
                 .WhenCalled(
                     invocation => initSubscribtionCallback.SetValue((MulticastDelegate)(invocation.Arguments[2]))
                     );
 
-            transportEngine.Expect(e => e.Subscribe<int>(new Endpoint(), m => { })).IgnoreArguments().Return(Disposable.Empty).Repeat.Once();
+            messagingEngine.Expect(e => e.Subscribe<int>(new Endpoint(), m => { })).IgnoreArguments().Return(Disposable.Empty).Repeat.Once();
 
-            var feedProvider = MockRepository.GeneratePartialMock<MessagingFeedWithInitializationMock<int, string, object, object>>(transportEngine);
+            var feedProvider = MockRepository.GeneratePartialMock<MessagingFeedWithInitializationMock<int, string, object, object>>(messagingEngine);
             feedProvider.Expect(p => p.GetEndpointImpl("feedContext")).Return(new Endpoint("dummyTransportId", "dummySubj"));
             feedProvider.Expect(p => p.GetInitEndpointImpl("feedContext")).Return(new Endpoint("dummyTransportId", "dummyInitSubj"));
 
@@ -99,19 +99,19 @@ namespace Inceptum.DataBus.Tests.Messaging
         public void SubscribtionTest()
         {
             var initCommand = new object();
-            var transportEngine = MockRepository.GenerateMock<IMessagingEngine>();
+            var messagingEngine = MockRepository.GenerateMock<IMessagingEngine>();
             var dummyResponse = new object();
 
-            transportEngine.Expect(e => e.SendRequestAsync<object, object>(null, new Endpoint(), o => { }, exception => { })).IgnoreArguments()
+            messagingEngine.Expect(e => e.SendRequestAsync<object, object>(null, new Endpoint(), o => { }, exception => { })).IgnoreArguments()
                 .WhenCalled(
                     invocation =>
                     {
                         var initSubscriptionCallback = (MulticastDelegate)(invocation.Arguments[2]);
                         initSubscriptionCallback.DynamicInvoke(dummyResponse);
                     });
-            transportEngine.Expect(e => e.Subscribe<int>(new Endpoint(), m => { })).IgnoreArguments().Return(Disposable.Empty).Repeat.Once();
+            messagingEngine.Expect(e => e.Subscribe<int>(new Endpoint(), m => { })).IgnoreArguments().Return(Disposable.Empty).Repeat.Once();
 
-            var feedProvider = MockRepository.GeneratePartialMock<MessagingFeedWithInitializationMock<int, string, object, object>>(transportEngine);
+            var feedProvider = MockRepository.GeneratePartialMock<MessagingFeedWithInitializationMock<int, string, object, object>>(messagingEngine);
             feedProvider.Expect(p => p.GetEndpointImpl("feedContext")).Return(new Endpoint("dummyTransportId", "dummySubj"));
             feedProvider.Expect(p => p.GetInitEndpointImpl("feedContext")).Return(new Endpoint("dummyTransportId", "dummyInitSubj"));
             feedProvider.Expect(p => p.GetInitRequestImpl("feedContext")).Return(initCommand);
@@ -133,10 +133,10 @@ namespace Inceptum.DataBus.Tests.Messaging
         public void InitFailureTest()
         {
             var initCommand = new object();
-            var transportEngine = MockRepository.GenerateMock<IMessagingEngine>();
+            var messagingEngine = MockRepository.GenerateMock<IMessagingEngine>();
             var exception = new Exception("Test Error");
-            transportEngine.Expect(e => e.SendRequestAsync<object, object>(null, new Endpoint(), o => { }, ex => { })).IgnoreArguments().Throw(exception);
-            var feedProvider = MockRepository.GeneratePartialMock<MessagingFeedWithInitializationMock<int, string, object, object>>(transportEngine);
+            messagingEngine.Expect(e => e.SendRequestAsync<object, object>(null, new Endpoint(), o => { }, ex => { })).IgnoreArguments().Throw(exception);
+            var feedProvider = MockRepository.GeneratePartialMock<MessagingFeedWithInitializationMock<int, string, object, object>>(messagingEngine);
 
             feedProvider.Expect(p => p.GetEndpointImpl("feedContext")).Return(new Endpoint("dummyTransportId", "dummySubj"));
             feedProvider.Expect(p => p.GetInitEndpointImpl("feedContext")).Return(new Endpoint("dummyTransportId", "dummyInitSubj"));

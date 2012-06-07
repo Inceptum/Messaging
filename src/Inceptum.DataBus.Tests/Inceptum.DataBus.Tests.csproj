@@ -45,6 +45,7 @@
     <Compile Include="DataBusTests.cs" />
     <Compile Include="FeedTests.cs" />
     <Compile Include="Messaging\MessagingFeedWithInitializationBaseTests.cs" />
+    <Compile Include="Messaging\MessagingFeedWithHbProviderBaseTests.cs" />
     <Compile Include="Messaging\ValueWaiter.cs" />
     <Compile Include="MyFeedProvider.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
