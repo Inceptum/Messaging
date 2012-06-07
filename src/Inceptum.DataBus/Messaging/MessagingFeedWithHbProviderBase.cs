@@ -1,39 +1,14 @@
-/*using System;
+using System;
 using System.Collections.Generic;
+using System.Reactive.Concurrency;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Inceptum.Core.Messaging;
 
 namespace Inceptum.DataBus.Messaging
 {
-    internal class HbFeedResubscriptionPolicy<TData, THeartbeatMessage> : IFeedResubscriptionPolicy where THeartbeatMessage : class
-    {
-        private readonly HeartbeatsHandler<TData, THeartbeatMessage> m_HbHandler;
-        private readonly long m_Timeout;
-
-        public HbFeedResubscriptionPolicy(HeartbeatsHandler<TData, THeartbeatMessage> hbHandler,long timeout)
-        {
-            m_Timeout = timeout;
-            m_HbHandler = hbHandler;
-        }
-
-        public IDisposable InitResubscription(Action doSubscribe, Exception exception)
-        {
-            return m_HbHandler.WaitForHb(doSubscribe,m_Timeout);
-        }
-    }
-
-    public abstract class MessagingFeedWithHbProviderBase<TData,  TContext, TInitResponse, THeartbeatMessage> :
-        MessagingFeedWithHbProviderBase<TData, TData, TContext, TInitResponse, THeartbeatMessage> 
-        where THeartbeatMessage : class
-    {
-        protected MessagingFeedWithHbProviderBase(IMessagingEngine messagingEngine, long retryTimeout = 120000)
-            : base(messagingEngine,retryTimeout)
-        {
-        }
-
-    }
-
+    
     /// <summary>
     /// Base class for messaging feed providers providing feeds that require reinitialization on hearbeat loss.
     /// </summary>
@@ -43,64 +18,91 @@ namespace Inceptum.DataBus.Messaging
     /// <typeparam name="TInitRequest">The type of the init request.</typeparam>
     /// <typeparam name="TInitResponse">The type of the init response.</typeparam>
     /// <typeparam name="THeartbeatMessage">The type of heartbeat message</typeparam>
-    public abstract class MessagingFeedWithHbProviderBase<TData, TMessage, TContext,TInitRequest, TInitResponse, THeartbeatMessage> 
+    public abstract class MessagingFeedWithHbProviderBase<TData, TMessage, TContext, TInitRequest, TInitResponse, THeartbeatMessage> 
         : MessagingFeedWithInitializationBase<TData, TMessage, TContext,TInitRequest, TInitResponse>
-        where THeartbeatMessage : class 
     {
-        private const string DEFAULT_HEARTBEAT_QUEUE_NAME = "HEARTBEAT_QUEUE";
-        private readonly IMessagingEngine m_MessagingEngine;
-        private readonly Dictionary<object, HeartbeatsHandler<TData, THeartbeatMessage>> m_HbHandlersCache = new Dictionary<object, HeartbeatsHandler<TData, THeartbeatMessage>>();
-        private readonly long m_RetryTimeout;
 
-        protected MessagingFeedWithHbProviderBase(IMessagingEngine messagingEngine, long retryTimeout = 120000)
-            : base(messagingEngine)
+        protected MessagingFeedWithHbProviderBase(IMessagingEngine messagingEngine, long initTimeout = 30000)
+            : base(messagingEngine, initTimeout)
         {
-            m_RetryTimeout = retryTimeout;
         }
 
+
+        /// <summary>
+        /// Gets the tolerance, number of intervals without HB before feed is lost.
+        /// </summary>
+        protected virtual uint Tolerance
+        {
+            get { return 2; }
+        }
 
         protected override IDisposable InitializeFeed(Subject<TData> dataFeed, TInitResponse response, TContext context)
         {
-            return m_MessagingEngine.Subscribe<THeartbeatMessage>(GetEndpoint(context).HbEndpoint, message => processHeartBeat(context,message,dataFeed));
-        }
 
-        Dictionary<object, Handler> m_HbHandlers=new Dictionary<object, Handler>();
+            var hbEndpoint = GetHbEndpoint(context);
+            var heartBeatInterval=GetHeartbeatIntervalFromResponse( response, context);
+            Logger.DebugFormat("Subscribing for heartbeats. Context: {0};   Endpoint: {1}; Hb interval {2}ms", GetContextLogRepresentationString(context), hbEndpoint, heartBeatInterval);
+            var scheduledHbLoss = new SerialDisposable();
 
+            var hbSubscription = Disposable.Empty;
 
-        private void processHeartBeat(TContext context,THeartbeatMessage message, Subject<TData> dataFeed)
-        {
             
-            var heartBeatKey = GetHeartBeatKey(context);
-            
+                
+            var tmp= MessagingEngine.Subscribe<THeartbeatMessage>(hbEndpoint, message => processHeartBeat(context,message,dataFeed,heartBeatInterval,scheduledHbLoss));
+            hbSubscription = Disposable.Create(() =>
+                                                       {
+                                                           tmp.Dispose();
+                                                           Logger.DebugFormat("Unsubscribed from heartbeats: {0};  Endpoint: {1}",GetContextLogRepresentationString(context), hbEndpoint);
+                                                       });
+          
+            scheduledHbLoss.Disposable = scheduleHbLoss( heartBeatInterval, dataFeed, context);
+            return new CompositeDisposable(hbSubscription,scheduledHbLoss);
         }
 
-        protected abstract HeartbeatInfo GetHeartbeatInfoFromResponse(TInitResponse response, TContext context);
-
-
-        protected virtual object GetHeartBeatKey(TContext context)
+        private IDisposable scheduleHbLoss(long heartBeatInterval, Subject<TData> dataFeed, TContext context, DateTime? lastHb=null)
         {
-            return context;
+            var hb = lastHb;
+
+            var errorMessage = string.Format("Heartbeats for context {0} were lost", context);
+            return Scheduler.ThreadPool.Schedule(
+                DateTime.Now.AddMilliseconds(heartBeatInterval * Tolerance),
+                (() =>
+                     {
+                         if (hb.HasValue)
+                             Logger.WarnFormat("Heartbeats lost (no hb in x{0} intervals). Context: {1}; Interval {2}ms; The last HB was at {3}ms",Tolerance, GetContextLogRepresentationString(context), heartBeatInterval,hb.Value);
+                         else
+                             Logger.WarnFormat("There are no heartbeats for context: {0}. Cancelling subscription...", GetContextLogRepresentationString(context));
+                         dataFeed.OnError(new HeartbeatLostException(errorMessage));
+                     }
+                ));
         }
 
-        protected virtual string HeartBeatQueue
+        private void processHeartBeat(TContext context, THeartbeatMessage message, Subject<TData> dataFeed, long initialHeartBeatInterval, SerialDisposable scheduledHbLoss)
         {
-            get { return DEFAULT_HEARTBEAT_QUEUE_NAME; }
+            Logger.DebugFormat(DateTime.Now.ToString()+": Heartbeat recieved. Context: {0}", GetContextLogRepresentationString(context));
+            var interval = GetHeartbeatIntervalFromHeartbeatMessage(message,context);
+            if (interval == -1)
+                interval = initialHeartBeatInterval;
+            scheduledHbLoss.Disposable = scheduleHbLoss(interval, dataFeed, context, DateTime.Now);
         }
 
-
-        public override void Dispose()
+        protected virtual Endpoint GetHbEndpoint(TContext context)
         {
-            foreach (var handler in m_HbHandlersCache.Values)
+            var endpoint = GetEndpoint(context);
+            return new Endpoint
             {
-                handler.Dispose();
-            }
-            m_HbHandlersCache.Clear();
-            lock (_heartbeatSubscriber)
-            {
-
-                _heartbeatSubscriber.UnsubscribeAll();
-            }
-            base.Dispose();
+                Destination = endpoint.Destination + ".hb",
+                SharedDestination = false,
+                TransportId = endpoint.TransportId
+            };
         }
+
+
+        protected abstract long GetHeartbeatIntervalFromResponse(TInitResponse response, TContext context);
+        protected virtual long GetHeartbeatIntervalFromHeartbeatMessage(THeartbeatMessage message, TContext context)
+        {
+            return -1;
+        }
+
     }
-}*/
+}
