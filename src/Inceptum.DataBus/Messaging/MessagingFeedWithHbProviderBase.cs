@@ -79,7 +79,7 @@ namespace Inceptum.DataBus.Messaging
 
         private void processHeartBeat(TContext context, THeartbeatMessage message, Subject<TData> dataFeed, long initialHeartBeatInterval, SerialDisposable scheduledHbLoss)
         {
-            Logger.DebugFormat(DateTime.Now.ToString()+": Heartbeat recieved. Context: {0}", GetContextLogRepresentationString(context));
+            //Logger.DebugFormat(DateTime.Now.ToString()+": Heartbeat received. Context: {0}", GetContextLogRepresentationString(context));
             var interval = GetHeartbeatIntervalFromHeartbeatMessage(message,context);
             if (interval == -1)
                 interval = initialHeartBeatInterval;
