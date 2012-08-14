@@ -14,7 +14,7 @@ namespace Inceptum.Messaging
 {
     public class MessagingEngine : IMessagingEngine
     {
-        internal const int MESSAGE_LIFESPAN = 0; // forever // 1800000; // milliseconds (30 minutes)
+        internal const int MESSAGE_DEFAULT_LIFESPAN = 0; // forever // 1800000; // milliseconds (30 minutes)
         internal const string JAILED_PROPERTY_NAME = "JAILED_TAG";
         private readonly ManualResetEvent m_Disposing = new ManualResetEvent(false);
         private readonly CountingTracker m_RequestsTracker = new CountingTracker();
@@ -74,6 +74,11 @@ namespace Inceptum.Messaging
 
         public void Send<TMessage>(TMessage message, Endpoint endpoint)
         {
+            Send(message, endpoint, MESSAGE_DEFAULT_LIFESPAN);
+        }
+
+        public void Send<TMessage>(TMessage message, Endpoint endpoint, int ttl)
+        {
             if (endpoint.Destination == null) throw new ArgumentException("Destination can not be null");
             if (m_Disposing.WaitOne(0))
                 throw new InvalidOperationException("Engine is disposing");
@@ -84,7 +89,7 @@ namespace Inceptum.Messaging
                 {
 					Transport transport = m_TransportManager.GetTransport(endpoint.TransportId);
                     var serializedMessage = serializeMessage(message);
-					transport.Send(endpoint.Destination, serializedMessage);
+                    transport.Send(endpoint.Destination, serializedMessage, ttl);
                 }
                 catch (Exception e)
                 {
