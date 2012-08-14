@@ -65,10 +65,10 @@ namespace Inceptum.Messaging.Transports
         }
 
 
-        public void Send(string destination, BinaryMessage message, string processingGroup = null)
+        public void Send(string destination, BinaryMessage message, int ttl, string processingGroup = null)
         {
             var group = getProcessingGroup(destination, processingGroup);
-            group.Send(destination, message);
+            group.Send(destination, message, ttl);
         }
 
         public RequestHandle SendRequest(string destination, BinaryMessage message, Action<BinaryMessage> callback, string processingGroup = null)

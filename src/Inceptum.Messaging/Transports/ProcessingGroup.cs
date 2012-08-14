@@ -57,17 +57,17 @@ namespace Inceptum.Messaging.Transports
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public void Send(string destination, BinaryMessage message)
+        public void Send(string destination, BinaryMessage message, int ttl)
         {
             ensureSessionIsCreated();
-            send(destination, message);
+            send(destination, message, ttl);
         }
 
-        private void send(string destination, BinaryMessage message, Action<Message> tuneMessage = null)
+        private void send(string destination, BinaryMessage message, int ttl, Action<Message> tuneMessage = null)
         {
-            send(createDestination(destination), message,tuneMessage);
+            send(createDestination(destination), message, ttl, tuneMessage);
         }
-        private void send(Destination destination, BinaryMessage message, Action<Message> tuneMessage = null)
+        private void send(Destination destination, BinaryMessage message, int ttl, Action<Message> tuneMessage = null)
         {
             
            
@@ -81,8 +81,7 @@ namespace Inceptum.Messaging.Transports
 
             using (Disposable.Create(producer.close))
             {
-                producer.send(bytesMessage, DeliveryMode.PERSISTENT, DefaultMessageProperties.DEFAULT_PRIORITY,
-                              MessagingEngine.MESSAGE_LIFESPAN);
+                producer.send(bytesMessage, DeliveryMode.PERSISTENT, DefaultMessageProperties.DEFAULT_PRIORITY, ttl);
             }
             //TODO: destroy session
         }
@@ -147,7 +146,7 @@ namespace Inceptum.Messaging.Transports
                                                         }
                                                     );*/
             m_Subscriptions.Add(request);
-            send(destination, message, m => m.setJMSReplyTo(temporaryQueue));
+            send(destination, message, MessagingEngine.MESSAGE_DEFAULT_LIFESPAN, m => m.setJMSReplyTo(temporaryQueue));
             return request;
         }
 
@@ -157,16 +156,15 @@ namespace Inceptum.Messaging.Transports
             ensureSessionIsCreated();
             //TODO: implement in more appropriate way. Processing should not freeze session thread. Response producer is created and destroyed for each message it is also not good idea
             var subscription = subscribe(createDestination(destination), request =>
-                                                        {
+                {
 
-                                                            var jmsCorrelationId = request.getJMSCorrelationID();
-                                                            var responseBytes = handler(new BinaryMessage(request));
-                                                            lock (this)
-                                                            {
-                                                                send(request.getJMSReplyTo(), responseBytes,
-                                                                     message => message.setJMSCorrelationID(jmsCorrelationId));
-                                                            }
-                                                        }, messageType);
+                    var jmsCorrelationId = request.getJMSCorrelationID();
+                    var responseBytes = handler(new BinaryMessage(request));
+                    lock (this)
+                    {
+                        send(request.getJMSReplyTo(), responseBytes, MessagingEngine.MESSAGE_DEFAULT_LIFESPAN, message => message.setJMSCorrelationID(jmsCorrelationId));
+                    }
+                }, messageType);
             return subscription;
         }
 
