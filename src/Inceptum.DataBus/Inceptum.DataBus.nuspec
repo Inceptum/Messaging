@@ -12,7 +12,4 @@
     <copyright>Copyright 2013</copyright>
     <tags></tags>
   </metadata>
-  <files>
-    <file src="..\Inceptum.DataBus\bin\$Configuration$\Inceptum.DataBus.dll" target="lib\net40" />
-  </files>  
 </package>
