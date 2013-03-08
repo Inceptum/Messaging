@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inceptum.Messaging", "Inceptum.Messaging\Inceptum.Messaging.csproj", "{87CC7D22-A809-40D3-80FB-E9D58109DC82}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inceptum.Messaging.Tests", "Inceptum.Messaging.Tests\Inceptum.Messaging.Tests.csproj", "{B370B3F0-31A7-4146-898C-C2928C025B99}"
@@ -16,6 +16,19 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inceptum.Workflow", "Inceptum.Workflow\Inceptum.Workflow.csproj", "{CB80FA0D-76F5-4570-9E1E-63C33AAFDBDB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inceptum.Workflow.Tests", "Inceptum.Workflow.Tests\Inceptum.Workflow.Tests.csproj", "{DBB21DCE-8972-4707-A9C2-F33E9A27B9E5}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "libs", "libs", "{73D7DA3F-5B5C-47CC-A6EF-98D713F13833}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Sonic", "Sonic", "{1A217BA9-A72E-416E-BF63-1203AECB5DF5}"
+	ProjectSection(SolutionItems) = preProject
+		libs\Sonic\antlr.runtime.dll = libs\Sonic\antlr.runtime.dll
+		libs\Sonic\Org.Mentalis.Security.dll = libs\Sonic\Org.Mentalis.Security.dll
+		libs\Sonic\Sonic.Client.dll = libs\Sonic\Sonic.Client.dll
+		libs\Sonic\Sonic.Client.Jms.Impl.dll = libs\Sonic\Sonic.Client.Jms.Impl.dll
+		libs\Sonic\Sonic.Jms.Cf.Impl.dll = libs\Sonic\Sonic.Jms.Cf.Impl.dll
+		libs\Sonic\Sonic.Jms.dll = libs\Sonic\Sonic.Jms.dll
+		libs\Sonic\Sonic.Security.dll = libs\Sonic\Sonic.Security.dll
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -59,7 +72,7 @@ Global
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
-	GlobalSection(ExtensibilityAddIns) = postSolution
-		OpenWrap.VisualStudioIntegration2010 = 1;Ensures OpenWrap initialization when a solution is opened.;OpenWrap Visual Studio Solution Add-in
+	GlobalSection(NestedProjects) = preSolution
+		{1A217BA9-A72E-416E-BF63-1203AECB5DF5} = {73D7DA3F-5B5C-47CC-A6EF-98D713F13833}
 	EndGlobalSection
 EndGlobal

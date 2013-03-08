@@ -31,9 +31,45 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="antlr.runtime">
+      <HintPath>..\libs\Sonic\antlr.runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="Castle.Core">
+      <HintPath>..\packages\Castle.Core.3.2.0\lib\net40-client\Castle.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Castle.Windsor">
+      <HintPath>..\packages\Castle.Windsor.3.2.0\lib\net40\Castle.Windsor.dll</HintPath>
+    </Reference>
+    <Reference Include="Org.Mentalis.Security">
+      <HintPath>..\libs\Sonic\Org.Mentalis.Security.dll</HintPath>
+    </Reference>
+    <Reference Include="protobuf-net">
+      <HintPath>..\packages\protobuf-net.2.0.0.621\lib\net40\protobuf-net.dll</HintPath>
+    </Reference>
+    <Reference Include="Sonic.Client">
+      <HintPath>..\libs\Sonic\Sonic.Client.dll</HintPath>
+    </Reference>
+    <Reference Include="Sonic.Client.Jms.Impl">
+      <HintPath>..\libs\Sonic\Sonic.Client.Jms.Impl.dll</HintPath>
+    </Reference>
+    <Reference Include="Sonic.Jms">
+      <HintPath>..\libs\Sonic\Sonic.Jms.dll</HintPath>
+    </Reference>
+    <Reference Include="Sonic.Jms.Cf.Impl">
+      <HintPath>..\libs\Sonic\Sonic.Jms.Cf.Impl.dll</HintPath>
+    </Reference>
+    <Reference Include="Sonic.Security">
+      <HintPath>..\libs\Sonic\Sonic.Security.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Reactive.Core">
+      <HintPath>..\packages\Rx-Core.2.1.30214.0\lib\Net40\System.Reactive.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reactive.Interfaces">
+      <HintPath>..\packages\Rx-Interfaces.2.1.30214.0\lib\Net40\System.Reactive.Interfaces.dll</HintPath>
+    </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -55,9 +91,7 @@
     <Compile Include="MessagingEngine.cs" />
     <Compile Include="ProcessingException.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ResponseSubscriber.cs" />
     <Compile Include="SerializationManager.cs" />
-    <Compile Include="SubscriptionManager.cs" />
     <Compile Include="Transports\IProcessingGroup.cs" />
     <Compile Include="Transports\ProcessingGroup.cs" />
     <Compile Include="Transports\QueueProcessingGroup.cs" />
@@ -74,7 +108,10 @@
       <Name>Inceptum.Core</Name>
     </ProjectReference>
   </ItemGroup>
-  <Import Project="..\..\wraps\openwrap\build\OpenWrap.CSharp.targets" />
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
