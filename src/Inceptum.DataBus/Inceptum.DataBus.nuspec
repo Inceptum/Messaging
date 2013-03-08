@@ -15,4 +15,8 @@
         <dependency id="Inceptum.Core" version="[$version$]" />
     </dependencies>  
   </metadata>
+  <files>
+    <file src="\bin\$Configuration$\Inceptum.DataBus.dll" target="lib\net40" />
+    <file src="\bin\$Configuration$\Inceptum.DataBus.xml" target="lib\net40" />
+</files>
 </package>
