@@ -99,6 +99,7 @@
     <Compile Include="ProcessingException.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SerializationManager.cs" />
+    <Compile Include="Transports\BinaryMessage.cs" />
     <Compile Include="Transports\IProcessingGroup.cs" />
     <Compile Include="Transports\ProcessingGroup.cs" />
     <Compile Include="Transports\QueueProcessingGroup.cs" />

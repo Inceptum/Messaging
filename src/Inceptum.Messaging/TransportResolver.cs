@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Sonic.Jms;
-using QueueConnectionFactory = Sonic.Jms.Cf.Impl.QueueConnectionFactory;
 
 namespace Inceptum.Messaging
 {

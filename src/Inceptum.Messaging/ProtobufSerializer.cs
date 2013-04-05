@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using ProtoBuf;
-using Sonic.Jms;
 
 namespace Inceptum.Messaging
 {
