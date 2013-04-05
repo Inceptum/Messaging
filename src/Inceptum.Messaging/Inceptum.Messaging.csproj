@@ -101,6 +101,7 @@
     <Compile Include="SerializationManager.cs" />
     <Compile Include="Transports\BinaryMessage.cs" />
     <Compile Include="Transports\IProcessingGroup.cs" />
+    <Compile Include="Transports\ITransport.cs" />
     <Compile Include="Transports\ProcessingGroup.cs" />
     <Compile Include="Transports\QueueProcessingGroup.cs" />
     <Compile Include="Transports\RequestHandle.cs" />
