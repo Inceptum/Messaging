@@ -135,7 +135,7 @@ namespace Inceptum.Messaging.Transports
         {
             ensureSessionIsCreated();
             TemporaryQueue temporaryQueue = m_Session.createTemporaryQueue();
-            var request = new RequestHandle(callback,temporaryQueue.delete, cb => subscribe(temporaryQueue,cb,null) );
+            var request = new RequestHandle(callback,temporaryQueue.delete, cb => subscribe(temporaryQueue,m=>cb(new BinaryMessage(m)),null) );
             m_Subscriptions.Add(request);
             send(destination, message, MessagingEngine.MESSAGE_DEFAULT_LIFESPAN, m => m.setJMSReplyTo(temporaryQueue));
             return request;
