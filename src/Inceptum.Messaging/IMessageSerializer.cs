@@ -1,6 +1,4 @@
-﻿using Sonic.Jms;
-
-namespace Inceptum.Messaging
+﻿namespace Inceptum.Messaging
 {
     public interface IMessageSerializer<TMessage>
     {

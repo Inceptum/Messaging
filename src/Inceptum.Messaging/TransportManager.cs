@@ -4,20 +4,17 @@ using System.Configuration;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using Castle.Core.Logging;
 using Inceptum.Core.Messaging;
 using Inceptum.Messaging.Transports;
-using Sonic.Jms;
 
 namespace Inceptum.Messaging
 {
-   
 
     internal class TransportManager : IDisposable
     {
-        private class ResolvedTransport:IDisposable
+        private class ResolvedTransport : IDisposable
         {
-            readonly List<string> m_KnownIds=new List<string>();
+            private readonly List<string> m_KnownIds = new List<string>();
             private readonly TransportInfo m_TransportInfo;
             private readonly Action m_ProcessTransportFailure;
 
@@ -27,14 +24,18 @@ namespace Inceptum.Messaging
                 m_TransportInfo = transportInfo;
             }
 
-            public IEnumerable<string> KnownIds { get { return m_KnownIds.ToArray(); } }
+            public IEnumerable<string> KnownIds
+            {
+                get { return m_KnownIds.ToArray(); }
+            }
+
             private Transport Transport { get; set; }
- 
+
 
             private void addId(string transportId)
             {
                 if (string.IsNullOrEmpty(transportId)) throw new ArgumentNullException("transportId");
-                if(!m_KnownIds.Contains(transportId))
+                if (!m_KnownIds.Contains(transportId))
                     m_KnownIds.Add(transportId);
             }
 
@@ -45,34 +46,25 @@ namespace Inceptum.Messaging
                 return Transport ?? (Transport = new Transport(m_TransportInfo, m_ProcessTransportFailure));
             }
 
- 
+
             [MethodImpl(MethodImplOptions.Synchronized)]
             public void Dispose()
             {
-               if(Transport!=null)
-               {
-                   Transport.Dispose();
-                   Transport = null;
-               }
+                if (Transport == null) 
+                    return;
+                Transport.Dispose();
+                Transport = null;
             }
         }
 
 
         private readonly Dictionary<TransportInfo, ResolvedTransport> m_Transports = new Dictionary<TransportInfo, ResolvedTransport>();
         private readonly ITransportResolver m_TransportResolver;
-
         readonly ManualResetEvent m_IsDisposed=new ManualResetEvent(false);
-        private ILogger m_Logger;
+ 
 
-        public TransportManager(ITransportResolver transportResolver):this(transportResolver, NullLogger.Instance)
+        public TransportManager(ITransportResolver transportResolver)
         {
-            
-        }
-       
-
-        public TransportManager(ITransportResolver transportResolver, ILogger logger)
-        {
-            m_Logger = logger;
             if (transportResolver == null) throw new ArgumentNullException("transportResolver");
             m_TransportResolver = transportResolver;
         }
@@ -99,7 +91,7 @@ namespace Inceptum.Messaging
         public Transport GetTransport(string transportId)
         {
             if (m_IsDisposed.WaitOne(0))
-            throw new ObjectDisposedException(string.Format("Can not create transport {0}. TransportManager instance is disposed",transportId));
+                throw new ObjectDisposedException(string.Format("Can not create transport {0}. TransportManager instance is disposed",transportId));
 
 
             var transportInfo = m_TransportResolver.GetTransport(transportId);
