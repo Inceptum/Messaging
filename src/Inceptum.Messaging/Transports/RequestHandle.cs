@@ -1,6 +1,5 @@
 using System;
 using System.Threading;
-using Sonic.Jms;
 
 namespace Inceptum.Messaging.Transports
 {
@@ -19,7 +18,7 @@ namespace Inceptum.Messaging.Transports
             get { return Await(0); }
         }
 
-        public RequestHandle(Action<BinaryMessage> callback, Action finishRequest, Func<Action<Message>, IDisposable> subscriber)
+        public RequestHandle(Action<BinaryMessage> callback, Action finishRequest, Func<Action<BinaryMessage>, IDisposable> subscriber)
         {
             m_FinishRequest = finishRequest;
             m_Callback = callback;
@@ -32,11 +31,11 @@ namespace Inceptum.Messaging.Transports
             return m_IsComplete.WaitOne(timeout);
         }
 
-        private void acceptResponse(Message message)
+        private void acceptResponse(BinaryMessage message)
         {
             try
             {
-                m_Callback(new BinaryMessage(message));
+                m_Callback(message);
             }
             finally
             {
