@@ -87,7 +87,7 @@ namespace Inceptum.Messaging
             {
                 try
                 {
-					Transport transport = m_TransportManager.GetTransport(endpoint.TransportId);
+                    var transport = m_TransportManager.GetTransport(endpoint.TransportId);
                     var serializedMessage = serializeMessage(message);
                     transport.Send(endpoint.Destination, serializedMessage, ttl);
                 }
@@ -371,7 +371,7 @@ namespace Inceptum.Messaging
 
         private IDisposable subscribe(string destination, string transportId, Action<BinaryMessage> callback, string messageType)
         {
-            Transport transport = m_TransportManager.GetTransport(transportId);
+            var transport = m_TransportManager.GetTransport(transportId);
             IDisposable subscription = transport.Subscribe(destination, callback, messageType);
             return createSonicHandle(subscription.Dispose);
         }

@@ -8,7 +8,7 @@ using QueueConnection = Sonic.Jms.QueueConnection;
 
 namespace Inceptum.Messaging.Transports
 {
-    internal class Transport : IDisposable
+    internal class Transport : IDisposable, ITransport
     {
         private readonly object m_SyncRoot = new object();
         private readonly TransportInfo m_TransportInfo;

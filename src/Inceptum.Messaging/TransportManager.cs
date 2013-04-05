@@ -88,7 +88,7 @@ namespace Inceptum.Messaging
 
         public event TrasnportEventHandler TransportEvents;
 
-        public Transport GetTransport(string transportId)
+        public ITransport GetTransport(string transportId)
         {
             if (m_IsDisposed.WaitOne(0))
                 throw new ObjectDisposedException(string.Format("Can not create transport {0}. TransportManager instance is disposed",transportId));
