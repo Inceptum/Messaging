@@ -93,7 +93,17 @@ namespace Inceptum.Messaging.Transports
         {
             ensureSessionIsCreated();
 
-            return subscribe(createDestination(destination), message => callback(new BinaryMessage(message)), messageType);
+            return subscribe(createDestination(destination), message => callback(toBinaryMessage(message)), messageType);
+        }
+
+        private BinaryMessage toBinaryMessage(Message sonicMessage)
+        {
+            var bytesMessage = sonicMessage as BytesMessage;
+            if (bytesMessage == null)
+                throw new InvalidCastException("Message of unsupported type was received. Only binary messages are supported");
+            var bytes = new byte[bytesMessage.getBodyLength()];
+            bytesMessage.readBytes(bytes);
+            return new BinaryMessage { Bytes = bytes, Type = bytesMessage.getJMSType() };
         }
 
 
@@ -135,7 +145,7 @@ namespace Inceptum.Messaging.Transports
         {
             ensureSessionIsCreated();
             TemporaryQueue temporaryQueue = m_Session.createTemporaryQueue();
-            var request = new RequestHandle(callback,temporaryQueue.delete, cb => subscribe(temporaryQueue,m=>cb(new BinaryMessage(m)),null) );
+            var request = new RequestHandle(callback,temporaryQueue.delete, cb => subscribe(temporaryQueue,m=>cb(toBinaryMessage(m)),null) );
             m_Subscriptions.Add(request);
             send(destination, message, MessagingEngine.MESSAGE_DEFAULT_LIFESPAN, m => m.setJMSReplyTo(temporaryQueue));
             return request;
@@ -150,7 +160,7 @@ namespace Inceptum.Messaging.Transports
                 {
 
                     var jmsCorrelationId = request.getJMSCorrelationID();
-                    var responseBytes = handler(new BinaryMessage(request));
+                    var responseBytes = handler(toBinaryMessage(request));
                     lock (this)
                     {
                         send(request.getJMSReplyTo(), responseBytes, MessagingEngine.MESSAGE_DEFAULT_LIFESPAN, message => message.setJMSCorrelationID(jmsCorrelationId));
