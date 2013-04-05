@@ -3,7 +3,7 @@ using System.Threading;
 
 namespace Inceptum.Messaging.Transports
 {
-    internal class RequestHandle : IDisposable
+    public class RequestHandle : IDisposable
     {
         private readonly IDisposable m_Subscription;
         private volatile bool m_IsDisposed;
@@ -12,8 +12,8 @@ namespace Inceptum.Messaging.Transports
         private readonly Action m_FinishRequest;
 
 
-        public DateTime DueDate { get; set; }
-        public bool IsComplete
+        internal DateTime DueDate { get; set; }
+        internal bool IsComplete
         {
             get { return Await(0); }
         }
@@ -26,7 +26,7 @@ namespace Inceptum.Messaging.Transports
 
         }
 
-        public bool Await(int timeout)
+        internal bool Await(int timeout)
         {
             return m_IsComplete.WaitOne(timeout);
         }

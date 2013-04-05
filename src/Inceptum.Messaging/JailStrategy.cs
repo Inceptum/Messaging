@@ -15,7 +15,8 @@ namespace Inceptum.Messaging
             m_CreateTag = createTag;
         }
 
-        internal Func<string> CreateTag
+        //TODO: changed internal to public while extracting sonic dependent code to dedicated assembly. Need to review.
+        public Func<string> CreateTag
         {
             get { return m_CreateTag; }
         }

@@ -17,9 +17,11 @@ namespace Inceptum.Messaging
             private readonly List<string> m_KnownIds = new List<string>();
             private readonly TransportInfo m_TransportInfo;
             private readonly Action m_ProcessTransportFailure;
+            private ITransportFactory m_Factory;
 
-            public ResolvedTransport(TransportInfo transportInfo, Action processTransportFailure)
+            public ResolvedTransport(TransportInfo transportInfo, Action processTransportFailure,ITransportFactory factory)
             {
+                m_Factory = factory;
                 m_ProcessTransportFailure = processTransportFailure;
                 m_TransportInfo = transportInfo;
             }
@@ -29,7 +31,7 @@ namespace Inceptum.Messaging
                 get { return m_KnownIds.ToArray(); }
             }
 
-            private Transport Transport { get; set; }
+            private ITransport Transport { get; set; }
 
 
             private void addId(string transportId)
@@ -40,10 +42,10 @@ namespace Inceptum.Messaging
             }
 
             [MethodImpl(MethodImplOptions.Synchronized)]
-            public Transport InitializeAs(string transportId)
+            public ITransport InitializeAs(string transportId)
             {
                 addId(transportId);
-                return Transport ?? (Transport = new Transport(m_TransportInfo, m_ProcessTransportFailure));
+                return Transport ?? (Transport = m_Factory.Create(m_TransportInfo, m_ProcessTransportFailure));
             }
 
 
@@ -61,10 +63,12 @@ namespace Inceptum.Messaging
         private readonly Dictionary<TransportInfo, ResolvedTransport> m_Transports = new Dictionary<TransportInfo, ResolvedTransport>();
         private readonly ITransportResolver m_TransportResolver;
         readonly ManualResetEvent m_IsDisposed=new ManualResetEvent(false);
- 
+        private ITransportFactory[] m_TransportFactories;
 
-        public TransportManager(ITransportResolver transportResolver)
+
+        public TransportManager(ITransportResolver transportResolver, params ITransportFactory[] transportFactories)
         {
+            m_TransportFactories = transportFactories;
             if (transportResolver == null) throw new ArgumentNullException("transportResolver");
             m_TransportResolver = transportResolver;
         }
@@ -98,6 +102,10 @@ namespace Inceptum.Messaging
             
             if (transportInfo == null)
                 throw new ConfigurationErrorsException(string.Format("Transport '{0}' is not resolvable", transportId));
+            var factory = m_TransportFactories.FirstOrDefault(f => f.Name == transportInfo.Messaging);
+            if(factory==null)
+                throw new ConfigurationErrorsException(string.Format("Can not create transport '{0}', {1} messaging is not supported", transportId,transportInfo.Messaging));
+
             ResolvedTransport transport;
 
             if (!m_Transports.TryGetValue(transportInfo, out transport)  )
@@ -106,7 +114,7 @@ namespace Inceptum.Messaging
                 {
                     if (!m_Transports.TryGetValue(transportInfo, out transport))
                     {
-                        transport = new ResolvedTransport(transportInfo,()=> ProcessTransportFailure(transportInfo));
+                        transport = new ResolvedTransport(transportInfo,()=> ProcessTransportFailure(transportInfo),factory);
                         if (m_Transports.ContainsKey(transportInfo))
                             m_Transports.Remove(transportInfo);
                         m_Transports.Add(transportInfo, transport);

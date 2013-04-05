@@ -15,7 +15,6 @@ namespace Inceptum.Messaging
     public class MessagingEngine : IMessagingEngine
     {
         internal const int MESSAGE_DEFAULT_LIFESPAN = 0; // forever // 1800000; // milliseconds (30 minutes)
-        internal const string JAILED_PROPERTY_NAME = "JAILED_TAG";
         private readonly ManualResetEvent m_Disposing = new ManualResetEvent(false);
         private readonly CountingTracker m_RequestsTracker = new CountingTracker();
         private readonly ISerializationManager m_SerializationManager;
@@ -41,8 +40,8 @@ namespace Inceptum.Messaging
             createSonicHandle(() => stopTimeoutedRequests(true));
         }
 
-        public MessagingEngine(ITransportResolver transportResolver, ISerializationManager serializationManager)
-            : this(new TransportManager(transportResolver), serializationManager)
+        public MessagingEngine(ITransportResolver transportResolver, ISerializationManager serializationManager,params ITransportFactory[] transportFactories)
+            : this(new TransportManager(transportResolver, transportFactories), serializationManager)
         {
         }
 
