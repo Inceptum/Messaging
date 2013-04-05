@@ -2,7 +2,7 @@
 
 namespace Inceptum.Messaging.Transports
 {
-    internal interface ITransport
+    public interface ITransport:IDisposable
     {
         void Send(string destination, BinaryMessage message, int ttl, string processingGroup = null);
         RequestHandle SendRequest(string destination, BinaryMessage message, Action<BinaryMessage> callback, string processingGroup = null);

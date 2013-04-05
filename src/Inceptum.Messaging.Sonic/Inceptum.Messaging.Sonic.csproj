@@ -9,8 +9,9 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Inceptum.Messaging.Sonic</RootNamespace>
     <AssemblyName>Inceptum.Messaging.Sonic</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -20,6 +21,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -28,10 +30,38 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="antlr.runtime">
+      <HintPath>..\libs\Sonic\antlr.runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="Org.Mentalis.Security">
+      <HintPath>..\libs\Sonic\Org.Mentalis.Security.dll</HintPath>
+    </Reference>
+    <Reference Include="Sonic.Client">
+      <HintPath>..\libs\Sonic\Sonic.Client.dll</HintPath>
+    </Reference>
+    <Reference Include="Sonic.Client.Jms.Impl">
+      <HintPath>..\libs\Sonic\Sonic.Client.Jms.Impl.dll</HintPath>
+    </Reference>
+    <Reference Include="Sonic.Jms">
+      <HintPath>..\libs\Sonic\Sonic.Jms.dll</HintPath>
+    </Reference>
+    <Reference Include="Sonic.Jms.Cf.Impl">
+      <HintPath>..\libs\Sonic\Sonic.Jms.Cf.Impl.dll</HintPath>
+    </Reference>
+    <Reference Include="Sonic.Security">
+      <HintPath>..\libs\Sonic\Sonic.Security.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Reactive.Core">
+      <HintPath>..\packages\Rx-Core.2.1.30214.0\lib\Net40\System.Reactive.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reactive.Interfaces">
+      <HintPath>..\packages\Rx-Interfaces.2.1.30214.0\lib\Net40\System.Reactive.Interfaces.dll</HintPath>
+    </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -39,8 +69,31 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Class1.cs" />
+    <Compile Include="..\SolutionInfo.cs">
+      <Link>Properties\SolutionInfo.cs</Link>
+    </Compile>
+    <Compile Include="..\VersionInfo.cs">
+      <Link>Properties\VersionInfo.cs</Link>
+    </Compile>
+    <Compile Include="GenericConnectionStateChangeListener.cs" />
+    <Compile Include="GenericMessageListener.cs" />
+    <Compile Include="IProcessingGroup.cs" />
+    <Compile Include="ProcessingGroup.cs" />
+    <Compile Include="QueueProcessingGroup.cs" />
+    <Compile Include="SonicDestinationExt.cs" />
+    <Compile Include="SonicTransportFactory.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TopicProcessingGroup.cs" />
+    <Compile Include="Transport.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Inceptum.Messaging\Inceptum.Messaging.csproj">
+      <Project>{87CC7D22-A809-40D3-80FB-E9D58109DC82}</Project>
+      <Name>Inceptum.Messaging</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

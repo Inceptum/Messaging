@@ -4,7 +4,7 @@ namespace Inceptum.Messaging
 {
     public class TransportInfo
     {
-        public TransportInfo(string broker, string login, string password, string jailStrategyName)
+        public TransportInfo(string broker, string login, string password, string jailStrategyName, string messaging="Sonic")
         {
             if (string.IsNullOrEmpty((broker ?? "").Trim())) throw new ArgumentException("broker should be not empty string", "broker");
             if (string.IsNullOrEmpty((login ?? "").Trim())) throw new ArgumentException("login should be not empty string", "login");
@@ -13,6 +13,7 @@ namespace Inceptum.Messaging
             Login = login;
             Password = password;
             JailStrategyName = jailStrategyName;
+            Messaging = messaging;
         }
 
         public string Broker { get; private set; }
@@ -22,12 +23,12 @@ namespace Inceptum.Messaging
 
         public JailStrategy JailStrategy { get; internal set; }
 
+        public string Messaging { get; private set; }
 
-        public bool Equals(TransportInfo other)
+
+        protected bool Equals(TransportInfo other)
         {
-            if (ReferenceEquals(null, other)) return false;
-            if (ReferenceEquals(this, other)) return true;
-            return Equals(other.Broker, Broker) && Equals(other.Login, Login) && Equals(other.Password, Password) && Equals(other.JailStrategyName, JailStrategyName);
+            return string.Equals(Broker, other.Broker) && string.Equals(Login, other.Login) && string.Equals(Password, other.Password) && string.Equals(Messaging, other.Messaging) && string.Equals(JailStrategyName, other.JailStrategyName);
         }
 
     
@@ -41,12 +42,11 @@ namespace Inceptum.Messaging
             return !Equals(left, right);
         }
 
-
         public override bool Equals(object obj)
         {
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != typeof (TransportInfo)) return false;
+            if (obj.GetType() != this.GetType()) return false;
             return Equals((TransportInfo) obj);
         }
 
@@ -54,11 +54,12 @@ namespace Inceptum.Messaging
         {
             unchecked
             {
-                int result = (Broker != null ? Broker.GetHashCode() : 0);
-                result = (result*397) ^ (Login != null ? Login.GetHashCode() : 0);
-                result = (result*397) ^ (Password != null ? Password.GetHashCode() : 0);
-                result = (result*397) ^ (JailStrategyName != null ? JailStrategyName.GetHashCode() : 0);
-                return result;
+                var hashCode = (Broker != null ? Broker.GetHashCode() : 0);
+                hashCode = (hashCode*397) ^ (Login != null ? Login.GetHashCode() : 0);
+                hashCode = (hashCode*397) ^ (Password != null ? Password.GetHashCode() : 0);
+                hashCode = (hashCode*397) ^ (Messaging != null ? Messaging.GetHashCode() : 0);
+                hashCode = (hashCode*397) ^ (JailStrategyName != null ? JailStrategyName.GetHashCode() : 0);
+                return hashCode;
             }
         }
 
