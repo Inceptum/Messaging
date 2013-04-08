@@ -15,7 +15,7 @@ namespace Inceptum.Messaging.Sonic
         public string Name { get { return "Sonic"; } }
         public ITransport Create(TransportInfo transportInfo, Action onFailure)
         {
-            throw new NotImplementedException();
+            return new Transport(transportInfo, onFailure);
         }
     }
 }
