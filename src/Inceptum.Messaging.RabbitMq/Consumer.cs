@@ -1,4 +1,4 @@
-﻿namespace Inceptum.Messaging.RabbitMq
+﻿/*namespace Inceptum.Messaging.RabbitMq
 {
     public class Consumer
     {
@@ -70,4 +70,4 @@
                 Model.Abort();
         }
     }
-}
+}*/
