@@ -50,7 +50,7 @@ namespace Inceptum.Messaging.RabbitMq
                 try
                 {
                     var e = (RabbitMQ.Client.Events.BasicDeliverEventArgs)consumer.Queue.Dequeue();
-                    IBasicProperties props = e.BasicProperties;
+                    var props = e.BasicProperties;
                     byte[] body = e.Body;
                     try
                     {
@@ -60,7 +60,7 @@ namespace Inceptum.Messaging.RabbitMq
                     catch (Exception exception)
                     {
                        //TODO:log
-                        m_Channel.BasicCancel();
+                        //m_Channel.BasicNack(e.DeliveryTag, false, true);
                     }
                 }
                 catch (OperationInterruptedException ex)
@@ -71,7 +71,7 @@ namespace Inceptum.Messaging.RabbitMq
                     break;
                 }
             }
-
+            throw new NotImplementedException();
         }
 
 
@@ -92,13 +92,7 @@ namespace Inceptum.Messaging.RabbitMq
 
         public ITransport Create(TransportInfo transportInfo, Action onFailure)
         {
-            var factory = new ConnectionFactory();
-            factory.HostName = "localhost";
-
-            IConnection connection = factory.CreateConnection();
-            IModel channel = connection.CreateModel();
-
-            channel.ExchangeDeclare(EXCHANGE_NAME, "fanout");
+            return new Transport(transportInfo.Broker,transportInfo.Login,transportInfo.Password);
         }
     }
 }
