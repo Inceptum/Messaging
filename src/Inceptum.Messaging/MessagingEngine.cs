@@ -354,6 +354,7 @@ namespace Inceptum.Messaging
         {
         	return m_MessageTypeMapping.GetOrAdd(type, clrType =>
         	                                           	{
+                                                            //TODO: type should be determined by serializer
         	                                           		var typeName = clrType.GetCustomAttributes(false)
         	                                           			.Select(a => a as ProtoBuf.ProtoContractAttribute)
         	                                           			.Where(a => a != null)
