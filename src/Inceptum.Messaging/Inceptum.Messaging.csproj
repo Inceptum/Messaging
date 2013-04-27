@@ -66,6 +66,12 @@
       <Link>Properties\VersionInfo.cs</Link>
     </Compile>
     <Compile Include="Castle\MessagingFacility.cs" />
+    <Compile Include="Contract\Endpoint.cs" />
+    <Compile Include="Contract\IMessagingEngine.cs" />
+    <Compile Include="Contract\TransportConstants.cs" />
+    <Compile Include="Contract\TransportException.cs" />
+    <Compile Include="Contract\TransportOutdatedException.cs" />
+    <Compile Include="Contract\TransportOutdateEventArgs.cs" />
     <Compile Include="ISerializerFactory.cs" />
     <Compile Include="ITransportFactory.cs" />
     <Compile Include="ProtobufSerializer.cs" />
@@ -84,12 +90,8 @@
     <Compile Include="TransportInfo.cs" />
     <Compile Include="TransportManager.cs" />
     <Compile Include="TransportResolver.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Inceptum.Core\Inceptum.Core.csproj">
-      <Project>{6119133D-5984-4E3C-B93A-B0956FBA8B79}</Project>
-      <Name>Inceptum.Core</Name>
-    </ProjectReference>
+    <Compile Include="Utils\CountingTracker.cs" />
+    <Compile Include="Utils\SchedulingBackgroundWorker.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

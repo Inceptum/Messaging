@@ -4,7 +4,7 @@ using System.Configuration;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using Inceptum.Core.Messaging;
+using Inceptum.Messaging.Contract;
 using Inceptum.Messaging.Transports;
 
 namespace Inceptum.Messaging
@@ -150,7 +150,7 @@ namespace Inceptum.Messaging
             {
                 foreach (var transportId in transport.KnownIds)
                 {
-                    handler(transportId, Core.Messaging.TransportEvents.Failure);
+                    handler(transportId, Contract.TransportEvents.Failure);
                 }
             }
         }
