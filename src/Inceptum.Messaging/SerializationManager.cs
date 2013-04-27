@@ -20,10 +20,10 @@ namespace Inceptum.Messaging
 
 
         /// <summary>
-        /// Deserializes the specified sonic message to application type.
+        /// Deserializes the specified message to application type.
         /// </summary>
         /// <typeparam name="TMessage">The type of the application message.</typeparam>
-        /// <param name="message">The sonic message.</param>
+        /// <param name="message">The  message.</param>
         /// <returns></returns>
         /// <exception cref="NotSupportedException">Unknown business object type.</exception>
         public TMessage Deserialize<TMessage>(byte[] message)
