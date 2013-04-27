@@ -70,7 +70,6 @@ namespace Inceptum.Messaging.RabbitMq.Tests
 
 
         [Test]
-        [Repeat(100)]
         public void UnknownMessageTypHandlereWaitingDoesNotPreventTransportDisposeTest()
         {
             var factory = new ConnectionFactory { HostName = "localhost", UserName = "guest", Password = "guest" };
@@ -80,9 +79,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
                 channel.ExchangeDeclare("test.exchange", "direct");
                 channel.QueueDeclare("test.queue", false, false, true, null);
                 channel.QueueBind("test.queue", "test.exchange", "");
-                var initialThreadCount = Process.GetCurrentProcess().Threads.Count;
-                Console.WriteLine(Process.GetCurrentProcess().Threads.Count);
-                ManualResetEvent received=new ManualResetEvent(false);
+                var received=new ManualResetEvent(false);
                 Thread connectionThread = null;
                 using (var transport = new Transport("localhost", "guest", "guest"))
                 {
@@ -97,7 +94,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
                     transport.Send("test.exchange", new BinaryMessage { Bytes = new byte[] { 0x0, 0x1, 0x2 }, Type = "type2" }, 0);
 
                 }
-                Assert.That(connectionThread.ThreadState, Is.EqualTo(ThreadState.Stopped));
+                Assert.That(connectionThread.ThreadState, Is.EqualTo(ThreadState.Stopped),"Processing thread is still active in spite of transport dispose");
             }
         }
 

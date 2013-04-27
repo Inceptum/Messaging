@@ -18,7 +18,7 @@ namespace Inceptum.Messaging
         private readonly ManualResetEvent m_Disposing = new ManualResetEvent(false);
         private readonly CountingTracker m_RequestsTracker = new CountingTracker();
         private readonly ISerializationManager m_SerializationManager;
-        private readonly List<IDisposable> m_SonicHandles = new List<IDisposable>();
+        private readonly List<IDisposable> m_MessagingHandles = new List<IDisposable>();
         private readonly TransportManager m_TransportManager;
 
         //TODO: verify logging. I've added param but never tested
@@ -37,7 +37,7 @@ namespace Inceptum.Messaging
             m_TransportManager = transportManager;
             m_SerializationManager = serializationManager;
             m_RequestTimeoutManager = new SchedulingBackgroundWorker("RequestTimeoutManager", () => stopTimeoutedRequests());
-            createSonicHandle(() => stopTimeoutedRequests(true));
+            createMessagingHandle(() => stopTimeoutedRequests(true));
         }
 
         public MessagingEngine(ITransportResolver transportResolver, ISerializationManager serializationManager,params ITransportFactory[] transportFactories)
@@ -239,9 +239,9 @@ namespace Inceptum.Messaging
 			where TResponse : class
 		{
 			var handle = new SerialDisposable();
-			IDisposable transportWatcher = SubscribeOnTransportEvents((id, @event) =>
+            IDisposable transportWatcher = SubscribeOnTransportEvents((trasnportId, @event) =>
 			                                                          	{
-			                                                          		if (@event != TransportEvents.Failure)
+			                                                          		if (trasnportId == endpoint.TransportId || @event != TransportEvents.Failure)
 			                                                          			return;
 			                                                          		registerHandlerWithRetry(handler, endpoint, handle);
 			                                                          	});
@@ -257,12 +257,12 @@ namespace Inceptum.Messaging
             m_Disposing.Set();
             m_RequestTimeoutManager.Dispose();
             m_RequestsTracker.WaitAll();
-            lock (m_SonicHandles)
+            lock (m_MessagingHandles)
             {
 
-                while (m_SonicHandles.Any())
+                while (m_MessagingHandles.Any())
                 {
-                    m_SonicHandles.First().Dispose();
+                    m_MessagingHandles.First().Dispose();
                 }
             }
             m_TransportManager.Dispose();
@@ -318,7 +318,7 @@ namespace Inceptum.Messaging
                 	                                                     	? getMessageType(typeof (TRequest))
                 	                                                     	: null
                 		);
-                	var sonicHandle = createSonicHandle(() =>
+                	var messagingHandle = createMessagingHandle(() =>
                 	                                            	{
                 	                                            		try
                 	                                            		{
@@ -332,7 +332,7 @@ namespace Inceptum.Messaging
                 	                                            	});
 
                     Logger.InfoFormat("Handler was successfully registered. Transport: {0}, Queue: {1}",  endpoint.TransportId, endpoint.Destination);
-                    return sonicHandle;
+                    return messagingHandle;
                 }
                 catch (Exception e)
                 {
@@ -373,38 +373,38 @@ namespace Inceptum.Messaging
         {
             var transport = m_TransportManager.GetTransport(transportId);
             IDisposable subscription = transport.Subscribe(destination, callback, messageType);
-            return createSonicHandle(subscription.Dispose);
+            return createMessagingHandle(subscription.Dispose);
         }
 
 
-        private IDisposable createSonicHandle(Action destroy)
+        private IDisposable createMessagingHandle(Action destroy)
         {
             IDisposable handle = null;
 
             handle = Disposable.Create(() =>
                                            {
                                                destroy();
-                                               lock (m_SonicHandles)
+                                               lock (m_MessagingHandles)
                                                {
 // ReSharper disable AccessToModifiedClosure
-                                                   m_SonicHandles.Remove(handle);
+                                                   m_MessagingHandles.Remove(handle);
 // ReSharper restore AccessToModifiedClosure
                                                }
                                            });
-            lock (m_SonicHandles)
+            lock (m_MessagingHandles)
             {
-                m_SonicHandles.Add(handle);
+                m_MessagingHandles.Add(handle);
             }
             return handle;
         }
 
 
-        private void processMessage<TMessage>(BinaryMessage sonicMessage, Action<TMessage> callback, Endpoint endpoint)
+        private void processMessage<TMessage>(BinaryMessage binaryMessage, Action<TMessage> callback, Endpoint endpoint)
         {
             TMessage message = default(TMessage);
             try
             {
-                message = deserializeMessage<TMessage>(sonicMessage);
+                message = deserializeMessage<TMessage>(binaryMessage);
             }
             catch (Exception e)
             {
