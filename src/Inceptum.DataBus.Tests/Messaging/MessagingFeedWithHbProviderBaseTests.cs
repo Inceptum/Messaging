@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Reactive.Disposables;
 using System.Threading;
-using Inceptum.Core.Messaging;
 using Inceptum.DataBus.Messaging;
+using Inceptum.Messaging.Contract;
 using NUnit.Framework;
 using Rhino.Mocks;
 

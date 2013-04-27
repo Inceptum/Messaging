@@ -1,0 +1,85 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inceptum.Messaging", "Inceptum.Messaging\Inceptum.Messaging.csproj", "{87CC7D22-A809-40D3-80FB-E9D58109DC82}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inceptum.DataBus", "Inceptum.DataBus\Inceptum.DataBus.csproj", "{7F5DD1AC-CA1A-488A-9053-03F4CBAF7D92}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inceptum.DataBus.Tests", "Inceptum.DataBus.Tests\Inceptum.DataBus.Tests.csproj", "{5D465092-2209-4743-8524-A8239137C79F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "libs", "libs", "{73D7DA3F-5B5C-47CC-A6EF-98D713F13833}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Sonic", "Sonic", "{1A217BA9-A72E-416E-BF63-1203AECB5DF5}"
+	ProjectSection(SolutionItems) = preProject
+		libs\Sonic\antlr.runtime.dll = libs\Sonic\antlr.runtime.dll
+		libs\Sonic\Org.Mentalis.Security.dll = libs\Sonic\Org.Mentalis.Security.dll
+		libs\Sonic\Sonic.Client.dll = libs\Sonic\Sonic.Client.dll
+		libs\Sonic\Sonic.Client.Jms.Impl.dll = libs\Sonic\Sonic.Client.Jms.Impl.dll
+		libs\Sonic\Sonic.Jms.Cf.Impl.dll = libs\Sonic\Sonic.Jms.Cf.Impl.dll
+		libs\Sonic\Sonic.Jms.dll = libs\Sonic\Sonic.Jms.dll
+		libs\Sonic\Sonic.Security.dll = libs\Sonic\Sonic.Security.dll
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{949C50EC-7FD1-4810-AB50-84233600B9AE}"
+	ProjectSection(SolutionItems) = preProject
+		SolutionInfo.cs = SolutionInfo.cs
+		VersionInfo.cs = VersionInfo.cs
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inceptum.Messaging.RabbitMq", "Inceptum.Messaging.RabbitMq\Inceptum.Messaging.RabbitMq.csproj", "{38F85229-5AA0-44DE-BC91-BB7D93E28EF4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inceptum.Messaging.Sonic", "Inceptum.Messaging.Sonic\Inceptum.Messaging.Sonic.csproj", "{94768353-1832-4E8C-B9B8-15C3798668F4}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{9729687F-6883-47F2-87F3-78571CAEC925}"
+	ProjectSection(SolutionItems) = preProject
+		.nuget\NuGet.Config = .nuget\NuGet.Config
+		.nuget\NuGet.exe = .nuget\NuGet.exe
+		.nuget\NuGet.targets = .nuget\NuGet.targets
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inceptum.Messaging.RabbitMq.Tests", "Inceptum.Messaging.RabbitMq.Tests\Inceptum.Messaging.RabbitMq.Tests.csproj", "{8687908B-7EBF-45A2-A69E-9655A7B5957D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inceptum.Messaging.Tests", "Inceptum.Messaging.Tests\Inceptum.Messaging.Tests.csproj", "{E09A2ABA-52D4-40CC-8121-D85A59782BF8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{87CC7D22-A809-40D3-80FB-E9D58109DC82}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{87CC7D22-A809-40D3-80FB-E9D58109DC82}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{87CC7D22-A809-40D3-80FB-E9D58109DC82}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{87CC7D22-A809-40D3-80FB-E9D58109DC82}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7F5DD1AC-CA1A-488A-9053-03F4CBAF7D92}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7F5DD1AC-CA1A-488A-9053-03F4CBAF7D92}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7F5DD1AC-CA1A-488A-9053-03F4CBAF7D92}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7F5DD1AC-CA1A-488A-9053-03F4CBAF7D92}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5D465092-2209-4743-8524-A8239137C79F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5D465092-2209-4743-8524-A8239137C79F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5D465092-2209-4743-8524-A8239137C79F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5D465092-2209-4743-8524-A8239137C79F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{38F85229-5AA0-44DE-BC91-BB7D93E28EF4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{38F85229-5AA0-44DE-BC91-BB7D93E28EF4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{38F85229-5AA0-44DE-BC91-BB7D93E28EF4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{38F85229-5AA0-44DE-BC91-BB7D93E28EF4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{94768353-1832-4E8C-B9B8-15C3798668F4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{94768353-1832-4E8C-B9B8-15C3798668F4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{94768353-1832-4E8C-B9B8-15C3798668F4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{94768353-1832-4E8C-B9B8-15C3798668F4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8687908B-7EBF-45A2-A69E-9655A7B5957D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8687908B-7EBF-45A2-A69E-9655A7B5957D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8687908B-7EBF-45A2-A69E-9655A7B5957D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8687908B-7EBF-45A2-A69E-9655A7B5957D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E09A2ABA-52D4-40CC-8121-D85A59782BF8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E09A2ABA-52D4-40CC-8121-D85A59782BF8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E09A2ABA-52D4-40CC-8121-D85A59782BF8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E09A2ABA-52D4-40CC-8121-D85A59782BF8}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{1A217BA9-A72E-416E-BF63-1203AECB5DF5} = {73D7DA3F-5B5C-47CC-A6EF-98D713F13833}
+	EndGlobalSection
+EndGlobal

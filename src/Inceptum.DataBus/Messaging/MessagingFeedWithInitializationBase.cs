@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Reactive.Subjects;
 using Db.Aces.Platform.Transport.Tibco;
-using Inceptum.Core.Messaging;
+using Inceptum.Messaging.Contract;
 
 namespace Inceptum.DataBus.Messaging
 {

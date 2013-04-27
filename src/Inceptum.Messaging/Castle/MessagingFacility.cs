@@ -7,7 +7,7 @@ using Castle.MicroKernel;
 using Castle.MicroKernel.Facilities;
 using Castle.MicroKernel.Registration;
 using Inceptum.Core;
-using Inceptum.Core.Messaging;
+using Inceptum.Messaging.Contract;
 
 namespace Inceptum.Messaging.Castle
 {

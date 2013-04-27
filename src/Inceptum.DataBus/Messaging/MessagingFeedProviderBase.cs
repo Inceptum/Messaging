@@ -6,8 +6,8 @@ using System.Reactive.Subjects;
 using Castle.Core.Logging;
 using Db.Aces.Platform.Transport.Tibco;
 using Inceptum.Core;
-using Inceptum.Core.Messaging;
- 
+using Inceptum.Messaging.Contract;
+
 
 namespace Inceptum.DataBus.Messaging
 {

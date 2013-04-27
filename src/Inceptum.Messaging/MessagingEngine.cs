@@ -6,8 +6,8 @@ using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Threading;
 using Castle.Core.Logging;
-using Inceptum.Core.Messaging;
 using Inceptum.Core.Utils;
+using Inceptum.Messaging.Contract;
 using Inceptum.Messaging.Transports;
 
 namespace Inceptum.Messaging

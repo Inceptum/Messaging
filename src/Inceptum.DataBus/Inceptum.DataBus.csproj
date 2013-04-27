@@ -103,13 +103,13 @@
     <Compile Include="SubscriptionExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Inceptum.Core\Inceptum.Core.csproj">
-      <Project>{6119133D-5984-4E3C-B93A-B0956FBA8B79}</Project>
-      <Name>Inceptum.Core</Name>
-    </ProjectReference>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
+    <ProjectReference Include="..\Inceptum.Messaging\Inceptum.Messaging.csproj">
+      <Project>{87CC7D22-A809-40D3-80FB-E9D58109DC82}</Project>
+      <Name>Inceptum.Messaging</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\nuget.targets" />

@@ -1,4 +1,4 @@
-using Inceptum.Core.Messaging;
+using Inceptum.Messaging.Contract;
 
 namespace Inceptum.DataBus.Messaging
 {
