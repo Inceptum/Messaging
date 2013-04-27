@@ -17,7 +17,7 @@ namespace Inceptum.Messaging
             private readonly List<string> m_KnownIds = new List<string>();
             private readonly TransportInfo m_TransportInfo;
             private readonly Action m_ProcessTransportFailure;
-            private ITransportFactory m_Factory;
+            private readonly ITransportFactory m_Factory;
 
             public ResolvedTransport(TransportInfo transportInfo, Action processTransportFailure,ITransportFactory factory)
             {
@@ -63,7 +63,7 @@ namespace Inceptum.Messaging
         private readonly Dictionary<TransportInfo, ResolvedTransport> m_Transports = new Dictionary<TransportInfo, ResolvedTransport>();
         private readonly ITransportResolver m_TransportResolver;
         readonly ManualResetEvent m_IsDisposed=new ManualResetEvent(false);
-        private ITransportFactory[] m_TransportFactories;
+        private readonly ITransportFactory[] m_TransportFactories;
 
 
         public TransportManager(ITransportResolver transportResolver, params ITransportFactory[] transportFactories)
