@@ -1,5 +1,4 @@
 ﻿using System;
-using Inceptum.Messaging.Transports;
 using RabbitMQ.Client;
 
 namespace Inceptum.Messaging.RabbitMq
