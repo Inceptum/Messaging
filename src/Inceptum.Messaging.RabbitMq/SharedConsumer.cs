@@ -9,7 +9,7 @@ namespace Inceptum.Messaging.RabbitMq
 {
     public class SharedConsumer : DefaultBasicConsumer,IDisposable
     {
-        private readonly Dictionary<string, Action<BinaryMessage>> m_Callbacks = new Dictionary<string, Action<BinaryMessage>>();
+        private readonly Dictionary<string, Action<IBasicProperties, byte[]>> m_Callbacks = new Dictionary<string, Action<IBasicProperties, byte[]>>();
         private readonly AutoResetEvent m_CallBackAdded = new AutoResetEvent(false);
         private readonly ManualResetEvent m_Stop = new ManualResetEvent(false);
 
@@ -17,7 +17,7 @@ namespace Inceptum.Messaging.RabbitMq
         {
         }
 
-        public void AddCallback(Action<BinaryMessage> callback, string messageType)
+        public void AddCallback(Action<IBasicProperties, byte[]> callback, string messageType)
         {
             if (callback == null) throw new ArgumentNullException("callback");
             if (string.IsNullOrEmpty(messageType)) throw new ArgumentNullException("messageType");
@@ -51,7 +51,7 @@ namespace Inceptum.Messaging.RabbitMq
         {
             while (true)
             {
-                Action<BinaryMessage> callback;
+                Action<IBasicProperties, byte[]> callback;
                 lock (m_Callbacks)
                 {
                     m_Callbacks.TryGetValue(properties.Type, out callback);
@@ -60,7 +60,7 @@ namespace Inceptum.Messaging.RabbitMq
                 {
                     try
                     {
-                        callback(new BinaryMessage {Bytes = body, Type = properties.Type});
+                        callback(properties,body);
                         Model.BasicAck(deliveryTag, false);
                     }
                     catch (Exception e)
@@ -86,8 +86,11 @@ namespace Inceptum.Messaging.RabbitMq
         private void stop()
         {
             m_Stop.Set();
-            if (Model.IsOpen)
-                Model.BasicCancel(ConsumerTag);
+            lock (Model)
+            {
+                if (Model.IsOpen)
+                    Model.BasicCancel(ConsumerTag);
+            }
         }
     }
 }

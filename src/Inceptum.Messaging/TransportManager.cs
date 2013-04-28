@@ -14,14 +14,14 @@ namespace Inceptum.Messaging
     {
         private class ResolvedTransport : IDisposable
         {
-            class ProcessinGroupWrapper: IDisposable
+            class ProcessingGroupWrapper: IDisposable
             {
                 public string TransportId { get; private set; }
                 public string Name { get; private set; }
                 public IProcessingGroup ProcessingGroup { get; private set; }
                 public event Action OnFailure;
 
-                public ProcessinGroupWrapper(string transportId, string name)
+                public ProcessingGroupWrapper(string transportId, string name)
                 {
                     TransportId = transportId;
                     Name = name;
@@ -60,7 +60,7 @@ namespace Inceptum.Messaging
             private readonly TransportInfo m_TransportInfo;
             private readonly Action m_ProcessTransportFailure;
             private readonly ITransportFactory m_Factory;
-            private readonly List<ProcessinGroupWrapper> m_ProcessingGroups=new List<ProcessinGroupWrapper>();
+            private readonly List<ProcessingGroupWrapper> m_ProcessingGroups=new List<ProcessingGroupWrapper>();
             public ResolvedTransport(TransportInfo transportInfo, Action processTransportFailure,ITransportFactory factory)
             {
                 m_Factory = factory;
@@ -93,7 +93,7 @@ namespace Inceptum.Messaging
                
                 if (processingGroup==null)
                 {
-                    processingGroup = new ProcessinGroupWrapper(transportId,name);
+                    processingGroup = new ProcessingGroupWrapper(transportId,name);
                     processingGroup.SetProcessingGroup(transport.CreateProcessingGroup(name, () => processProcessingGroupFailure(processingGroup)));
                     m_ProcessingGroups.Add(processingGroup);
                 }
@@ -113,7 +113,7 @@ namespace Inceptum.Messaging
             }
 
             [MethodImpl(MethodImplOptions.Synchronized)]
-            private void processProcessingGroupFailure(ProcessinGroupWrapper processingGroup)
+            private void processProcessingGroupFailure(ProcessingGroupWrapper processingGroup)
             {
                 m_ProcessingGroups.Remove(processingGroup);
                 processingGroup.ReportFailure();
