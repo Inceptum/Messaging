@@ -98,8 +98,8 @@ namespace Inceptum.Messaging.RabbitMq.Tests
                 processingGroup.RegisterHandler(TEST_QUEUE, message => new BinaryMessage {Bytes = response, Type = typeof (byte[]).Name}, null);
                 processingGroup.SendRequest(TEST_EXCHANGE, new BinaryMessage { Bytes = request, Type = typeof(byte[]).Name }, message =>
                     {
-                        received.Set();
                         actualResponse = message.Bytes;
+                        received.Set();
                     });
                 Assert.That(received.WaitOne(500), Is.True, "Response was not received");
                 Assert.That(actualResponse, Is.EqualTo(response), "Received response does not match sent one");
