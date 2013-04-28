@@ -86,9 +86,9 @@ namespace Inceptum.Messaging
             {
                 try
                 {
-                    var transport = m_TransportManager.GetTransport(endpoint.TransportId);
+                    var processingGroup = m_TransportManager.GetProcessingGroup(endpoint.TransportId,endpoint.Destination);
                     var serializedMessage = serializeMessage(message);
-                    transport.Send(endpoint.Destination, serializedMessage, ttl);
+                    processingGroup.Send(endpoint.Destination, serializedMessage, ttl);
                 }
                 catch (Exception e)
                 {
@@ -109,7 +109,7 @@ namespace Inceptum.Messaging
             {
                 try
                 {
-					return subscribe(endpoint.Destination, endpoint.TransportId, m => processMessage(m, callback, endpoint), endpoint.SharedDestination ? getMessageType(typeof(TMessage)) : null);
+					return subscribe(endpoint, m => processMessage(m, callback, endpoint), endpoint.SharedDestination ? getMessageType(typeof(TMessage)) : null);
                 }
                 catch (Exception e)
                 {
@@ -197,8 +197,8 @@ namespace Inceptum.Messaging
             {
                 try
                 {
-                    var transport = m_TransportManager.GetTransport( endpoint.TransportId);
-                    RequestHandle requestHandle = transport.SendRequest(endpoint.Destination, serializeMessage(request),
+                    var processingGroup = m_TransportManager.GetProcessingGroup(endpoint.TransportId,endpoint.Destination);
+                    RequestHandle requestHandle = processingGroup.SendRequest(endpoint.Destination, serializeMessage(request),
                                                                      message =>
                                                                      {
                                                                          try
@@ -306,8 +306,8 @@ namespace Inceptum.Messaging
             {
                 try
                 {
-                    var transport = m_TransportManager.GetTransport( endpoint.TransportId);
-                	var subscription = transport.RegisterHandler(endpoint.Destination,
+                    var processingGroup = m_TransportManager.GetProcessingGroup( endpoint.TransportId,endpoint.Destination);
+                	var subscription = processingGroup.RegisterHandler(endpoint.Destination,
                 	                                                     requestMessage =>
                 	                                                     	{
                 	                                                     		var message = deserializeMessage<TRequest>(requestMessage);
@@ -369,10 +369,10 @@ namespace Inceptum.Messaging
             return m_SerializationManager.Deserialize<TMessage>(message.Bytes);
         }
 
-        private IDisposable subscribe(string destination, string transportId, Action<BinaryMessage> callback, string messageType)
+        private IDisposable subscribe(Endpoint endpoint,Action<BinaryMessage> callback, string messageType)
         {
-            var transport = m_TransportManager.GetTransport(transportId);
-            IDisposable subscription = transport.Subscribe(destination, callback, messageType);
+            var processingGroup = m_TransportManager.GetProcessingGroup(endpoint.TransportId , endpoint.Destination);
+            IDisposable subscription = processingGroup.Subscribe(endpoint.Destination, callback, messageType);
             return createMessagingHandle(subscription.Dispose);
         }
 

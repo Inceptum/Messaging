@@ -9,18 +9,7 @@ using Session = Sonic.Jms.Ext.Session;
 
 namespace Inceptum.Messaging.Sonic
 {
-    internal static class ProcessingGroup
-    {
-        public static IProcessingGroup Create(QueueConnection connection, bool isQueueGroup, string jailedSelector)
-        {
-            if (isQueueGroup) 
-                return new QueueProcessingGroup(connection,jailedSelector);
-            return new TopicProcessingGroup(connection, jailedSelector);
-        }
-    }
-
-
-    internal abstract class ProcessingGroup<TSession> : IProcessingGroup
+    internal abstract class ProcessingGroupBase<TSession> : IProcessingGroup
         where TSession : class,Session
     {
         private readonly QueueConnection m_Connection;
@@ -43,7 +32,7 @@ namespace Inceptum.Messaging.Sonic
             get { return m_Subscriptions; }
         }
 
-        protected ProcessingGroup(QueueConnection connection, string jailedTag)
+        protected ProcessingGroupBase(QueueConnection connection, string jailedTag)
         {
             m_JailedTag = jailedTag;
             if (connection == null) throw new ArgumentNullException("connection");
@@ -69,8 +58,6 @@ namespace Inceptum.Messaging.Sonic
         }
         private void send(Destination destination, BinaryMessage message, int ttl, Action<Message> tuneMessage = null)
         {
-            
-           
             var bytesMessage = m_Session.createBytesMessage();
             bytesMessage.writeBytes(message.Bytes??new byte[0]);
             bytesMessage.setStringProperty(SonicTransportFactory.JAILED_PROPERTY_NAME, m_JailedTag);
@@ -125,7 +112,6 @@ namespace Inceptum.Messaging.Sonic
                 {
                     consumer.close();
                     // ReSharper disable AccessToModifiedClosure
-                    // Closure.
                     m_Subscriptions.Remove(subscription);
                     // ReSharper restore AccessToModifiedClosure
                     if (m_Subscriptions.Count == 0)

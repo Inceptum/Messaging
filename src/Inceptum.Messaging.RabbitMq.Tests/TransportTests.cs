@@ -79,8 +79,9 @@ namespace Inceptum.Messaging.RabbitMq.Tests
         {
             using (var transport = new Transport("localhost", "guest", "guest"))
             {
-                transport.Send(TEST_EXCHANGE, new BinaryMessage {Bytes = new byte[] {0x0, 0x1, 0x2}, Type = typeof (byte[]).Name}, 0);
-                transport.Subscribe(TEST_QUEUE, message => Console.WriteLine("message:" + message.Type), typeof (byte[]).Name);
+                var processingGroup = transport.CreateProcessingGroup("test", null);
+                processingGroup.Send(TEST_EXCHANGE, new BinaryMessage { Bytes = new byte[] { 0x0, 0x1, 0x2 }, Type = typeof(byte[]).Name }, 0);
+                processingGroup.Subscribe(TEST_QUEUE, message => Console.WriteLine("message:" + message.Type), typeof(byte[]).Name);
             }
         }
 
@@ -90,17 +91,18 @@ namespace Inceptum.Messaging.RabbitMq.Tests
         {
             using (var transport = new Transport("localhost", "guest", "guest"))
             {
+                var processingGroup = transport.CreateProcessingGroup("test", null);
                 var type1Received = new AutoResetEvent(false);
                 var type2Received = new AutoResetEvent(false);
 
-                transport.Subscribe(TEST_QUEUE, message => type1Received.Set(), "type1");
+                processingGroup.Subscribe(TEST_QUEUE, message => type1Received.Set(), "type1");
 
-                transport.Send(TEST_EXCHANGE, new BinaryMessage { Bytes = new byte[] { 0x0, 0x1, 0x2 }, Type = "type1" }, 0);
+                processingGroup.Send(TEST_EXCHANGE, new BinaryMessage { Bytes = new byte[] { 0x0, 0x1, 0x2 }, Type = "type1" }, 0);
                 Assert.That(type1Received.WaitOne(2222500), Is.True, "Message of subscribed type was not delivered");
-                transport.Send(TEST_EXCHANGE, new BinaryMessage { Bytes = new byte[] { 0x0, 0x1, 0x2 }, Type = "type2" }, 0);
-                transport.Send(TEST_EXCHANGE, new BinaryMessage { Bytes = new byte[] { 0x0, 0x1, 0x2 }, Type = "type1" }, 0);
+                processingGroup.Send(TEST_EXCHANGE, new BinaryMessage { Bytes = new byte[] { 0x0, 0x1, 0x2 }, Type = "type2" }, 0);
+                processingGroup.Send(TEST_EXCHANGE, new BinaryMessage { Bytes = new byte[] { 0x0, 0x1, 0x2 }, Type = "type1" }, 0);
                 Assert.That(type1Received.WaitOne(500), Is.False, "Message of not subscribed type has not paused processing");
-                transport.Subscribe(TEST_QUEUE, message => type2Received.Set(), "type2");
+                processingGroup.Subscribe(TEST_QUEUE, message => type2Received.Set(), "type2");
                 Assert.That(type1Received.WaitOne(500), Is.True, "Processing was not resumed after handler for unknown message type was registered");
                 Assert.That(type2Received.WaitOne(500), Is.True, "Processing was not resumed after handler for unknown message type was registered");
 
@@ -116,14 +118,15 @@ namespace Inceptum.Messaging.RabbitMq.Tests
                 Thread connectionThread = null;
                 using (var transport = new Transport("localhost", "guest", "guest"))
                 {
-                    transport.Subscribe(TEST_QUEUE, message =>
+                    var processingGroup = transport.CreateProcessingGroup("test", null);
+                    processingGroup.Subscribe(TEST_QUEUE, message =>
                         {
                             connectionThread = Thread.CurrentThread;
                             received.Set();
                         }, "type1");
-                    transport.Send(TEST_EXCHANGE, new BinaryMessage { Bytes = new byte[] { 0x0, 0x1, 0x2 }, Type = "type1" }, 0);
+                    processingGroup.Send(TEST_EXCHANGE, new BinaryMessage { Bytes = new byte[] { 0x0, 0x1, 0x2 }, Type = "type1" }, 0);
                     Assert.That(received.WaitOne(100), Is.True, "Message was not delivered");
-                    transport.Send(TEST_EXCHANGE, new BinaryMessage { Bytes = new byte[] { 0x0, 0x1, 0x2 }, Type = "type2" }, 0);
+                    processingGroup.Send(TEST_EXCHANGE, new BinaryMessage { Bytes = new byte[] { 0x0, 0x1, 0x2 }, Type = "type2" }, 0);
 
                 }
                 Assert.That(connectionThread.ThreadState, Is.EqualTo(ThreadState.Stopped),"Processing thread is still active in spite of transport dispose");
@@ -134,12 +137,13 @@ namespace Inceptum.Messaging.RabbitMq.Tests
         {
             using (var transport = new Transport("localhost", "guest", "guest"))
             {
+                var processingGroup = transport.CreateProcessingGroup("test", null);
                 var received = new AutoResetEvent(false);
-                var subscription = transport.Subscribe(TEST_QUEUE, message => received.Set(), "type2");
-                transport.Send(TEST_EXCHANGE, new BinaryMessage { Bytes = new byte[] { 0x0, 0x1, 0x2 }, Type = "type1" }, 0);
+                var subscription = processingGroup.Subscribe(TEST_QUEUE, message => received.Set(), "type2");
+                processingGroup.Send(TEST_EXCHANGE, new BinaryMessage { Bytes = new byte[] { 0x0, 0x1, 0x2 }, Type = "type1" }, 0);
                 Assert.That(received.WaitOne(500), Is.False, "Message of not subscribed type has not paused processing");
                 subscription.Dispose();
-                transport.Subscribe(TEST_QUEUE, message => received.Set(), "type1");
+                processingGroup.Subscribe(TEST_QUEUE, message => received.Set(), "type1");
                 Assert.That(received.WaitOne(500), Is.True, "Message was not returned to queue");
             }
         }
