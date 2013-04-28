@@ -30,6 +30,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
 
         private const string TEST_QUEUE = "test.queue";
         private const string TEST_EXCHANGE = "test.exchange";
+        private const string HOST = "192.168.1.5";
         private IConnection m_Connection;
         private IModel m_Channel;
         private ConnectionFactory m_Factory;
@@ -38,7 +39,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
         [TestFixtureSetUp]
         public void FixtureSetUp()
         {
-            m_Factory = new ConnectionFactory {HostName = "localhost", UserName = "guest", Password = "guest"};
+            m_Factory = new ConnectionFactory {HostName = HOST, UserName = "guest", Password = "guest"};
             using (IConnection connection = m_Factory.CreateConnection())
             using (IModel channel = connection.CreateModel())
             {
@@ -74,7 +75,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
         [Test]
         public void SendTest()
         {
-            using (var transport = new Transport("localhost", "guest", "guest"))
+            using (var transport = new Transport(HOST, "guest", "guest"))
             {
                 IProcessingGroup processingGroup = transport.CreateProcessingGroup("test", null);
                 processingGroup.Send(TEST_EXCHANGE, new BinaryMessage {Bytes = new byte[] {0x0, 0x1, 0x2}, Type = typeof (byte[]).Name}, 0);
@@ -86,8 +87,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
         [Test]
         public void RpcTest()
         {
-            //Console.WriteLine(new PublicationAddress("direct","test","key"));
-            using (var transport = new Transport("localhost", "guest", "guest"))
+            using (var transport = new Transport(HOST, "guest", "guest"))
             {
                 var request = new byte[] {0x0, 0x1, 0x2};
                 var response = new byte[] {0x2, 0x1, 0x0};
@@ -111,7 +111,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
         [TestCase("test", TestName = "Shared destination")]
         public void UnsubscribeTest(string messageType)
         {
-            using (var transport = new Transport("localhost", "guest", "guest"))
+            using (var transport = new Transport(HOST, "guest", "guest"))
             {
                 var ev = new AutoResetEvent(false);
                 IProcessingGroup processingGroup = transport.CreateProcessingGroup("test", null);
@@ -126,7 +126,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
         [Test]
         public void ConnectionFailureTest()
         {
-            using (var transport = new Transport("localhost", "guest", "guest"))
+            using (var transport = new Transport(HOST, "guest", "guest"))
             {
                 var onFailureCalled = new AutoResetEvent(false);
                 IProcessingGroup processingGroup = transport.CreateProcessingGroup("test", () =>
@@ -146,7 +146,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
         [Test]
         public void HandlerWaitStopsAndMessageOfUnknownTypeReturnsToQueueOnUnsubscribeTest()
         {
-            using (var transport = new Transport("localhost", "guest", "guest"))
+            using (var transport = new Transport(HOST, "guest", "guest"))
             {
                 IProcessingGroup processingGroup = transport.CreateProcessingGroup("test", null);
                 var received = new AutoResetEvent(false);
@@ -166,7 +166,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
         [Test]
         public void MessageOfUnknownTypeShouldPauseProcessingTillCorrespondingHandlerIsRegisteredTest()
         {
-            using (var transport = new Transport("localhost", "guest", "guest"))
+            using (var transport = new Transport(HOST, "guest", "guest"))
             {
                 IProcessingGroup processingGroup = transport.CreateProcessingGroup("test", null);
                 var type1Received = new AutoResetEvent(false);
@@ -190,7 +190,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
         {
             var received = new ManualResetEvent(false);
             Thread connectionThread = null;
-            using (var transport = new Transport("localhost", "guest", "guest"))
+            using (var transport = new Transport(HOST, "guest", "guest"))
             {
                 IProcessingGroup processingGroup = transport.CreateProcessingGroup("test", null);
                 processingGroup.Subscribe(TEST_QUEUE, message =>
@@ -215,7 +215,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
             var messageBytes = new byte[messageSize];
             new Random().NextBytes(messageBytes);
 
-            using (var transport = new Transport("localhost", "guest", "guest"))
+            using (var transport = new Transport(HOST, "guest", "guest"))
             {
                 IProcessingGroup processingGroup = transport.CreateProcessingGroup("test", null);
                 Stopwatch sw = Stopwatch.StartNew();
@@ -236,7 +236,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
         [ExpectedException(typeof (InvalidOperationException))]
         public void AttemptToSubscribeSameDestinationAndMessageTypeTwiceFailureTest()
         {
-            using (var transport = new Transport("localhost", "guest", "guest"))
+            using (var transport = new Transport(HOST, "guest", "guest"))
             {
                 IProcessingGroup processingGroup = transport.CreateProcessingGroup("test", null);
                 processingGroup.Subscribe(TEST_QUEUE, message => { }, "type1");
@@ -248,7 +248,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
         [ExpectedException(typeof (InvalidOperationException))]
         public void AttemptToSubscribeSharedDestinationWithoutMessageTypeFailureTest()
         {
-            using (var transport = new Transport("localhost", "guest", "guest"))
+            using (var transport = new Transport(HOST, "guest", "guest"))
             {
                 IProcessingGroup processingGroup = transport.CreateProcessingGroup("test", null);
                 processingGroup.Subscribe(TEST_QUEUE, message => { }, "type1");
@@ -260,7 +260,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
         [ExpectedException(typeof (InvalidOperationException))]
         public void AttemptToSubscribeNonSharedDestinationWithMessageTypeFailureTest()
         {
-            using (var transport = new Transport("localhost", "guest", "guest"))
+            using (var transport = new Transport(HOST, "guest", "guest"))
             {
                 IProcessingGroup processingGroup = transport.CreateProcessingGroup("test", null);
                 processingGroup.Subscribe(TEST_QUEUE, message => { }, null);
@@ -272,7 +272,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
         [ExpectedException(typeof (InvalidOperationException))]
         public void AttemptToSubscribeSameDestinationWithoutMessageTypeTwiceFailureTest()
         {
-            using (var transport = new Transport("localhost", "guest", "guest"))
+            using (var transport = new Transport(HOST, "guest", "guest"))
             {
                 IProcessingGroup processingGroup = transport.CreateProcessingGroup("test", null);
                 processingGroup.Subscribe(TEST_QUEUE, message => { }, null);
