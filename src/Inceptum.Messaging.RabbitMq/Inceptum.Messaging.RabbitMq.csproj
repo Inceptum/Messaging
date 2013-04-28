@@ -59,6 +59,7 @@
       <Link>Properties\VersionInfo.cs</Link>
     </Compile>
     <Compile Include="Consumer.cs" />
+    <Compile Include="SharedConsumer.cs" />
     <Compile Include="ProcessingGroup.cs" />
     <Compile Include="RabbitMqTransportFactory.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
