@@ -14,11 +14,53 @@ namespace Inceptum.Messaging
     {
         private class ResolvedTransport : IDisposable
         {
+            class ProcessinGroupWrapper: IDisposable
+            {
+                public string TransportId { get; private set; }
+                public string Name { get; private set; }
+                public IProcessingGroup ProcessingGroup { get; private set; }
+                public event Action OnFailure;
+
+                public ProcessinGroupWrapper(string transportId, string name)
+                {
+                    TransportId = transportId;
+                    Name = name;
+                }
+
+                public void SetProcessingGroup(IProcessingGroup processingGroup)
+                {
+                    ProcessingGroup = processingGroup;
+                }
+
+                public void ReportFailure()
+                {
+                    if (OnFailure == null) 
+                        return;
+
+                    foreach (var handler in OnFailure.GetInvocationList())
+                    {
+                        try
+                        {
+                            handler.DynamicInvoke();
+                        }
+                        catch (Exception)
+                        {
+                            //TODO: log
+                        }
+                    }
+                }
+
+                public void Dispose()
+                {
+                    if(ProcessingGroup!=null)
+                        ProcessingGroup.Dispose();
+                }
+            }
             private readonly List<string> m_KnownIds = new List<string>();
             private readonly TransportInfo m_TransportInfo;
             private readonly Action m_ProcessTransportFailure;
             private readonly ITransportFactory m_Factory;
-
+            private readonly List<ProcessinGroupWrapper> m_ProcessingGroups=new List<ProcessinGroupWrapper>();
             public ResolvedTransport(TransportInfo transportInfo, Action processTransportFailure,ITransportFactory factory)
             {
                 m_Factory = factory;
@@ -42,18 +84,52 @@ namespace Inceptum.Messaging
             }
 
             [MethodImpl(MethodImplOptions.Synchronized)]
-            public ITransport InitializeAs(string transportId)
+            public IProcessingGroup GetProcessingGroup(string transportId,string name, Action onFailure)
             {
                 addId(transportId);
-                return Transport ?? (Transport = m_Factory.Create(m_TransportInfo, m_ProcessTransportFailure));
+                var transport = Transport ?? (Transport = m_Factory.Create(m_TransportInfo, processTransportFailure));
+
+                var processingGroup = m_ProcessingGroups.FirstOrDefault(g => g.TransportId == transportId && g.Name  == name);
+               
+                if (processingGroup==null)
+                {
+                    processingGroup = new ProcessinGroupWrapper(transportId,name);
+                    processingGroup.SetProcessingGroup(transport.CreateProcessingGroup(name, () => processProcessingGroupFailure(processingGroup)));
+                    m_ProcessingGroups.Add(processingGroup);
+                }
+                if(onFailure!=null)
+                    processingGroup.OnFailure += onFailure;
+                return processingGroup.ProcessingGroup;
             }
 
+            [MethodImpl(MethodImplOptions.Synchronized)]
+            private void processTransportFailure()
+            {
+                foreach (var processinGroup in m_ProcessingGroups)
+                {
+                    processProcessingGroupFailure(processinGroup);
+                }
+                m_ProcessTransportFailure();
+            }
+
+            [MethodImpl(MethodImplOptions.Synchronized)]
+            private void processProcessingGroupFailure(ProcessinGroupWrapper processingGroup)
+            {
+                m_ProcessingGroups.Remove(processingGroup);
+                processingGroup.ReportFailure();
+            }
+ 
 
             [MethodImpl(MethodImplOptions.Synchronized)]
             public void Dispose()
             {
                 if (Transport == null) 
                     return;
+                foreach (var processinGroupWrapper in m_ProcessingGroups)
+                {
+                    processinGroupWrapper.Dispose();
+                }
+                //TODO: dispose processing groups
                 Transport.Dispose();
                 Transport = null;
             }
@@ -92,7 +168,7 @@ namespace Inceptum.Messaging
 
         public event TrasnportEventHandler TransportEvents;
 
-        public ITransport GetTransport(string transportId)
+        public IProcessingGroup GetProcessingGroup(string transportId, string name, Action onFailure=null)
         {
             if (m_IsDisposed.WaitOne(0))
                 throw new ObjectDisposedException(string.Format("Can not create transport {0}. TransportManager instance is disposed",transportId));
@@ -125,7 +201,7 @@ namespace Inceptum.Messaging
 
             try
             {
-                return transport.InitializeAs(transportId);
+                return transport.GetProcessingGroup(transportId,name,onFailure);
             }
             catch (Exception e)
             {

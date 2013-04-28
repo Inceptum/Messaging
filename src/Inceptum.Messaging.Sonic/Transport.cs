@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using Inceptum.Messaging.Transports;
 using Sonic.Jms.Ext;
 using Connection = Sonic.Jms.Ext.Connection;
@@ -22,7 +21,6 @@ namespace Inceptum.Messaging.Sonic
         
         private readonly string m_JailedTag;
         private readonly QueueConnection m_Connection;
-        internal string JailedSelector { get; private set; }
 
         public Transport(TransportInfo transportInfo, Action onFailure)
         {
@@ -31,7 +29,6 @@ namespace Inceptum.Messaging.Sonic
             m_TransportInfo = transportInfo;
 
             m_JailedTag = (m_TransportInfo.JailStrategy ?? JailStrategy.None).CreateTag();
-            JailedSelector = SonicTransportFactory.JAILED_PROPERTY_NAME + " = \'" + m_JailedTag + "\'";
 
             var factory = new QueueConnectionFactory();
             (factory as ConnectionFactory).setConnectionURLs(m_TransportInfo.Broker);
@@ -48,66 +45,7 @@ namespace Inceptum.Messaging.Sonic
         }
          
  
-        
-        
-        private bool isQueue(string destination)
-        {
-            if (destination.StartsWith("queue://", true, CultureInfo.InvariantCulture))
-            {
-                return true;
-            }
-            
-            if (destination.StartsWith("topic://", true, CultureInfo.InvariantCulture))
-            {
-                return false;
-            }
-            
-            throw new InvalidOperationException("Wrong destination name: " + destination + ". Should start with 'queue://' or 'topic://'");
-        }
-
-
-        public void Send(string destination, BinaryMessage message, int ttl, string processingGroup = null)
-        {
-            var group = getProcessingGroup(destination, processingGroup);
-            group.Send(destination, message, ttl);
-        }
-
-        public RequestHandle SendRequest(string destination, BinaryMessage message, Action<BinaryMessage> callback, string processingGroup = null)
-        {
-            var group = getProcessingGroup(destination, processingGroup);
-            return group.SendRequest(destination, message, callback);
-        }
-
-        public IDisposable RegisterHandler(string destination, Func<BinaryMessage, BinaryMessage> handler, string messageType, string processingGroup = null)
-        { 
-            var group = getProcessingGroup(destination, processingGroup);
-            return group.RegisterHandler(destination, handler,messageType);
-        }
-
-        public IDisposable Subscribe(string destination, Action<BinaryMessage> callback, string messageType, string processingGroup = null)
-        {
-            var group = getProcessingGroup(destination, processingGroup);
-            return group.Subscribe(destination, callback, messageType);
-        }
-
-        private IProcessingGroup getProcessingGroup(string destination, string processingGroup)
-        {
-            var groupName = processingGroup ?? destination;
-            var isQueueGroup = isQueue(destination);
-            var groupKey = Tuple.Create(groupName, isQueueGroup);
-            IProcessingGroup group;
-            lock (m_ProcessingGroups)
-            {
-                if (!m_ProcessingGroups.TryGetValue(groupKey, out group))
-                {
-                    group = ProcessingGroup.Create(m_Connection, isQueueGroup,m_JailedTag);
-                    m_ProcessingGroups.Add(groupKey, group);
-                }
-            }
-            return group;
-        }
  
-
         private void connectionStateHandler(int state)
         {
             lock (m_SyncRoot)
@@ -121,6 +59,12 @@ namespace Inceptum.Messaging.Sonic
                         break;
                 }
             }
+        }
+
+
+        public IProcessingGroup CreateProcessingGroup(string name, Action onFailure)
+        {
+            return new ProcessingGroupWrapper(name, m_Connection, m_JailedTag);
         }
 
         #region IDisposable Members
@@ -144,6 +88,7 @@ namespace Inceptum.Messaging.Sonic
                 m_IsDisposed = true;
             }
         }
+
 
         #endregion
     }

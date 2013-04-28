@@ -1,72 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reactive.Disposables;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using Inceptum.Messaging.Transports;
 using RabbitMQ.Client;
-using RabbitMQ.Client.Exceptions;
-using RabbitMQ.Util;
 
 namespace Inceptum.Messaging.RabbitMq
 {
-   
-
-    internal class ProcessingGroup : DefaultBasicConsumer,IDisposable
-    {
-        private readonly IConnection m_Connection;
-        private readonly IModel m_Model;
-
-        public ProcessingGroup(IConnection connection)
-        {
-            m_Connection = connection;
-            m_Model = m_Connection.CreateModel();
-        }
-
-        readonly Dictionary<string, Consumer> m_Consumers = new Dictionary<string, Consumer>();
-
-        public IDisposable Subscribe(string destination, Action<BinaryMessage> callback, string messageType)
-        {
-            lock (m_Consumers)
-            {
-                Consumer consumer;
-                if (!m_Consumers.TryGetValue(destination, out consumer))
-                {
-                    consumer = new Consumer(m_Model);
-                    m_Consumers[destination] = consumer;
-                }
-
-                consumer.AddCallback(callback, messageType);
-                m_Model.BasicConsume(destination, false, consumer);
-                return Disposable.Create(() =>
-                    {
-                        lock (m_Consumers)
-                        {
-                            if (!consumer.RemoveCallback(messageType))
-                                m_Consumers.Remove(destination);
-                        }
-                    });
-            }
-        }
-
-
-        public void Dispose()
-        {
-            lock (m_Consumers)
-            {
-                foreach (var consumer in m_Consumers.Values)
-                {
-                    consumer.Dispose();
-                }
-            }
-
-            m_Model.Dispose();
-            m_Connection.Dispose();
-        }
-    }
-
-
     public class Consumer : DefaultBasicConsumer,IDisposable
     {
         private readonly IModel m_Model;

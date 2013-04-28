@@ -32,6 +32,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="antlr.runtime">
+      <HintPath>..\libs\Sonic\antlr.runtime.dll</HintPath>
+    </Reference>
     <Reference Include="Castle.Core">
       <HintPath>..\packages\Castle.Core.3.2.0\lib\net45\Castle.Core.dll</HintPath>
     </Reference>
@@ -41,11 +44,29 @@
     <Reference Include="nunit.framework">
       <HintPath>..\packages\NUnit.2.6.2\lib\nunit.framework.dll</HintPath>
     </Reference>
+    <Reference Include="Org.Mentalis.Security">
+      <HintPath>..\libs\Sonic\Org.Mentalis.Security.dll</HintPath>
+    </Reference>
     <Reference Include="protobuf-net">
       <HintPath>..\packages\protobuf-net.2.0.0.621\lib\net40\protobuf-net.dll</HintPath>
     </Reference>
     <Reference Include="Rhino.Mocks">
       <HintPath>..\packages\RhinoMocks.3.6.1\lib\net\Rhino.Mocks.dll</HintPath>
+    </Reference>
+    <Reference Include="Sonic.Client">
+      <HintPath>..\libs\Sonic\Sonic.Client.dll</HintPath>
+    </Reference>
+    <Reference Include="Sonic.Client.Jms.Impl">
+      <HintPath>..\libs\Sonic\Sonic.Client.Jms.Impl.dll</HintPath>
+    </Reference>
+    <Reference Include="Sonic.Jms">
+      <HintPath>..\libs\Sonic\Sonic.Jms.dll</HintPath>
+    </Reference>
+    <Reference Include="Sonic.Jms.Cf.Impl">
+      <HintPath>..\libs\Sonic\Sonic.Jms.Cf.Impl.dll</HintPath>
+    </Reference>
+    <Reference Include="Sonic.Security">
+      <HintPath>..\libs\Sonic\Sonic.Security.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -70,6 +91,10 @@
     <Compile Include="TransportManagerTests.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Inceptum.Messaging.Sonic\Inceptum.Messaging.Sonic.csproj">
+      <Project>{94768353-1832-4E8C-B9B8-15C3798668F4}</Project>
+      <Name>Inceptum.Messaging.Sonic</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Inceptum.Messaging\Inceptum.Messaging.csproj">
       <Project>{87CC7D22-A809-40D3-80FB-E9D58109DC82}</Project>
       <Name>Inceptum.Messaging</Name>

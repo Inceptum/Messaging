@@ -79,8 +79,8 @@
     </Compile>
     <Compile Include="GenericConnectionStateChangeListener.cs" />
     <Compile Include="GenericMessageListener.cs" />
-    <Compile Include="IProcessingGroup.cs" />
-    <Compile Include="ProcessingGroup.cs" />
+    <Compile Include="ProcessingGroupBase.cs" />
+    <Compile Include="ProcessingGroupWrapper.cs" />
     <Compile Include="QueueProcessingGroup.cs" />
     <Compile Include="SonicDestinationExt.cs" />
     <Compile Include="SonicTransportFactory.cs" />

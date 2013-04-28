@@ -1,4 +1,4 @@
-﻿/*using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -11,13 +11,14 @@ using Castle.MicroKernel.Resolvers.SpecializedResolvers;
 using Castle.Windsor;
 using Inceptum.Messaging.Castle;
 using Inceptum.Messaging.Contract;
+using Inceptum.Messaging.Sonic;
 using NUnit.Framework;
 using Rhino.Mocks;
-/*using Sonic.Jms;
+using Sonic.Jms;
 using Connection = Sonic.Jms.Ext.Connection;
 using ConnectionFactory = Sonic.Jms.Ext.ConnectionFactory;
 using QueueSession = Sonic.Jms.Ext.QueueSession;
-using QueueConnectionFactory = Sonic.Jms.Cf.Impl.QueueConnectionFactory;#1#
+using QueueConnectionFactory = Sonic.Jms.Cf.Impl.QueueConnectionFactory;
 namespace Inceptum.Messaging.Tests
 {
     internal class FakeStringSerializer : IMessageSerializer<string>
@@ -55,17 +56,17 @@ namespace Inceptum.Messaging.Tests
 
 
     [TestFixture]
-    public class MessagingEngineTests
+    public class MessagingEngineTests1
     {
         #region Setup/Teardown
 
-   //     [SetUp]
+        [SetUp]
         public void Setup()
         {
             PurgeQueue("Test setup");
         }
 
-     //   [TestFixtureTearDown]
+     [TestFixtureTearDown]
         public void TestFixtureTearDown()
         {
             PurgeQueue("Fixture teardown");
@@ -348,107 +349,13 @@ namespace Inceptum.Messaging.Tests
 
 
 
-        [Test, Ignore]
-       public void FXv2Listener()
-        {
-
-            var db = new DataBus.DataBus(){ Logger = new ConsoleLogger()};
-            var serializationManager = new SerializationManager();
-            serializationManager.RegisterSerializerFactory(new ProtobufSerializerFactory());
-            var messagingEngine = new MessagingEngine(
-                new TransportResolver(
-                    new Dictionary<string, TransportInfo>
-                        {{"tr1", new TransportInfo("tcp://msk-mqesb1.office.finam.ru:2510", "dev", "dev", "None")}}),
-                serializationManager, new SonicTransportFactory()
-                ) {Logger = new ConsoleLogger()};
-
-
-            db.RegisterFeedProvider("rates", new RatesFeedProvider(messagingEngine,
-                    new Endpoint("tr1", "topic://finam.source.reuters"), new Endpoint("tr1", "topic://finam.source.reuters.{0}")) { Logger = new ConsoleLogger() });
-
-            var feed = db.Channel<decimal>("rates").Feed("USD");
-            using (feed.Subscribe(obj => { }))
-            {
-                Thread.Sleep(12000);
-                Console.WriteLine("Done!!!");
-            }
-
-            Thread.Sleep(1200);
-
-        }
-
-
-        [Test, Ignore]
-        public void FXListener()
-        {
-
-            using (IWindsorContainer container = new WindsorContainer())
-            {
-
-                container.AddFacility(new MessagingFacility(
-                                          new Dictionary<string, TransportInfo>
-                                              {
-                                                  {
-                                                      "tr",
-                                                      new TransportInfo("tcp://MSK-SONIC1.office.finam.ru:3506", "dev",
-                                                                        "dev", "None")
-                                                      },
-                                                  {
-                                                      "tr1",
-                                                      new TransportInfo("tcp://msk-mqesb1.office.finam.ru:2510", "dev",
-                                                                        "dev", "None")
-                                                      },
-                                                      {
-                                                      "tr2",
-                                                      new TransportInfo("tcp://MSK-SONIC1.office.finam.ru:3506,tcp://MSK-SONIC1.office.finam.ru:3507", "dev",
-                                                                        "dev", "None")
-                                                      },
-                                              })
-                    );
-                var engine = container.Resolve<IMessagingEngine>();
-                engine.SubscribeOnTransportEvents((id, @event) => Console.WriteLine("transport " + id + " failed"));
-
-                var ev = new ManualResetEvent(false);
-                using (engine.Subscribe<Quote>(new Endpoint("tr1", "topic://finam.reuters.fx.usd.rub"), s =>
-                                                                                              {
-                                                                                                  Console.WriteLine(
-                                                                                                      string.Format(
-                                                                                                          "USD: {0}: last:{1} bid:{2} ask:{3} close:{4}  buy:{5} sell:{6}",
-                                                                                                          DateTime.Now,
-                                                                                                          s.last, s.bid,
-                                                                                                          s.ask, s.close,
-                                                                                                          s.last*.992,
-                                                                                                          s.last*1.008));
-                                                                                                  ev.Set();
-                                                                                              }))
-
-				using (engine.Subscribe<Quote>(new Endpoint( "tr1","topic://finam.reuters.fx.eur.rub"), s =>
-                                                                                              {
-                                                                                                  Console.WriteLine(
-                                                                                                      string.Format(
-                                                                                                          "EUR: {0}: last:{1} bid:{2} ask:{3} close:{4}  buy:{5} sell:{6}",
-                                                                                                          DateTime.Now,
-                                                                                                          s.last, s.bid,
-                                                                                                          s.ask, s.close,
-                                                                                                          s.last*.992,
-                                                                                                          s.last*1.008));
-                                                                                                  ev.Set();
-                                                                                              }))
-                {
-                    Thread.Sleep(3*24*60*60*1000);
-                }
-            }
-
-        }
-
-
 
         [Test]
         public void SendToOverflowenQueueFailureTest()
         {
 
             var serializationManager = new SerializationManager();
-            serializationManager.RegisterSerializer(typeof (string), new FakeStringSerializer());
+            serializationManager.RegisterSerializer(typeof(string), new FakeStringSerializer());
 
             ITransportResolver resolver = MockTransportResolver();
 
@@ -460,22 +367,23 @@ namespace Inceptum.Messaging.Tests
                 Exception exception = null;
 
                 var t = new Thread(() =>
-                                       {
-                                           try
-                                           {
-                                               engine.Send(halfMegabyteMessage, new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE1));
-                                           }
-                                           catch (Exception ex)
-                                           {
-                                               exception = ex;
-                                           }
-                                       });
+                {
+                    try
+                    {
+                        engine.Send(halfMegabyteMessage, new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE1));
+                    }
+                    catch (Exception ex)
+                    {
+                        exception = ex;
+                    }
+                });
                 t.Start();
                 Assert.That(t.Join(2000), Is.True, "Exception was not thrown when queue is overflowed");
                 Assert.That(exception, Is.Not.Null);
                 Console.WriteLine(exception);
             }
         }
+
 
 
         [Test]
@@ -490,8 +398,8 @@ namespace Inceptum.Messaging.Tests
             engine.SubscribeOnTransportEvents((transportid, @event) => failureWasReportedCount++);
 
             //need for transportManager to start tracking transport failures for these ids
-            transportManager.GetTransport(TransportConstants.TRANSPORT_ID1);
-            transportManager.GetTransport(TransportConstants.TRANSPORT_ID2);
+            transportManager.GetProcessingGroup(TransportConstants.TRANSPORT_ID1,"test");
+            transportManager.GetProcessingGroup(TransportConstants.TRANSPORT_ID2, "test");
 
             transportManager.ProcessTransportFailure( 
                                                      new TransportInfo(TransportConstants.BROKER,
@@ -520,7 +428,7 @@ namespace Inceptum.Messaging.Tests
                     start.WaitOne();
                     try
                     {
-                        var transport = transportManager.GetTransport(TransportConstants.TRANSPORT_ID1);
+                        var transport = transportManager.GetProcessingGroup(TransportConstants.TRANSPORT_ID1,"test");
                         Console.WriteLine(treadNum+". "+transport);
                         Interlocked.Increment(ref attemptCount);
                     }
@@ -610,4 +518,4 @@ namespace Inceptum.Messaging.Tests
         }
     }
 
-}*/
+}
