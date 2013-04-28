@@ -82,6 +82,30 @@ namespace Inceptum.Messaging.RabbitMq.Tests
             }
         }
 
+
+        [Test]
+        public void RpcTest()
+        {
+            //Console.WriteLine(new PublicationAddress("direct","test","key"));
+            using (var transport = new Transport("localhost", "guest", "guest"))
+            {
+                var request = new byte[] {0x0, 0x1, 0x2};
+                var response = new byte[] {0x2, 0x1, 0x0};
+                byte[] actualResponse = null;
+                var received = new ManualResetEvent(false);
+
+                var processingGroup = transport.CreateProcessingGroup("test", null);
+                processingGroup.RegisterHandler(TEST_QUEUE, message => new BinaryMessage {Bytes = response, Type = typeof (byte[]).Name}, null);
+                processingGroup.SendRequest(TEST_EXCHANGE, new BinaryMessage { Bytes = request, Type = typeof(byte[]).Name }, message =>
+                    {
+                        received.Set();
+                        actualResponse = message.Bytes;
+                    });
+                Assert.That(received.WaitOne(500), Is.True, "Response was not received");
+                Assert.That(actualResponse, Is.EqualTo(response), "Received response does not match sent one");
+            }
+        }
+
         [Test]
         [TestCase(null, TestName = "Non shared destination")]
         [TestCase("test", TestName = "Shared destination")]
@@ -216,6 +240,30 @@ namespace Inceptum.Messaging.RabbitMq.Tests
             {
                 IProcessingGroup processingGroup = transport.CreateProcessingGroup("test", null);
                 processingGroup.Subscribe(TEST_QUEUE, message => { }, "type1");
+                processingGroup.Subscribe(TEST_QUEUE, message => { }, "type1");
+            }
+        }
+        
+        [Test]
+        [ExpectedException(typeof (InvalidOperationException))]
+        public void AttemptToSubscribeSharedDestinationWithoutMessageTypeFailureTest()
+        {
+            using (var transport = new Transport("localhost", "guest", "guest"))
+            {
+                IProcessingGroup processingGroup = transport.CreateProcessingGroup("test", null);
+                processingGroup.Subscribe(TEST_QUEUE, message => { }, "type1");
+                processingGroup.Subscribe(TEST_QUEUE, message => { }, null);
+            }
+        }
+
+        [Test]
+        [ExpectedException(typeof (InvalidOperationException))]
+        public void AttemptToSubscribeNonSharedDestinationWithMessageTypeFailureTest()
+        {
+            using (var transport = new Transport("localhost", "guest", "guest"))
+            {
+                IProcessingGroup processingGroup = transport.CreateProcessingGroup("test", null);
+                processingGroup.Subscribe(TEST_QUEUE, message => { }, null);
                 processingGroup.Subscribe(TEST_QUEUE, message => { }, "type1");
             }
         }

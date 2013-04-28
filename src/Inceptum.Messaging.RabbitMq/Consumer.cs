@@ -6,9 +6,10 @@ namespace Inceptum.Messaging.RabbitMq
 {
     class Consumer:DefaultBasicConsumer,IDisposable
     {
-        private readonly Action<BinaryMessage> m_Callback;
+        private readonly Action<IBasicProperties, byte[]> m_Callback;
 
-        public Consumer(IModel model,Action<BinaryMessage> callback) : base(model)
+        public Consumer(IModel model, Action<IBasicProperties, byte[]> callback)
+            : base(model)
         {
             if (callback == null) throw new ArgumentNullException("callback");
             m_Callback = callback;
@@ -20,7 +21,7 @@ namespace Inceptum.Messaging.RabbitMq
         {
             try
             {
-                m_Callback(new BinaryMessage {Bytes = body, Type = properties.Type});
+                m_Callback(properties,body);
                 Model.BasicAck(deliveryTag, false);
             }
             catch (Exception e)
@@ -31,7 +32,8 @@ namespace Inceptum.Messaging.RabbitMq
 
         public void Dispose()
         {
-            Model.BasicCancel(ConsumerTag);
+            lock (Model)
+                Model.BasicCancel(ConsumerTag);
         }
     }
 }

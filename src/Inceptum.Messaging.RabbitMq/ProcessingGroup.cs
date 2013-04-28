@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Reactive.Disposables;
 using Inceptum.Messaging.Transports;
 using RabbitMQ.Client;
@@ -10,6 +11,8 @@ namespace Inceptum.Messaging.RabbitMq
     {
         private readonly IConnection m_Connection;
         private readonly IModel m_Model;
+        private readonly CompositeDisposable m_Subscriptions = new CompositeDisposable();
+
 
         public ProcessingGroup(IConnection connection)
         {
@@ -31,24 +34,72 @@ namespace Inceptum.Messaging.RabbitMq
 
         public void Send(string destination, BinaryMessage message, int ttl)
         {
-            //TODO: model is not thread safe
+            send(destination, message, properties =>
+                {
+                    if (ttl > 0) properties.Expiration = ttl.ToString(CultureInfo.InvariantCulture);
+                });
+        }
+
+        private void send(string destination, BinaryMessage message, Action<IBasicProperties> tuneMessage = null)
+        {
+            var publicationAddress = PublicationAddress.Parse(destination) ?? new PublicationAddress("direct", destination, "");
+            send(publicationAddress, message, tuneMessage);
+        }
+        private void send(PublicationAddress destination, BinaryMessage message, Action<IBasicProperties> tuneMessage = null)
+        {
             var properties = m_Model.CreateBasicProperties();
-            if(message.Type!=null)
+            if (message.Type != null)
                 properties.Type = message.Type;
-            m_Model.BasicPublish(destination, "", properties, message.Bytes);
+            if (tuneMessage != null)
+                tuneMessage(properties);
+            lock(m_Model)
+                m_Model.BasicPublish(destination, properties, message.Bytes);
         }
 
         public RequestHandle SendRequest(string destination, BinaryMessage message, Action<BinaryMessage> callback)
         {
-            throw new NotImplementedException();
+            string queue;
+            lock(m_Model)
+                queue = m_Model.QueueDeclare().QueueName;
+            var request = new RequestHandle(callback, () => { }, cb => Subscribe(queue, cb, null));
+            m_Subscriptions.Add(request);
+// ReSharper disable ImplicitlyCapturedClosure
+            send(destination, message, p => p.ReplyTo = new PublicationAddress("direct", "", queue).ToString());
+// ReSharper restore ImplicitlyCapturedClosure
+            return request;
+ 
         }
 
         public IDisposable RegisterHandler(string destination, Func<BinaryMessage, BinaryMessage> handler, string messageType)
         {
-            throw new NotImplementedException();
+           
+            var subscription = subscribe(destination, (properties, bytes) =>
+            {
+                var correlationId = properties.CorrelationId;
+                var responseBytes = handler(toBinaryMessage(properties, bytes));
+                //If replyTo is not parsable we treat it as queue name and message is sent via default exchange  (http://www.rabbitmq.com/tutorials/amqp-concepts.html#exchange-default)
+                var publicationAddress = PublicationAddress.Parse(properties.ReplyTo) ?? new PublicationAddress("direct", "", properties.ReplyTo);
+                send(publicationAddress, responseBytes, p =>
+                    {
+                        if (correlationId != null)
+                            p.CorrelationId = correlationId;
+                    });
+            }, messageType);
+
+            return subscription;
         }
 
         public IDisposable Subscribe(string destination, Action<BinaryMessage> callback, string messageType)
+        {
+            return subscribe(destination, (properties, bytes) => callback(toBinaryMessage(properties, bytes)),messageType);
+        }
+
+        private BinaryMessage toBinaryMessage(IBasicProperties properties, byte[] bytes)
+        {
+            return new BinaryMessage {Bytes = bytes, Type = properties.Type};
+        }
+
+        private IDisposable subscribe(string destination, Action<IBasicProperties, byte[]> callback, string messageType)
         {
 
             lock (m_Consumers)
@@ -70,9 +121,8 @@ namespace Inceptum.Messaging.RabbitMq
                 return subscribeShared(destination, callback, messageType, basicConsumer as SharedConsumer);
             }
         }
-
-        private IDisposable subscribeShared(string destination, Action<BinaryMessage> callback, string messageType,
-                                            SharedConsumer consumer)
+        
+        private IDisposable subscribeShared(string destination, Action<IBasicProperties, byte[]> callback, string messageType, SharedConsumer consumer)
         {
             if (consumer == null)
             {
@@ -82,8 +132,8 @@ namespace Inceptum.Messaging.RabbitMq
 
             consumer.AddCallback(callback, messageType);
 
-
-            m_Model.BasicConsume(destination, false, consumer);
+            lock (m_Model)
+                m_Model.BasicConsume(destination, false, consumer);
             return Disposable.Create(() =>
                 {
                     lock (m_Consumers)
@@ -94,10 +144,11 @@ namespace Inceptum.Messaging.RabbitMq
                 });
         }
 
-        private IDisposable subscribeNonShared(string destination, Action<BinaryMessage> callback)
+        private IDisposable subscribeNonShared(string destination, Action<IBasicProperties, byte[]> callback)
         {
             var consumer = new Consumer(m_Model, callback);
-            m_Model.BasicConsume(destination, false, consumer);
+            lock (m_Model)
+                m_Model.BasicConsume(destination, false, consumer);
             m_Consumers[destination] = consumer;
             // ReSharper disable ImplicitlyCapturedClosure
             return Disposable.Create(() =>
@@ -121,8 +172,8 @@ namespace Inceptum.Messaging.RabbitMq
                     consumer.Dispose();
                 }
             }
-
-            m_Model.Dispose();
+            lock (m_Model)
+                m_Model.Dispose();
             m_Connection.Dispose();
         }
     }
