@@ -12,7 +12,6 @@
     <copyright>Copyright 2013</copyright>
     <tags></tags>
 	<dependencies>
-        <dependency id="Inceptum.Core" version="[$version$]" />
     </dependencies>  
   </metadata>
   <files>
