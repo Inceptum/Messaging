@@ -1,23 +1,23 @@
 <?xml version="1.0"?>
 <package >
-  <metadata>
-    <id>Inceptum.Messaging.Sonic</id>
-    <version>$version$</version>
-    <title>Inceptum.Messaging.Sonic</title>
-    <authors>InceptumSoft</authors>
-    <owners>InceptumSoft</owners>
-    <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>Inceptum.Messaging.Sonic</description>
-    <releaseNotes></releaseNotes>
-    <copyright>Copyright 2013</copyright>
-    <tags></tags>
-	<dependencies>
-        <dependency id="Inceptum.Messaging" version="$version$" />
-    </dependencies>  
+	<metadata>
+		<id>Inceptum.Messaging.Sonic</id>
+		<version>$version$</version>
+		<title>Inceptum.Messaging.Sonic</title>
+		<authors>InceptumSoft</authors>
+		<owners>InceptumSoft</owners>
+		<requireLicenseAcceptance>false</requireLicenseAcceptance>
+		<description>Inceptum.Messaging.Sonic</description>
+		<releaseNotes></releaseNotes>
+		<copyright>Copyright 2013</copyright>
+		<tags></tags>
+		<dependencies>
+			<dependency id="Inceptum.Messaging" version="$version$" />
+		</dependencies>  
+	</metadata>
 	<files>
 		<file src="bin\$Configuration$\Inceptum.Messaging.Sonic.dll" target="lib\net40" />
 		<file src="bin\$Configuration$\Inceptum.Messaging.Sonic.xml" target="lib\net40" />
 		<file src="..\..\src\libs\Sonic\*.*" target="lib\net40" />
 	</files>
-  </metadata>
 </package>
