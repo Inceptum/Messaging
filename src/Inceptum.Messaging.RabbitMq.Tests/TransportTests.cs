@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
+using System.Reflection;
 using System.Threading;
-using System.Threading.Tasks;
 using Inceptum.Messaging.Transports;
 using NUnit.Framework;
 using RabbitMQ.Client;
@@ -15,6 +12,22 @@ namespace Inceptum.Messaging.RabbitMq.Tests
     [TestFixture]
     public class TransportTests
     {
+        [SetUp]
+        public void Setup()
+        {
+            m_Connection = m_Factory.CreateConnection();
+            m_Channel = m_Connection.CreateModel();
+            Console.WriteLine("Purging queue {0}", TEST_QUEUE);
+            m_Channel.QueuePurge(TEST_QUEUE);
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            m_Channel.Dispose();
+            m_Connection.Dispose();
+        }
+
         private const string TEST_QUEUE = "test.queue";
         private const string TEST_EXCHANGE = "test.exchange";
         private IConnection m_Connection;
@@ -25,7 +38,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
         [TestFixtureSetUp]
         public void FixtureSetUp()
         {
-            m_Factory = new ConnectionFactory { HostName = "localhost", UserName = "guest", Password = "guest" };
+            m_Factory = new ConnectionFactory {HostName = "localhost", UserName = "guest", Password = "guest"};
             using (IConnection connection = m_Factory.CreateConnection())
             using (IModel channel = connection.CreateModel())
             {
@@ -55,81 +68,55 @@ namespace Inceptum.Messaging.RabbitMq.Tests
                 channel.QueueDeclare(TEST_QUEUE, false, false, false, null);
                 channel.QueueBind(TEST_QUEUE, TEST_EXCHANGE, "");
             }
-        }        
-
-
-        [SetUp]
-        public void Setup()
-        {
-            m_Connection = m_Factory.CreateConnection();
-            m_Channel = m_Connection.CreateModel();
-            m_Channel.QueuePurge(TEST_QUEUE);
-        }        
-        
-        [TearDown]
-        public void TearDown()
-        {
-            m_Channel.Dispose();
-            m_Connection.Dispose();
-             
         }
+
 
         [Test]
         public void SendTest()
         {
             using (var transport = new Transport("localhost", "guest", "guest"))
             {
-                var processingGroup = transport.CreateProcessingGroup("test", null);
-                processingGroup.Send(TEST_EXCHANGE, new BinaryMessage { Bytes = new byte[] { 0x0, 0x1, 0x2 }, Type = typeof(byte[]).Name }, 0);
-                processingGroup.Subscribe(TEST_QUEUE, message => Console.WriteLine("message:" + message.Type), typeof(byte[]).Name);
+                IProcessingGroup processingGroup = transport.CreateProcessingGroup("test", null);
+                processingGroup.Send(TEST_EXCHANGE, new BinaryMessage {Bytes = new byte[] {0x0, 0x1, 0x2}, Type = typeof (byte[]).Name}, 0);
+                processingGroup.Subscribe(TEST_QUEUE, message => Console.WriteLine("message:" + message.Type), typeof (byte[]).Name);
             }
         }
 
-
         [Test]
-        public void MessageOfUnknownTypeShouldPauseProcessingTillCorrespondingHandlerIsRegisteredTest()
+        [TestCase(null, TestName = "Non shared destination")]
+        [TestCase("test", TestName = "Shared destination")]
+        public void UnsubscribeTest(string messageType)
         {
             using (var transport = new Transport("localhost", "guest", "guest"))
             {
-                var processingGroup = transport.CreateProcessingGroup("test", null);
-                var type1Received = new AutoResetEvent(false);
-                var type2Received = new AutoResetEvent(false);
-
-                processingGroup.Subscribe(TEST_QUEUE, message => type1Received.Set(), "type1");
-
-                processingGroup.Send(TEST_EXCHANGE, new BinaryMessage { Bytes = new byte[] { 0x0, 0x1, 0x2 }, Type = "type1" }, 0);
-                Assert.That(type1Received.WaitOne(2222500), Is.True, "Message of subscribed type was not delivered");
-                processingGroup.Send(TEST_EXCHANGE, new BinaryMessage { Bytes = new byte[] { 0x0, 0x1, 0x2 }, Type = "type2" }, 0);
-                processingGroup.Send(TEST_EXCHANGE, new BinaryMessage { Bytes = new byte[] { 0x0, 0x1, 0x2 }, Type = "type1" }, 0);
-                Assert.That(type1Received.WaitOne(500), Is.False, "Message of not subscribed type has not paused processing");
-                processingGroup.Subscribe(TEST_QUEUE, message => type2Received.Set(), "type2");
-                Assert.That(type1Received.WaitOne(500), Is.True, "Processing was not resumed after handler for unknown message type was registered");
-                Assert.That(type2Received.WaitOne(500), Is.True, "Processing was not resumed after handler for unknown message type was registered");
-
+                var ev = new AutoResetEvent(false);
+                IProcessingGroup processingGroup = transport.CreateProcessingGroup("test", null);
+                processingGroup.Send(TEST_EXCHANGE, new BinaryMessage {Bytes = new byte[] {0x0, 0x1, 0x2}, Type = messageType}, 0);
+                IDisposable subscription = processingGroup.Subscribe(TEST_QUEUE, message => ev.Set(), messageType);
+                Assert.That(ev.WaitOne(500), Is.True, "Message was not delivered");
+                subscription.Dispose();
+                Assert.That(ev.WaitOne(500), Is.False, "Message was delivered for canceled subscription");
             }
         }
 
-
         [Test]
-        public void UnknownMessageTypHandlereWaitingDoesNotPreventTransportDisposeTest()
+        public void ConnectionFailureTest()
         {
- 
-                var received=new ManualResetEvent(false);
-                Thread connectionThread = null;
-                using (var transport = new Transport("localhost", "guest", "guest"))
-                {
-                    var processingGroup = transport.CreateProcessingGroup("test", null);
-                    processingGroup.Subscribe(TEST_QUEUE, message =>
-                        {
-                            connectionThread = Thread.CurrentThread;
-                            received.Set();
-                        }, "type1");
-                    processingGroup.Send(TEST_EXCHANGE, new BinaryMessage { Bytes = new byte[] { 0x0, 0x1, 0x2 }, Type = "type1" }, 0);
-                    Assert.That(received.WaitOne(100), Is.True, "Message was not delivered");
-                    processingGroup.Send(TEST_EXCHANGE, new BinaryMessage { Bytes = new byte[] { 0x0, 0x1, 0x2 }, Type = "type2" }, 0);
-
-                }
-                Assert.That(connectionThread.ThreadState, Is.EqualTo(ThreadState.Stopped),"Processing thread is still active in spite of transport dispose");
+            using (var transport = new Transport("localhost", "guest", "guest"))
+            {
+                var onFailureCalled = new AutoResetEvent(false);
+                IProcessingGroup processingGroup = transport.CreateProcessingGroup("test", () =>
+                    {
+                        onFailureCalled.Set();
+                        Console.WriteLine(Thread.CurrentThread.ManagedThreadId);
+                    });
+                processingGroup.Send(TEST_EXCHANGE, new BinaryMessage {Bytes = new byte[] {0x0, 0x1, 0x2}, Type = "messageType"}, 0);
+                processingGroup.Subscribe(TEST_QUEUE, message => { }, "messageType");
+                FieldInfo field = typeof (ProcessingGroup).GetField("m_Connection", BindingFlags.NonPublic | BindingFlags.Instance);
+                var connection = field.GetValue(processingGroup) as IConnection;
+                connection.Abort(1, "All your base are belong to us");
+                Assert.That(onFailureCalled.WaitOne(500), Is.True, "Subsciptionwas not notefied on failure");
+            }
         }
 
         [Test]
@@ -137,10 +124,14 @@ namespace Inceptum.Messaging.RabbitMq.Tests
         {
             using (var transport = new Transport("localhost", "guest", "guest"))
             {
-                var processingGroup = transport.CreateProcessingGroup("test", null);
+                IProcessingGroup processingGroup = transport.CreateProcessingGroup("test", null);
                 var received = new AutoResetEvent(false);
-                var subscription = processingGroup.Subscribe(TEST_QUEUE, message => received.Set(), "type2");
-                processingGroup.Send(TEST_EXCHANGE, new BinaryMessage { Bytes = new byte[] { 0x0, 0x1, 0x2 }, Type = "type1" }, 0);
+                IDisposable subscription = processingGroup.Subscribe(TEST_QUEUE, message =>
+                    {
+                        received.Set();
+                        Console.WriteLine(Thread.CurrentThread.ManagedThreadId);
+                    }, "type2");
+                processingGroup.Send(TEST_EXCHANGE, new BinaryMessage {Bytes = new byte[] {0x0, 0x1, 0x2}, Type = "type1"}, 0);
                 Assert.That(received.WaitOne(500), Is.False, "Message of not subscribed type has not paused processing");
                 subscription.Dispose();
                 processingGroup.Subscribe(TEST_QUEUE, message => received.Set(), "type1");
@@ -148,5 +139,97 @@ namespace Inceptum.Messaging.RabbitMq.Tests
             }
         }
 
+        [Test]
+        public void MessageOfUnknownTypeShouldPauseProcessingTillCorrespondingHandlerIsRegisteredTest()
+        {
+            using (var transport = new Transport("localhost", "guest", "guest"))
+            {
+                IProcessingGroup processingGroup = transport.CreateProcessingGroup("test", null);
+                var type1Received = new AutoResetEvent(false);
+                var type2Received = new AutoResetEvent(false);
+
+                processingGroup.Subscribe(TEST_QUEUE, message => type1Received.Set(), "type1");
+
+                processingGroup.Send(TEST_EXCHANGE, new BinaryMessage {Bytes = new byte[] {0x0, 0x1, 0x2}, Type = "type1"}, 0);
+                Assert.That(type1Received.WaitOne(2222500), Is.True, "Message of subscribed type was not delivered");
+                processingGroup.Send(TEST_EXCHANGE, new BinaryMessage {Bytes = new byte[] {0x0, 0x1, 0x2}, Type = "type2"}, 0);
+                processingGroup.Send(TEST_EXCHANGE, new BinaryMessage {Bytes = new byte[] {0x0, 0x1, 0x2}, Type = "type1"}, 0);
+                Assert.That(type1Received.WaitOne(500), Is.False, "Message of not subscribed type has not paused processing");
+                processingGroup.Subscribe(TEST_QUEUE, message => type2Received.Set(), "type2");
+                Assert.That(type1Received.WaitOne(500), Is.True, "Processing was not resumed after handler for unknown message type was registered");
+                Assert.That(type2Received.WaitOne(500), Is.True, "Processing was not resumed after handler for unknown message type was registered");
+            }
+        }
+
+        [Test]
+        public void UnknownMessageTypHandlereWaitingDoesNotPreventTransportDisposeTest()
+        {
+            var received = new ManualResetEvent(false);
+            Thread connectionThread = null;
+            using (var transport = new Transport("localhost", "guest", "guest"))
+            {
+                IProcessingGroup processingGroup = transport.CreateProcessingGroup("test", null);
+                processingGroup.Subscribe(TEST_QUEUE, message =>
+                    {
+                        connectionThread = Thread.CurrentThread;
+                        received.Set();
+                    }, "type1");
+                processingGroup.Send(TEST_EXCHANGE, new BinaryMessage {Bytes = new byte[] {0x0, 0x1, 0x2}, Type = "type1"}, 0);
+                Assert.That(received.WaitOne(100), Is.True, "Message was not delivered");
+                processingGroup.Send(TEST_EXCHANGE, new BinaryMessage {Bytes = new byte[] {0x0, 0x1, 0x2}, Type = "type2"}, 0);
+            }
+            Assert.That(connectionThread.ThreadState, Is.EqualTo(ThreadState.Stopped), "Processing thread is still active in spite of transport dispose");
+        }
+
+        [Test]
+        [Ignore]
+        [TestCase(10, TestName = "10b")]
+        [TestCase(8912, TestName = "8Kb")]
+        [TestCase(1048576, TestName = "8Mb")]
+        public void PerformanceTest(int messageSize)
+        {
+            var messageBytes = new byte[messageSize];
+            new Random().NextBytes(messageBytes);
+
+            using (var transport = new Transport("localhost", "guest", "guest"))
+            {
+                IProcessingGroup processingGroup = transport.CreateProcessingGroup("test", null);
+                Stopwatch sw = Stopwatch.StartNew();
+                int sendCounter;
+                for (sendCounter = 0; sw.ElapsedMilliseconds < 2000; sendCounter++)
+                    processingGroup.Send(TEST_EXCHANGE, new BinaryMessage {Bytes = messageBytes, Type = typeof (byte[]).Name}, 0);
+                int receiveCounter = 0;
+
+                var ev = new ManualResetEvent(false);
+                processingGroup.Subscribe(TEST_QUEUE, message => receiveCounter++, typeof (byte[]).Name);
+                ev.WaitOne(1000);
+                Console.WriteLine("Send: {0} per second", sendCounter/2);
+                Console.WriteLine("Receive: {0} per second", receiveCounter);
+            }
+        }
+
+        [Test]
+        [ExpectedException(typeof (InvalidOperationException))]
+        public void AttemptToSubscribeSameDestinationAndMessageTypeTwiceFailureTest()
+        {
+            using (var transport = new Transport("localhost", "guest", "guest"))
+            {
+                IProcessingGroup processingGroup = transport.CreateProcessingGroup("test", null);
+                processingGroup.Subscribe(TEST_QUEUE, message => { }, "type1");
+                processingGroup.Subscribe(TEST_QUEUE, message => { }, "type1");
+            }
+        }
+
+        [Test]
+        [ExpectedException(typeof (InvalidOperationException))]
+        public void AttemptToSubscribeSameDestinationWithoutMessageTypeTwiceFailureTest()
+        {
+            using (var transport = new Transport("localhost", "guest", "guest"))
+            {
+                IProcessingGroup processingGroup = transport.CreateProcessingGroup("test", null);
+                processingGroup.Subscribe(TEST_QUEUE, message => { }, null);
+                processingGroup.Subscribe(TEST_QUEUE, message => { }, null);
+            }
+        }
     }
 }
