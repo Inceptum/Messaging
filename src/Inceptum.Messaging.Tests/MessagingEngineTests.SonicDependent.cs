@@ -11,6 +11,7 @@ using Castle.MicroKernel.Resolvers.SpecializedResolvers;
 using Castle.Windsor;
 using Inceptum.Messaging.Castle;
 using Inceptum.Messaging.Contract;
+using Inceptum.Messaging.Serialization;
 using Inceptum.Messaging.Sonic;
 using NUnit.Framework;
 using Rhino.Mocks;
