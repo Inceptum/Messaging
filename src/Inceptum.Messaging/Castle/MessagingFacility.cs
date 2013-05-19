@@ -8,6 +8,7 @@ using Castle.MicroKernel.Facilities;
 using Castle.MicroKernel.Registration;
 using Inceptum.Core;
 using Inceptum.Messaging.Contract;
+using Inceptum.Messaging.Serialization;
 
 namespace Inceptum.Messaging.Castle
 {
@@ -24,6 +25,7 @@ namespace Inceptum.Messaging.Castle
             get { return m_Transports; }
             set { m_Transports = value; }
         }
+
 
         public MessagingFacility()
         {
