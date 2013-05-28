@@ -119,6 +119,26 @@ namespace Inceptum.Messaging
             }
         }
 
+        public IDisposable Subscribe(Endpoint endpoint, Action<BinaryMessage> callback)
+        {
+            if (endpoint.Destination == null) throw new ArgumentException("Destination can not be null");
+            if (m_Disposing.WaitOne(0))
+                throw new InvalidOperationException("Engine is disposing");
+
+            using (m_RequestsTracker.Track())
+            {
+                try
+                {
+                    return subscribe(endpoint, callback, null);
+                }
+                catch (Exception e)
+                {
+                    Logger.ErrorFormat(e, "Failed to subscribe. Transport: {0}, Queue: {1}", endpoint.TransportId, endpoint.Destination);
+                    throw;
+                }
+            }
+        }
+
 
         //NOTE: send via topic waits only first response.
         public TResponse SendRequest<TRequest, TResponse>(TRequest request, Endpoint endpoint, long timeout)
