@@ -70,6 +70,7 @@
       <HintPath>..\libs\Sonic\Sonic.Security.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Reactive.Core">
       <HintPath>..\packages\Rx-Core.2.1.30214.0\lib\Net40\System.Reactive.Core.dll</HintPath>
@@ -84,6 +85,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Configuration\MessagingConfigurationSectionTests.cs" />
     <Compile Include="MessagingEngineTests.cs" />
     <Compile Include="MessagingEngineTests.SonicDependent.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -102,6 +104,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

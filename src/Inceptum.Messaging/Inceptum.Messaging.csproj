@@ -69,6 +69,14 @@
       <Link>Properties\VersionInfo.cs</Link>
     </Compile>
     <Compile Include="Castle\MessagingFacility.cs" />
+    <Compile Include="Configuration\EndpointConfigurationElement.cs" />
+    <Compile Include="Configuration\EndpointsCollection.cs" />
+    <Compile Include="Configuration\IMessagingConfiguration.cs" />
+    <Compile Include="Configuration\MessagingConfigurationSection.cs" />
+    <Compile Include="Configuration\NamedConfigurationElement.cs" />
+    <Compile Include="Configuration\NamedConfigurationElementCollection.cs" />
+    <Compile Include="Configuration\TransportConfigurationElement.cs" />
+    <Compile Include="Configuration\TransportsCollection.cs" />
     <Compile Include="Contract\Endpoint.cs" />
     <Compile Include="Contract\IMessagingEngine.cs" />
     <Compile Include="Contract\TransportConstants.cs" />
@@ -101,6 +109,7 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\nuget.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
