@@ -13,7 +13,7 @@ namespace Inceptum.Messaging.Contract
      
     public interface IMessagingEngine:IDisposable
     {
-
+        ISerializationManager SerializationManager { get; }
         IDisposable SubscribeOnTransportEvents(TrasnportEventHandler handler);
         void Send<TMessage>(TMessage message, Endpoint endpoint);
         void Send<TMessage>(TMessage message, Endpoint endpoint, int ttl);

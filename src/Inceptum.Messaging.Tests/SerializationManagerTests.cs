@@ -18,14 +18,14 @@ namespace Inceptum.Messaging.Tests
             var serializer = MockRepository.GenerateMock<IMessageSerializer<string>>();
             serializer.Expect(s => s.Serialize("test")).Return(new byte[] { 0x1 });
             serializer.Expect(s => s.Deserialize(new byte[] { 0x1 })).Return("test");
-            serializationManager.RegisterSerializer(typeof(string),serializer);
+            serializationManager.RegisterSerializer("fake",typeof(string),serializer);
 
-            var stringSerializer = serializationManager.ExtractSerializer<string>();
+            var stringSerializer = serializationManager.ExtractSerializer<string>("fake");
             
             Assert.That(stringSerializer, Is.Not.Null, "serializer was not cretaed");
             Assert.That(stringSerializer, Is.SameAs(serializer), "Wrong serializer was returned");
-            Assert.That(serializationManager.Deserialize<string>(new byte[] { 0x1 }), Is.EqualTo("test"), "Serializer was not used for deserialization");
-            Assert.That(serializationManager.Serialize("test"), Is.EqualTo(new byte[] { 0x1 }), "Serializer was not used for deserialization");
+            Assert.That(serializationManager.Deserialize<string>("fake",new byte[] { 0x1 }), Is.EqualTo("test"), "Serializer was not used for deserialization");
+            Assert.That(serializationManager.Serialize("fake","test"), Is.EqualTo(new byte[] { 0x1 }), "Serializer was not used for deserialization");
 
         }
 
@@ -35,18 +35,19 @@ namespace Inceptum.Messaging.Tests
         {
             var serializationManager = new SerializationManager();
             var factory = MockRepository.GenerateMock<ISerializerFactory>();
+            factory.Expect(f => f.SerializationFormat).Return("fake");
             var serializer = MockRepository.GenerateMock<IMessageSerializer<string>>();
             serializer.Expect(s => s.Serialize("test")).Return(new byte[] {0x1});
             serializer.Expect(s => s.Deserialize(new byte[] { 0x1 })).Return("test");
             factory.Expect(f => f.Create<string>()).Return(serializer);
             serializationManager.RegisterSerializerFactory(factory);
 
-            var stringSerializer = serializationManager.ExtractSerializer<string>();
+            var stringSerializer = serializationManager.ExtractSerializer<string>("fake");
             
             Assert.That(stringSerializer,Is.Not.Null,"serializer was not cretaed");
             Assert.That(stringSerializer,Is.SameAs(serializer),"Wrong serializer was returned");
-            Assert.That(serializationManager.Deserialize<string>(new byte[] { 0x1 }), Is.EqualTo("test"), "Serializer was not used for deserialization");
-            Assert.That(serializationManager.Serialize("test"), Is.EqualTo(new byte[] { 0x1 }), "Serializer was not used for deserialization");
+            Assert.That(serializationManager.Deserialize<string>("fake",new byte[] { 0x1 }), Is.EqualTo("test"), "Serializer was not used for deserialization");
+            Assert.That(serializationManager.Serialize("fake","test"), Is.EqualTo(new byte[] { 0x1 }), "Serializer was not used for deserialization");
         }
              
         [Test]
@@ -55,10 +56,11 @@ namespace Inceptum.Messaging.Tests
         {
             var serializationManager = new SerializationManager();
             var factory = MockRepository.GenerateMock<ISerializerFactory>();
+            factory.Expect(f => f.SerializationFormat).Return("fake");
             factory.Expect(f => f.Create<int>()).Return(null);
             serializationManager.RegisterSerializerFactory(factory);
-            
-            serializationManager.ExtractSerializer<int>();
+
+            serializationManager.ExtractSerializer<int>("fake");
         }
         
              
@@ -68,10 +70,11 @@ namespace Inceptum.Messaging.Tests
         {
             var serializationManager = new SerializationManager();
             var factory = MockRepository.GenerateMock<ISerializerFactory>();
+            factory.Expect(f => f.SerializationFormat).Return("fake");
             factory.Expect(f => f.Create<string>()).Return(null);
             serializationManager.RegisterSerializerFactory(factory);
-       
-            serializationManager.ExtractSerializer<string>();
+
+            serializationManager.ExtractSerializer<string>("fake");
         }
         
               
@@ -91,12 +94,12 @@ namespace Inceptum.Messaging.Tests
             var t1 = Task.Factory.StartNew(() =>
             {
                 mre.WaitOne();
-                serializer1=serializationManager.ExtractSerializer<string>();
+                serializer1 = serializationManager.ExtractSerializer<string>("fake");
             });
             var t2 = Task.Factory.StartNew(() =>
             {
                 mre.WaitOne();
-                serializer2 = serializationManager.ExtractSerializer<string>();
+                serializer2 = serializationManager.ExtractSerializer<string>("fake");
             });
             mre.Set();
 

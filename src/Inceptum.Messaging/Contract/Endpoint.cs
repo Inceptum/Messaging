@@ -11,12 +11,13 @@
 		/// <summary>
 		/// 
 		/// </summary>
-		public Endpoint(string transportId, string destination, bool sharedDestination = false )
+        public Endpoint(string transportId, string destination, bool sharedDestination = false, string serializationFormat="protobuf")
 		{
 		  
 		    m_TransportId = transportId;
 			m_Destination = destination;
 			m_SharedDestination = sharedDestination;
+		    m_SerializationFormat = serializationFormat;
 		}
 
 		private string m_TransportId;
@@ -48,7 +49,8 @@
 		}
 
 		private bool m_SharedDestination;
-	   
+	    private string m_SerializationFormat;
+
 
 	    /// <summary>
 		/// Shared destination
@@ -57,6 +59,16 @@
 		{
 			get { return m_SharedDestination; }
 			set { m_SharedDestination = value; }
+		}
+
+
+	    /// <summary>
+		/// Shared destination
+		/// </summary>
+		public string SerializationFormat
+		{
+            get { return m_SerializationFormat ?? "protobuf"; }
+            set { m_SerializationFormat = value??"protobuf"; }
 		}
 
 	    public override string ToString()
