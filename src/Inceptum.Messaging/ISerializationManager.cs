@@ -6,21 +6,21 @@ namespace Inceptum.Messaging
 {
     public interface ISerializationManager
     {
-        byte[] Serialize<TMessage>(TMessage message);
-        TMessage Deserialize<TMessage>(byte[] message);
-        void RegisterSerializer(Type targetType, object serializer);
+        byte[] Serialize<TMessage>(string format,TMessage message);
+        TMessage Deserialize<TMessage>(string format, byte[] message);
+        void RegisterSerializer(string format, Type targetType, object serializer);
         void RegisterSerializerFactory(ISerializerFactory serializerFactory);
     }
 
     public static class SerializationManagerExtensions
     {
-        static readonly Dictionary<Type, Func<ISerializationManager,byte[],  object>> m_Deserializers = new Dictionary<Type, Func<ISerializationManager,byte[],  object>>();
-        static readonly Dictionary<Type, Func<ISerializationManager , object,byte[]>> m_Serializers = new Dictionary<Type, Func<ISerializationManager,  object,byte[]>>();
-        public static byte[] SerializeObject(this ISerializationManager manager, object message)
+        static readonly Dictionary<Type, Func<ISerializationManager, string, byte[], object>> m_Deserializers = new Dictionary<Type, Func<ISerializationManager, string, byte[], object>>();
+        static readonly Dictionary<Type, Func<ISerializationManager, string, object, byte[]>> m_Serializers = new Dictionary<Type, Func<ISerializationManager, string, object, byte[]>>();
+        public static byte[] SerializeObject(this ISerializationManager manager, string format, object message)
         {
             if (message == null)
                 return null;
-             Func<ISerializationManager, object, byte[]> serialize;
+            Func<ISerializationManager, string, object, byte[]> serialize;
              lock (m_Serializers)
             {
                 var type = message.GetType();
@@ -30,12 +30,12 @@ namespace Inceptum.Messaging
                     m_Serializers.Add(type, serialize);
                 }
             }
-            return serialize(manager, message);
+             return serialize(manager, format, message);
         }
 
-        public static object Deserialize(this ISerializationManager manager, byte[] message, Type type)
+        public static object Deserialize(this ISerializationManager manager, string format, byte[] message, Type type)
         {
-            Func<ISerializationManager, byte[], object> deserialize;
+            Func<ISerializationManager, string, byte[], object> deserialize;
             lock (m_Deserializers)
             {
                 if (!m_Deserializers.TryGetValue(type, out deserialize))
@@ -44,25 +44,27 @@ namespace Inceptum.Messaging
                     m_Deserializers.Add(type, deserialize);
                 }
             }
-            return deserialize(manager, message);
+            return deserialize(manager, format, message);
         }
 
-        private static Func<ISerializationManager,byte[],object> CreateDeserializer(Type type)
+        private static Func<ISerializationManager, string, byte[], object> CreateDeserializer(Type type)
         {
+            var format = Expression.Parameter(typeof(string), "format");
             var manger = Expression.Parameter(typeof(ISerializationManager), "manger");
             var message = Expression.Parameter(typeof(byte[]), "message");
-            var call = Expression.Call(manger, "Deserialize", new[] { type }, message);
+            var call = Expression.Call(manger, "Deserialize", new[] { type }, format, message);
             var convert=Expression.Convert(call, typeof(object));
-            var lambda = (Expression<Func<ISerializationManager,byte[], object>>)Expression.Lambda(convert,manger,message);
+            var lambda = (Expression<Func<ISerializationManager, string, byte[], object>>)Expression.Lambda(convert, manger, format, message);
             return lambda.Compile();
         }
 
-        private static Func<ISerializationManager, object, byte[]> CreateSerializer(Type type)
+        private static Func<ISerializationManager, string, object, byte[]> CreateSerializer(Type type)
         {
+            var format = Expression.Parameter(typeof(string), "format");
             var manger = Expression.Parameter(typeof(ISerializationManager), "manger");
             var message = Expression.Parameter(typeof(object), "message");
-            var call = Expression.Call(manger, "Serialize", new[] { type }, Expression.Convert(message,type));
-            var lambda = (Expression<Func<ISerializationManager, object, byte[]>>)Expression.Lambda(call, manger, message);
+            var call = Expression.Call(manger, "Serialize", new[] { type },format, Expression.Convert(message,type));
+            var lambda = (Expression<Func<ISerializationManager, string, object, byte[]>>)Expression.Lambda(call, manger, format,message);
             return lambda.Compile();
         }
 

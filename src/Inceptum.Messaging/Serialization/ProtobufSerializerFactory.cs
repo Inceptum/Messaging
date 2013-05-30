@@ -5,6 +5,10 @@ namespace Inceptum.Messaging.Serialization
 {
     public class ProtobufSerializerFactory:ISerializerFactory
     {
+        public string SerializationFormat {
+            get { return "protobuf"; }
+        }
+
         public IMessageSerializer<TMessage> Create<TMessage>()
         {
             //TODO: may affect performance

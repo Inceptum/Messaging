@@ -52,24 +52,14 @@ namespace Inceptum.Messaging.Castle
             m_SerializationManager = Kernel.Resolve<ISerializationManager>();
             Kernel.ComponentRegistered += onComponentRegistered;
             Kernel.ComponentModelCreated += ProcessModel;
-            //TODO: make optional
             Kernel.Register(Component.For<ISerializerFactory>().ImplementedBy<ProtobufSerializerFactory>());
+            Kernel.Register(Component.For<ISerializerFactory>().ImplementedBy<JsonSerializerFactory>());
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         private void onComponentRegistered(string key, IHandler handler)
         {
-            if ((bool)(handler.ComponentModel.ExtendedProperties["IsSerializer"] ?? false))
-            {
-                if (handler.CurrentState == HandlerState.WaitingDependency)
-                {
-                    m_SerializerWaitList.Add(handler);
-                }
-                else
-                {
-                    registerSerializer(handler);
-                }
-            }
+         
 
             if ((bool)(handler.ComponentModel.ExtendedProperties["IsSerializerFactory"] ?? false))
             {
@@ -90,12 +80,7 @@ namespace Inceptum.Messaging.Castle
         {
             m_SerializationManager.RegisterSerializerFactory(Kernel.Resolve(handler.ComponentModel.Name,typeof(ISerializerFactory)) as ISerializerFactory);
         }
-
-        private void registerSerializer(IHandler handler)
-        {
-            var type = handler.ComponentModel.ExtendedProperties["SerializableType"] as Type;
-            m_SerializationManager.RegisterSerializer(type, Kernel.Resolve(handler.ComponentModel.Name, typeof (IMessageSerializer<>).MakeGenericType(type)));
-        }
+ 
 
         private void onHandlerStateChanged(object source, EventArgs args)
         {
@@ -107,12 +92,7 @@ namespace Inceptum.Messaging.Castle
 
         private void processWaitList()
         {
-            foreach (var serializerHandler in m_SerializerWaitList.ToArray().Where(serializerHandler => serializerHandler.CurrentState == HandlerState.Valid))
-            {
-                registerSerializer(serializerHandler);
-                m_SerializerWaitList.Remove(serializerHandler);
-            }
-
+            
             foreach (var factoryHandler in m_SerializerFactoryWaitList.ToArray().Where(factoryHandler => factoryHandler.CurrentState == HandlerState.Valid))
             {
                 registerSerializerFactory(factoryHandler);
@@ -123,17 +103,7 @@ namespace Inceptum.Messaging.Castle
 
         public void ProcessModel(ComponentModel model)
         {
-            var serializerType = model.Services.FirstOrDefault(s=> s.IsGenericType && s.GetGenericTypeDefinition() == typeof(IMessageSerializer<>));
-            if (serializerType!=null)
-            {
-                model.ExtendedProperties["IsSerializer"] = true;
-                model.ExtendedProperties["SerializableType"] = serializerType.GetGenericArguments()[0];
-            }
-            else
-            {
-                model.ExtendedProperties["IsSerializer"] = false;
-            }        
-    
+          
             
             if (model.Services.Contains(typeof(ISerializerFactory)))
             {

@@ -9,16 +9,15 @@ using Rhino.Mocks;
 namespace Inceptum.Messaging.Tests
 {
     [TestFixture]
-    [Ignore]
-    public class InvestigationTests
+    public class SerializationManagerExtensionsTests
     {
         [Test]
         public void DeserializeTest()
         {
             var bytes = new byte[] {0x1};
             var manager = MockRepository.GenerateMock<ISerializationManager>();
-            manager.Expect(m => m.Deserialize<string>(bytes)).Return("test");
-            var deserialized = manager.Deserialize(bytes, typeof (string));
+            manager.Expect(m => m.Deserialize<string>("fake",bytes)).Return("test");
+            var deserialized = manager.Deserialize("fake",bytes, typeof (string));
             Assert.That(deserialized,Is.EqualTo("test"));
         }
 
@@ -27,8 +26,8 @@ namespace Inceptum.Messaging.Tests
         {
             var bytes = new byte[] {0x1};
             var manager = MockRepository.GenerateMock<ISerializationManager>();
-            manager.Expect(m => m.Serialize("test")).Return(bytes);
-            var serialized = manager.SerializeObject("test");
+            manager.Expect(m => m.Serialize("fake","test")).Return(bytes);
+            var serialized = manager.SerializeObject("fake","test");
             Assert.That(serialized, Is.EqualTo(bytes));
         }
     }

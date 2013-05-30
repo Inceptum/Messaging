@@ -118,17 +118,17 @@ namespace Inceptum.Messaging.Tests
         public void SendWithTimeToLive(string dest)
         {
             var serializationManager = new SerializationManager();
-            serializationManager.RegisterSerializer(typeof(string), new FakeStringSerializer());
+            serializationManager.RegisterSerializer("fake",typeof(string), new FakeStringSerializer());
 
             ITransportResolver resolver = MockTransportResolver();
             IMessagingEngine engine = new MessagingEngine(resolver, serializationManager, new SonicTransportFactory());
-            engine.Send("ping1", new Endpoint(TransportConstants.TRANSPORT_ID1, dest), 200);
-            engine.Send("ping2", new Endpoint(TransportConstants.TRANSPORT_ID1, dest), 1000);
+            engine.Send("ping1", new Endpoint(TransportConstants.TRANSPORT_ID1, dest, serializationFormat: "fake"), 200);
+            engine.Send("ping2", new Endpoint(TransportConstants.TRANSPORT_ID1, dest, serializationFormat: "fake"), 1000);
 
             Thread.Sleep(300);
 
             var receivedMessages = new List<object>();
-            using (engine.Subscribe<string>(new Endpoint(TransportConstants.TRANSPORT_ID1, dest), receivedMessages.Add))
+            using (engine.Subscribe<string>(new Endpoint(TransportConstants.TRANSPORT_ID1, dest, serializationFormat: "fake"), receivedMessages.Add))
             {
                 Thread.Sleep(1000);
             }
@@ -142,15 +142,15 @@ namespace Inceptum.Messaging.Tests
         public void RequestReplyTest(string dest)
         {
             var serializationManager = new SerializationManager();
-            serializationManager.RegisterSerializer(typeof (string), new FakeStringSerializer());
+            serializationManager.RegisterSerializer("fake",typeof (string), new FakeStringSerializer());
 
             ITransportResolver resolver = MockTransportResolver();
             IMessagingEngine engine = new MessagingEngine(resolver, serializationManager, new SonicTransportFactory());
             string response;
-			using (engine.RegisterHandler<string, string>(s => s == "ping" ? "pong" : "error", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE1)))
+			using (engine.RegisterHandler<string, string>(s => s == "ping" ? "pong" : "error", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE1,serializationFormat:"fake")))
             {
                 var stopwatch = Stopwatch.StartNew();
-                response = engine.SendRequest<string, string>("ping", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE1));
+                response = engine.SendRequest<string, string>("ping", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE1,serializationFormat:"fake"));
 
 
                 stopwatch.Stop();
@@ -164,7 +164,7 @@ namespace Inceptum.Messaging.Tests
                                         {
                                             try
                                             {
-                                                engine.SendRequest<string, string>("ping", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE1), 500);
+                                                engine.SendRequest<string, string>("ping", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE1, serializationFormat: "fake"), 500);
                                             }
                                             catch (Exception ex)
                                             {
@@ -191,22 +191,22 @@ namespace Inceptum.Messaging.Tests
         public void SendSubscribeTest(string dest)
         {
             var serializationManager = new SerializationManager();
-            serializationManager.RegisterSerializer(typeof (string), new FakeStringSerializer());
+            serializationManager.RegisterSerializer("fake",typeof (string), new FakeStringSerializer());
 
             ITransportResolver resolver = MockTransportResolver();
             var engine = new MessagingEngine(resolver, serializationManager, new SonicTransportFactory());
 
             var recievedMessages = new List<object>();
-            using (engine.Subscribe<string>(new Endpoint(TransportConstants.TRANSPORT_ID1, dest), recievedMessages.Add))
+            using (engine.Subscribe<string>(new Endpoint(TransportConstants.TRANSPORT_ID1, dest, serializationFormat: "fake"), recievedMessages.Add))
             {
-                engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, dest));
-                engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, dest));
-                engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, dest));
+                engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, dest, serializationFormat: "fake"));
+                engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, dest, serializationFormat: "fake"));
+                engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, dest, serializationFormat: "fake"));
                 Thread.Sleep(1000);
             }
             Assert.That(recievedMessages.Count, Is.EqualTo(3), "Some messages were not received");
             Assert.That(recievedMessages, Is.EqualTo(new[] {"test", "test", "test"}), "Some messages were corrupted");
-            engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, dest));
+            engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, dest, serializationFormat: "fake"));
             Thread.Sleep(100);
             Assert.That(recievedMessages.Count, Is.EqualTo(3),
                         "Subscription callback was called after subscription is disposed");
@@ -218,7 +218,7 @@ namespace Inceptum.Messaging.Tests
         public void SendTest(string dest)
         {
             var serializationManager = new SerializationManager();
-            serializationManager.RegisterSerializer(typeof (string), new FakeStringSerializer());
+            serializationManager.RegisterSerializer("fake",typeof (string), new FakeStringSerializer());
 
             ITransportResolver resolver = MockTransportResolver();
             var engine = new MessagingEngine(resolver, serializationManager, new SonicTransportFactory());
@@ -251,8 +251,8 @@ namespace Inceptum.Messaging.Tests
         public void SharedDestinationSendSubscribeTest()
         {
             var serializationManager = new SerializationManager();
-            serializationManager.RegisterSerializer(typeof (string), new FakeStringSerializer());
-            serializationManager.RegisterSerializer(typeof (int), new FakeIntSerializer());
+            serializationManager.RegisterSerializer("fake",typeof (string), new FakeStringSerializer());
+            serializationManager.RegisterSerializer("fake",typeof (int), new FakeIntSerializer());
 
             ITransportResolver resolver = MockTransportResolver();
             var engine = new MessagingEngine(resolver, serializationManager, new SonicTransportFactory());
@@ -260,24 +260,24 @@ namespace Inceptum.Messaging.Tests
             var recievedNonSharedMessages = new List<string>();
             var recievedStrMessages = new List<string>();
             var recievedIntMessages = new List<int>();
-            using (engine.Subscribe<string>(new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC, false), s => { recievedNonSharedMessages.Add(s); Console.WriteLine("Non-Shared dest subscription #1:" + s); }))
-            using (engine.Subscribe<string>(new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC, true), s => { recievedStrMessages.Add(s);Console.WriteLine("Subscription #1:" +s);}))
-			using (engine.Subscribe<int>(new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC, true), i => { recievedIntMessages.Add(i); Console.WriteLine("Subscription #2:" + i); }))
+            using (engine.Subscribe<string>(new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC, false, serializationFormat: "fake"), s => { recievedNonSharedMessages.Add(s); Console.WriteLine("Non-Shared dest subscription #1:" + s); }))
+            using (engine.Subscribe<string>(new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC, true, serializationFormat: "fake"), s => { recievedStrMessages.Add(s); Console.WriteLine("Subscription #1:" + s); }))
+            using (engine.Subscribe<int>(new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC, true, serializationFormat: "fake"), i => { recievedIntMessages.Add(i); Console.WriteLine("Subscription #2:" + i); }))
             {
-                engine.Send("11", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC));
-                engine.Send("12", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC));
-                engine.Send("13", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC));
-                engine.Send("14", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC));
-                engine.Send("15", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC));
-                engine.Send(21, new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC));
-                engine.Send("16", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC));
-                engine.Send(22, new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC));
-                engine.Send("23", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC));
-                engine.Send(24, new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC));
-                engine.Send(25, new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC));
-                engine.Send(26, new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC));
-                engine.Send(27, new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC));
-                engine.Send(28, new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC));
+                engine.Send("11", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC, serializationFormat: "fake"));
+                engine.Send("12", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC, serializationFormat: "fake"));
+                engine.Send("13", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC, serializationFormat: "fake"));
+                engine.Send("14", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC, serializationFormat: "fake"));
+                engine.Send("15", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC, serializationFormat: "fake"));
+                engine.Send(21, new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC, serializationFormat: "fake"));
+                engine.Send("16", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC, serializationFormat: "fake"));
+                engine.Send(22, new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC, serializationFormat: "fake"));
+                engine.Send("23", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC, serializationFormat: "fake"));
+                engine.Send(24, new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC, serializationFormat: "fake"));
+                engine.Send(25, new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC, serializationFormat: "fake"));
+                engine.Send(26, new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC, serializationFormat: "fake"));
+                engine.Send(27, new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC, serializationFormat: "fake"));
+                engine.Send(28, new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC, serializationFormat: "fake"));
                 Thread.Sleep(2000);
             }
             Assert.That(recievedNonSharedMessages.Count, Is.EqualTo(14), "Not all messages from both sequences were received by non-shared subscription ");
@@ -290,22 +290,22 @@ namespace Inceptum.Messaging.Tests
         public void EachDestinationIsSubscribedOnDedicatedThreadTest()
         {
             var serializationManager = new SerializationManager();
-            serializationManager.RegisterSerializer(typeof(string), new FakeStringSerializer());
+            serializationManager.RegisterSerializer("fake",typeof(string), new FakeStringSerializer());
 
             ITransportResolver resolver = MockTransportResolver();
             var engine = new MessagingEngine(resolver, serializationManager, new SonicTransportFactory());
 
             var queue1MessagesThreadIds = new List<int>();
             var queue2MessagesThreadIds = new List<int>();
-            using (engine.Subscribe<string>(new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE1), s => queue1MessagesThreadIds.Add(Thread.CurrentThread.ManagedThreadId)))
-            using (engine.Subscribe<string>(new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE2), s => queue2MessagesThreadIds.Add(Thread.CurrentThread.ManagedThreadId)))
+            using (engine.Subscribe<string>(new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE1, serializationFormat: "fake"), s => queue1MessagesThreadIds.Add(Thread.CurrentThread.ManagedThreadId)))
+            using (engine.Subscribe<string>(new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE2, serializationFormat: "fake"), s => queue2MessagesThreadIds.Add(Thread.CurrentThread.ManagedThreadId)))
             {
-                engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE1));
-                engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE2));
-                engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE1));
-                engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE2));
-                engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE1));
-                engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE2));
+                engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE1, serializationFormat: "fake"));
+                engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE2, serializationFormat: "fake"));
+                engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE1, serializationFormat: "fake"));
+                engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE2, serializationFormat: "fake"));
+                engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE1, serializationFormat: "fake"));
+                engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE2, serializationFormat: "fake"));
                 Thread.Sleep(1000);
             }
             Assert.That(queue1MessagesThreadIds.Distinct().Any(), Is.True, "Messages were not processed");
@@ -331,17 +331,20 @@ namespace Inceptum.Messaging.Tests
                                                                         TransportConstants.PASSWORD, "MachineName")
                                                       }
                                               }));
-                container.Register(Component.For<IMessageSerializer<string>>().ImplementedBy<FakeStringSerializer>());
+                var factory = MockRepository.GenerateMock<ISerializerFactory>();
+                factory.Expect(f => f.SerializationFormat).Return("fake");
+                factory.Expect(f => f.Create<string>()).Return(new FakeStringSerializer());
+                container.Register(Component.For<ISerializerFactory>().Instance(factory));
                 container.Register(Component.For<ITransportFactory>().ImplementedBy<SonicTransportFactory>());
                 var engine = container.Resolve<IMessagingEngine>();
                 var ev = new ManualResetEvent(false);
-                using (engine.Subscribe<string>(new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC), s =>
+                using (engine.Subscribe<string>(new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC, serializationFormat: "fake"), s =>
                             {
                                 Console.WriteLine(s);
                                 ev.Set();
                             }))
                 {
-                    engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC));
+                    engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC,serializationFormat:"fake"));
                     Assert.That(ev.WaitOne(500), Is.True, "message was not received");
                 }
             }
@@ -356,7 +359,7 @@ namespace Inceptum.Messaging.Tests
         {
 
             var serializationManager = new SerializationManager();
-            serializationManager.RegisterSerializer(typeof(string), new FakeStringSerializer());
+            serializationManager.RegisterSerializer("fake",typeof(string), new FakeStringSerializer());
 
             ITransportResolver resolver = MockTransportResolver();
 
@@ -364,14 +367,14 @@ namespace Inceptum.Messaging.Tests
             var halfMegabyteMessage = new string('a', 1 << 19);
             using (var engine = new MessagingEngine(resolver, serializationManager, new SonicTransportFactory()))
             {
-                engine.Send(halfMegabyteMessage, new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE1));
+                engine.Send(halfMegabyteMessage, new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE1, serializationFormat: "fake"));
                 Exception exception = null;
 
                 var t = new Thread(() =>
                 {
                     try
                     {
-                        engine.Send(halfMegabyteMessage, new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE1));
+                        engine.Send(halfMegabyteMessage, new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE1, serializationFormat: "fake"));
                     }
                     catch (Exception ex)
                     {
@@ -391,7 +394,7 @@ namespace Inceptum.Messaging.Tests
         public void TransportFailuteHandlingTest()
         {
             var serializationManager = new SerializationManager();
-            serializationManager.RegisterSerializer(typeof (string), new FakeStringSerializer());
+            serializationManager.RegisterSerializer("fake",typeof (string), new FakeStringSerializer());
             var resolver = MockTransportResolver();
             var transportManager = new TransportManager(resolver, new SonicTransportFactory());
             var engine = new MessagingEngine(transportManager, serializationManager);

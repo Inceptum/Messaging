@@ -34,17 +34,26 @@ namespace Inceptum.Messaging
         /// <param name="serializationManager"></param>
         internal MessagingEngine(TransportManager transportManager, ISerializationManager serializationManager)
         {
+            if (transportManager == null) throw new ArgumentNullException("transportManager");
+            if (serializationManager == null) throw new ArgumentNullException("serializationManager");
             m_TransportManager = transportManager;
             m_SerializationManager = serializationManager;
             m_RequestTimeoutManager = new SchedulingBackgroundWorker("RequestTimeoutManager", () => stopTimeoutedRequests());
             createMessagingHandle(() => stopTimeoutedRequests(true));
         }
 
+
+
         public MessagingEngine(ITransportResolver transportResolver, ISerializationManager serializationManager,params ITransportFactory[] transportFactories)
             : this(new TransportManager(transportResolver, transportFactories), serializationManager)
         {
         }
 
+
+        public ISerializationManager SerializationManager
+        {
+            get { return m_SerializationManager; }
+        }
 
         public ILogger Logger
         {
@@ -87,7 +96,7 @@ namespace Inceptum.Messaging
                 try
                 {
                     var processingGroup = m_TransportManager.GetProcessingGroup(endpoint.TransportId,endpoint.Destination);
-                    var serializedMessage = serializeMessage(message);
+                    var serializedMessage = serializeMessage(endpoint.SerializationFormat,message);
                     processingGroup.Send(endpoint.Destination, serializedMessage, ttl);
                 }
                 catch (Exception e)
@@ -218,12 +227,12 @@ namespace Inceptum.Messaging
                 try
                 {
                     var processingGroup = m_TransportManager.GetProcessingGroup(endpoint.TransportId,endpoint.Destination);
-                    RequestHandle requestHandle = processingGroup.SendRequest(endpoint.Destination, serializeMessage(request),
+                    RequestHandle requestHandle = processingGroup.SendRequest(endpoint.Destination, serializeMessage(endpoint.SerializationFormat,request),
                                                                      message =>
                                                                      {
                                                                          try
                                                                          {
-                                                                             var responseMessage = deserializeMessage<TResponse>(message);
+                                                                             var responseMessage = m_SerializationManager.Deserialize<TResponse>(endpoint.SerializationFormat, message.Bytes);  
                                                                              callback(responseMessage);
                                                                          }
                                                                          catch (Exception e)
@@ -330,9 +339,9 @@ namespace Inceptum.Messaging
                 	var subscription = processingGroup.RegisterHandler(endpoint.Destination,
                 	                                                     requestMessage =>
                 	                                                     	{
-                	                                                     		var message = deserializeMessage<TRequest>(requestMessage);
+                                                                                var message = m_SerializationManager.Deserialize<TRequest>(endpoint.SerializationFormat, requestMessage.Bytes); 
                 	                                                     		TResponse response = handler(message);
-                	                                                     		return serializeMessage(response);
+                	                                                     		return serializeMessage(endpoint.SerializationFormat,response);
                 	                                                     	},
                 	                                                     endpoint.SharedDestination
                 	                                                     	? getMessageType(typeof (TRequest))
@@ -363,10 +372,10 @@ namespace Inceptum.Messaging
         }
 
 
-        private BinaryMessage serializeMessage<TMessage>(TMessage message)
+        private BinaryMessage serializeMessage<TMessage>(string format,TMessage message)
         {
             var type = getMessageType(typeof(TMessage));
-            var bytes = m_SerializationManager.Serialize(message);
+            var bytes = m_SerializationManager.Serialize(format,message);
             return new BinaryMessage{Bytes=bytes,Type=type};
         }
 
@@ -383,11 +392,7 @@ namespace Inceptum.Messaging
         	                                           		return typeName ?? clrType.Name;
         	                                           	});
         }
-
-        private TMessage deserializeMessage<TMessage>(BinaryMessage message)
-        {
-            return m_SerializationManager.Deserialize<TMessage>(message.Bytes);
-        }
+         
 
         private IDisposable subscribe(Endpoint endpoint,Action<BinaryMessage> callback, string messageType)
         {
@@ -424,7 +429,7 @@ namespace Inceptum.Messaging
             TMessage message = default(TMessage);
             try
             {
-                message = deserializeMessage<TMessage>(binaryMessage);
+                message = m_SerializationManager.Deserialize<TMessage>(endpoint.SerializationFormat, binaryMessage.Bytes);
             }
             catch (Exception e)
             {
