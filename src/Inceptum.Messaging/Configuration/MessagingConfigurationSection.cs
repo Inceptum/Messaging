@@ -44,7 +44,7 @@ namespace Inceptum.Messaging.Configuration
             {
                 throw new ArgumentException(string.Format("Endpoint with name '{0}' not found", name), "name");
             }
-            return new Endpoint(ece.TransportId, ece.Destination, ece.SharedDestination);
+            return new Endpoint(ece.TransportId, ece.Destination, ece.SharedDestination, ece.SerializationFormat);
         }
     }
 }

@@ -24,5 +24,12 @@ namespace Inceptum.Messaging.Configuration
             get { return (bool) this["sharedDestination"]; }
             set { this["sharedDestination"] = value; }
         }
+
+        [ConfigurationProperty("serializationFormat", IsRequired = false, IsKey = false, DefaultValue = "protobuf")]
+        public string SerializationFormat
+        {
+            get { return (string)this["serializationFormat"]; }
+            set { this["serializationFormat"] = value; }
+        }
     }
 }
