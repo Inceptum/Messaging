@@ -118,7 +118,7 @@ namespace Inceptum.Messaging
             {
                 try
                 {
-					return subscribe(endpoint, m => processMessage(m, callback, endpoint), endpoint.SharedDestination ? getMessageType(typeof(TMessage)) : null);
+                    return subscribe(endpoint, m => processMessage(m, typeof(TMessage), message => callback((TMessage)message), endpoint), endpoint.SharedDestination ? getMessageType(typeof(TMessage)) : null);
                 }
                 catch (Exception e)
                 {
@@ -128,7 +128,7 @@ namespace Inceptum.Messaging
             }
         }
 
-        public IDisposable Subscribe(Endpoint endpoint, Action<BinaryMessage> callback)
+        public IDisposable Subscribe(Endpoint endpoint, Action<object> callback, bool failOnUnknownType, params Type[] knownTypes)
         {
             if (endpoint.Destination == null) throw new ArgumentException("Destination can not be null");
             if (m_Disposing.WaitOne(0))
@@ -138,7 +138,25 @@ namespace Inceptum.Messaging
             {
                 try
                 {
-                    return subscribe(endpoint, callback, null);
+                    var dictionary = knownTypes.ToDictionary(getMessageType);
+
+                    return subscribe(endpoint, m =>
+                        {
+                            Type messageType;
+                            if (!dictionary.TryGetValue(m.Type, out messageType))
+                            {
+
+                                if (failOnUnknownType)
+                                {
+                                    throw new ProcessingException(string.Format("Received message with unknown type header {0}. Transport: {1}, Queue: {2}", m.Type,
+                                                   endpoint.TransportId, endpoint.Destination));
+                                }
+
+                                Logger.DebugFormat("Received message with unknown type header {0} from. Ignoring. Transport: {1}, Queue: {2}", m.Type, endpoint.TransportId, endpoint.Destination);
+                                return;
+                            }
+                            processMessage(m, messageType, callback, endpoint);
+                        }, null);
                 }
                 catch (Exception e)
                 {
@@ -147,6 +165,7 @@ namespace Inceptum.Messaging
                 }
             }
         }
+
 
 
         //NOTE: send via topic waits only first response.
@@ -424,17 +443,18 @@ namespace Inceptum.Messaging
         }
 
 
-        private void processMessage<TMessage>(BinaryMessage binaryMessage, Action<TMessage> callback, Endpoint endpoint)
+
+        private void processMessage(BinaryMessage binaryMessage, Type type, Action<object> callback, Endpoint endpoint)
         {
-            TMessage message = default(TMessage);
+            object message = null;
             try
             {
-                message = m_SerializationManager.Deserialize<TMessage>(endpoint.SerializationFormat, binaryMessage.Bytes);
+                message = m_SerializationManager.Deserialize(endpoint.SerializationFormat, binaryMessage.Bytes, type);
             }
             catch (Exception e)
             {
                 Logger.ErrorFormat(e, "Failed to deserialize message. Transport: {0} Destination {1}. Message Type {2}.",
-								    endpoint.TransportId, endpoint.Destination, typeof(TMessage).Name);
+                                   endpoint.TransportId, endpoint.Destination, type.Name);
             }
 
             try
@@ -444,7 +464,7 @@ namespace Inceptum.Messaging
             catch (Exception e)
             {
                 Logger.ErrorFormat(e, "Failed to handle message. Transport: {0} Destination {1}. Message Type {2}.",
-									endpoint.TransportId, endpoint.Destination, typeof(TMessage).Name);
+                                   endpoint.TransportId, endpoint.Destination, type.Name);
             }
         }
     }
