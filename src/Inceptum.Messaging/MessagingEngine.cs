@@ -50,11 +50,6 @@ namespace Inceptum.Messaging
         }
 
 
-        public ISerializationManager SerializationManager
-        {
-            get { return m_SerializationManager; }
-        }
-
         public ILogger Logger
         {
             get { return m_Logger; }
