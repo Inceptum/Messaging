@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Castle.Core;
@@ -7,6 +8,7 @@ using Castle.MicroKernel;
 using Castle.MicroKernel.Facilities;
 using Castle.MicroKernel.Registration;
 using Inceptum.Core;
+using Inceptum.Messaging.Configuration;
 using Inceptum.Messaging.Contract;
 using Inceptum.Messaging.Serialization;
 
@@ -15,7 +17,7 @@ namespace Inceptum.Messaging.Castle
     public class MessagingFacility : AbstractFacility
     {
         private IDictionary<string, TransportInfo> m_Transports;
-        private readonly IDictionary<string, JailStrategy> m_JailStrategies;
+        private IDictionary<string, JailStrategy> m_JailStrategies;
         private readonly List<IHandler> m_SerializerWaitList = new List<IHandler>();
         private readonly List<IHandler> m_SerializerFactoryWaitList = new List<IHandler>();
         private ISerializationManager m_SerializationManager;
@@ -26,6 +28,13 @@ namespace Inceptum.Messaging.Castle
             set { m_Transports = value; }
         }
 
+        public IDictionary<string, JailStrategy> JailStrategies
+        {
+            get { return m_JailStrategies; }
+            set { m_JailStrategies = value; }
+        }
+
+        public IMessagingConfiguration MessagingConfiguration { get; set; }
 
         public MessagingFacility()
         {
@@ -39,15 +48,28 @@ namespace Inceptum.Messaging.Castle
 
         protected override void Init()
         {
+            var messagingConfiguration = MessagingConfiguration;
+            var transports = m_Transports;
+
+            if (messagingConfiguration != null && transports != null)
+                throw new Exception("Messaging facility can be configured via transports parameter or via MessagingConfiguration property, not both.");
+
             Kernel.Register(
                 Component.For<IMessagingEngine>().ImplementedBy<MessagingEngine>(),
                 Component.For<ISerializationManager>().ImplementedBy<SerializationManager>()
                 );
-
-            if (m_Transports != null)
+            
+            if (messagingConfiguration != null)
             {
-                Kernel.Register(Component.For<ITransportResolver>().ImplementedBy<TransportResolver>().DependsOn(new { transports = m_Transports, jailStrategies = m_JailStrategies }));
+                transports = messagingConfiguration.GetTransports();
+                Kernel.Resolver.AddSubResolver(new MessagingConfigurationEndpointResolver(messagingConfiguration));
             }
+
+            if (transports != null)
+            {
+                Kernel.Register(Component.For<ITransportResolver>().ImplementedBy<TransportResolver>().DependsOn(new { transports, jailStrategies = m_JailStrategies }));
+            }
+            
 
             m_SerializationManager = Kernel.Resolve<ISerializationManager>();
             Kernel.ComponentRegistered += onComponentRegistered;

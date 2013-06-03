@@ -69,6 +69,7 @@
     <Compile Include="..\VersionInfo.cs">
       <Link>Properties\VersionInfo.cs</Link>
     </Compile>
+    <Compile Include="Castle\MessagingConfigurationEndpointResolver.cs" />
     <Compile Include="Castle\MessagingFacility.cs" />
     <Compile Include="Configuration\EndpointConfigurationElement.cs" />
     <Compile Include="Configuration\EndpointsCollection.cs" />
