@@ -37,6 +37,11 @@ namespace Inceptum.Messaging.Configuration
                                                              tce.Messaging));
         }
 
+        public bool HasEndpoint(string name)
+        {
+            return Endpoints[name] != null;
+        }
+
         public Endpoint GetEndpoint(string name)
         {
             EndpointConfigurationElement ece = Endpoints[name];
