@@ -142,6 +142,12 @@ namespace Inceptum.Cqrs
             m_BoundContextWrapper.BoundContext.AddCommandsRouting(m_Types, m_PublishEndpoint);
             return m_BoundContextWrapper.WithEventStore((wireUpEventStore));
         }
+
+        public LocalListeningWrapper ListeningCommands(params Type[] types)
+        {
+            m_BoundContextWrapper.BoundContext.AddCommandsRouting(m_Types, m_PublishEndpoint);
+            return m_BoundContextWrapper.ListeningCommands(types);
+        }
     }
 
     public class RemoteListeningWrapper : ListeningWrapper<RemoteBoundContextWrapper>

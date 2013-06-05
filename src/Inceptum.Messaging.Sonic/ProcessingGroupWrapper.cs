@@ -12,11 +12,11 @@ namespace Inceptum.Messaging.Sonic
         private static QueueConnection m_Connection;
         private static string m_JailedTag;
         private bool m_IsQueueGroup;
-        private readonly string m_Name;
+        
 
-        public ProcessingGroupWrapper(string name,QueueConnection connection, string jailedTag)
+        public ProcessingGroupWrapper(QueueConnection connection, string jailedTag)
         {
-            m_Name = name;
+            
             m_JailedTag = jailedTag;
             m_Connection = connection;
         }
@@ -58,7 +58,8 @@ namespace Inceptum.Messaging.Sonic
             if (m_Instance != null)
             {
                 if(m_IsQueueGroup != isQueue(destination))
-                    throw new InvalidOperationException(string.Format("Can not process  {0} {1} in processing group {2} as it is already used for {3} processing. Sonic does not support processing topic and queue in same thread", m_IsQueueGroup ? "Topic" : "Queue", destination, m_Name, m_IsQueueGroup ? "Queue" : "Topic"));
+                    throw new InvalidOperationException(string.Format("Can not process  {0} {1} as it is already used for {2} processing. Sonic does not support processing topic and queue in same thread", m_IsQueueGroup ? "Topic" : "Queue", destination,  m_IsQueueGroup ? "Queue" : "Topic"));
+                    //throw new InvalidOperationException(string.Format("Can not process  {0} {1} in processing group {2} as it is already used for {3} processing. Sonic does not support processing topic and queue in same thread", m_IsQueueGroup ? "Topic" : "Queue", destination, m_Name, m_IsQueueGroup ? "Queue" : "Topic"));
                 return;
             }
             m_IsQueueGroup = isQueue(destination);

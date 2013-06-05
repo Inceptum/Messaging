@@ -38,18 +38,12 @@ namespace Inceptum.Cqrs
 
     public class CqrsEngine : ICqrsEngine, IDisposable
     {
-        private readonly CommandDispatcher m_CommandDispatcher = new CommandDispatcher();
         private readonly EventDispatcher m_EventDispatcher = new EventDispatcher();
         private readonly Dictionary<string, BoundContext> m_LocalBoundContexts = new Dictionary<string, BoundContext>();
         private readonly IMessagingEngine m_MessagingEngine;
         private readonly Dictionary<string, BoundContext> m_RemoteBoundContexts = new Dictionary<string, BoundContext>();
         private CompositeDisposable m_Subscription;
-
-        public CommandDispatcher CommandDispatcher
-        {
-            get { return m_CommandDispatcher; }
-        }
-
+ 
         public EventDispatcher EventDispatcher
         {
             get { return m_EventDispatcher; }
@@ -124,7 +118,7 @@ namespace Inceptum.Cqrs
                                           from routing in bc.Value.CommandsRouting
                                           let subscribeEndpoint = routing.SubscribeEndpoint
                                           where subscribeEndpoint != null
-                                          group routing by new { endpoint = subscribeEndpoint.Value, boundContext = bc.Key }
+                                          group routing by new { endpoint = subscribeEndpoint.Value, boundContext = bc.Value }
                                           into grouping
                                           select new
                                                   {
@@ -135,14 +129,28 @@ namespace Inceptum.Cqrs
 
 
             var eventSubscriptions =
-                eventEndpointBindings.Select(binding => m_MessagingEngine.Subscribe(binding.endpoint, e => m_EventDispatcher.Dispacth(e, binding.boundContext), false, binding.types));
+                eventEndpointBindings.Select(binding => m_MessagingEngine.Subscribe(binding.endpoint, @event => m_EventDispatcher.Dispacth(@event, binding.boundContext), false, binding.types));
             var commandSubscriptions =
-                commandEndpointBindings.Select(binding => m_MessagingEngine.Subscribe(binding.endpoint, e => m_CommandDispatcher.Dispacth(e, binding.boundContext), false, binding.types));
+                commandEndpointBindings.Select(binding => m_MessagingEngine.Subscribe(binding.endpoint, command => binding.boundContext.CommandDispatcher.Dispacth(command), false, binding.types));
 
             m_Subscription = new CompositeDisposable(eventSubscriptions.Concat(commandSubscriptions).ToArray());
         }
 
 
+        public void WireEventsListener(object eventListener)
+        {
+            EventDispatcher.Wire(eventListener);
+        }
+
+        public void WireCommandsHandler(object commandsHandler,string localBoundContext)
+        {
+            BoundContext bc;
+            if (!m_LocalBoundContexts.TryGetValue(localBoundContext, out bc))
+            {
+                throw new ArgumentException(string.Format("Bound context '{0}' not found",localBoundContext),"localBoundContext");
+            }
+            bc.CommandDispatcher.Wire(commandsHandler);
+        }
     }
 
 

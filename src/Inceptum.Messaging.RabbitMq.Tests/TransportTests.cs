@@ -77,7 +77,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
         {
             using (var transport = new Transport(HOST, "guest", "guest"))
             {
-                IProcessingGroup processingGroup = transport.CreateProcessingGroup("test", null);
+                IProcessingGroup processingGroup = transport.CreateProcessingGroup( null);
                 processingGroup.Send(TEST_EXCHANGE, new BinaryMessage {Bytes = new byte[] {0x0, 0x1, 0x2}, Type = typeof (byte[]).Name}, 0);
                 processingGroup.Subscribe(TEST_QUEUE, message => Console.WriteLine("message:" + message.Type), typeof (byte[]).Name);
             }
@@ -94,7 +94,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
                 byte[] actualResponse = null;
                 var received = new ManualResetEvent(false);
 
-                var processingGroup = transport.CreateProcessingGroup("test", null);
+                var processingGroup = transport.CreateProcessingGroup( null);
                 processingGroup.RegisterHandler(TEST_QUEUE, message => new BinaryMessage {Bytes = response, Type = typeof (byte[]).Name}, null);
                 processingGroup.SendRequest(TEST_EXCHANGE, new BinaryMessage { Bytes = request, Type = typeof(byte[]).Name }, message =>
                     {
@@ -114,7 +114,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
             using (var transport = new Transport(HOST, "guest", "guest"))
             {
                 var ev = new AutoResetEvent(false);
-                IProcessingGroup processingGroup = transport.CreateProcessingGroup("test", null);
+                IProcessingGroup processingGroup = transport.CreateProcessingGroup( null);
                 processingGroup.Send(TEST_EXCHANGE, new BinaryMessage {Bytes = new byte[] {0x0, 0x1, 0x2}, Type = messageType}, 0);
                 IDisposable subscription = processingGroup.Subscribe(TEST_QUEUE, message => ev.Set(), messageType);
                 Assert.That(ev.WaitOne(500), Is.True, "Message was not delivered");
@@ -129,7 +129,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
             using (var transport = new Transport(HOST, "guest", "guest"))
             {
                 var onFailureCalled = new AutoResetEvent(false);
-                IProcessingGroup processingGroup = transport.CreateProcessingGroup("test", () =>
+                IProcessingGroup processingGroup = transport.CreateProcessingGroup( () =>
                     {
                         onFailureCalled.Set();
                         Console.WriteLine(Thread.CurrentThread.ManagedThreadId);
@@ -148,7 +148,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
         {
             using (var transport = new Transport(HOST, "guest", "guest"))
             {
-                IProcessingGroup processingGroup = transport.CreateProcessingGroup("test", null);
+                IProcessingGroup processingGroup = transport.CreateProcessingGroup( null);
                 var received = new AutoResetEvent(false);
                 IDisposable subscription = processingGroup.Subscribe(TEST_QUEUE, message =>
                     {
@@ -168,7 +168,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
         {
             using (var transport = new Transport(HOST, "guest", "guest"))
             {
-                IProcessingGroup processingGroup = transport.CreateProcessingGroup("test", null);
+                IProcessingGroup processingGroup = transport.CreateProcessingGroup( null);
                 var type1Received = new AutoResetEvent(false);
                 var type2Received = new AutoResetEvent(false);
 
@@ -192,7 +192,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
             Thread connectionThread = null;
             using (var transport = new Transport(HOST, "guest", "guest"))
             {
-                IProcessingGroup processingGroup = transport.CreateProcessingGroup("test", null);
+                IProcessingGroup processingGroup = transport.CreateProcessingGroup( null);
                 processingGroup.Subscribe(TEST_QUEUE, message =>
                     {
                         connectionThread = Thread.CurrentThread;
@@ -217,7 +217,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
 
             using (var transport = new Transport(HOST, "guest", "guest"))
             {
-                IProcessingGroup processingGroup = transport.CreateProcessingGroup("test", null);
+                IProcessingGroup processingGroup = transport.CreateProcessingGroup( null);
                 Stopwatch sw = Stopwatch.StartNew();
                 int sendCounter;
                 for (sendCounter = 0; sw.ElapsedMilliseconds < 2000; sendCounter++)
@@ -238,7 +238,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
         {
             using (var transport = new Transport(HOST, "guest", "guest"))
             {
-                IProcessingGroup processingGroup = transport.CreateProcessingGroup("test", null);
+                IProcessingGroup processingGroup = transport.CreateProcessingGroup( null);
                 processingGroup.Subscribe(TEST_QUEUE, message => { }, "type1");
                 processingGroup.Subscribe(TEST_QUEUE, message => { }, "type1");
             }
@@ -250,7 +250,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
         {
             using (var transport = new Transport(HOST, "guest", "guest"))
             {
-                IProcessingGroup processingGroup = transport.CreateProcessingGroup("test", null);
+                IProcessingGroup processingGroup = transport.CreateProcessingGroup( null);
                 processingGroup.Subscribe(TEST_QUEUE, message => { }, "type1");
                 processingGroup.Subscribe(TEST_QUEUE, message => { }, null);
             }
@@ -262,7 +262,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
         {
             using (var transport = new Transport(HOST, "guest", "guest"))
             {
-                IProcessingGroup processingGroup = transport.CreateProcessingGroup("test", null);
+                IProcessingGroup processingGroup = transport.CreateProcessingGroup( null);
                 processingGroup.Subscribe(TEST_QUEUE, message => { }, null);
                 processingGroup.Subscribe(TEST_QUEUE, message => { }, "type1");
             }
@@ -274,7 +274,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
         {
             using (var transport = new Transport(HOST, "guest", "guest"))
             {
-                IProcessingGroup processingGroup = transport.CreateProcessingGroup("test", null);
+                IProcessingGroup processingGroup = transport.CreateProcessingGroup( null);
                 processingGroup.Subscribe(TEST_QUEUE, message => { }, null);
                 processingGroup.Subscribe(TEST_QUEUE, message => { }, null);
             }
