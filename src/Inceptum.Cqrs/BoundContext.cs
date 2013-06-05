@@ -14,8 +14,18 @@ namespace Inceptum.Cqrs
         private readonly bool m_IsLocal;
         public IStoreEvents EventStore { get; private set; }
 
+
+        private readonly CommandDispatcher m_CommandDispatcher;
+
+        public CommandDispatcher CommandDispatcher
+        {
+            get { return m_CommandDispatcher; }
+        }
+
+
         public BoundContext(string name, bool isLocal)
         {
+            m_CommandDispatcher = new CommandDispatcher(name);
             m_IsLocal = isLocal;
             if (string.IsNullOrEmpty(name)) throw new ArgumentException("Name should be not empty string", "name");
             Name = name;

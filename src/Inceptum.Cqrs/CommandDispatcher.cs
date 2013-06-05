@@ -9,6 +9,14 @@ namespace Inceptum.Cqrs
     public class CommandDispatcher
     {
         readonly Dictionary<Type, Action<object>> m_Handlers = new Dictionary<Type, Action<object>>();
+        private string m_BoundContext;
+
+        public CommandDispatcher(string boundContext)
+        {
+            if (string.IsNullOrEmpty(boundContext))
+                throw new ArgumentException("boundContext should be not empty string", "boundContext");
+            m_BoundContext = boundContext;
+        }
 
 
         public void Wire(object o)
@@ -38,16 +46,16 @@ namespace Inceptum.Cqrs
                 return;
             }
             throw new InvalidOperationException(string.Format(
-                "Only one handler per command is allowed. Command {0} handler is already registered. Can not register {1} as handler for it",parameterType,o));
+                "Only one handler per command is allowed. Command {0} handler is already registered in bound context {1}. Can not register {2} as handler for it", parameterType,m_BoundContext, o));
 
         }
 
-        public void Dispacth(object command, string boundContext)
+        public void Dispacth(object command)
         {
             Action<object> handler;
             if (!m_Handlers.TryGetValue(command.GetType(), out handler))
             {
-                throw new InvalidOperationException(string.Format("Failed to handle command {0}, no handler was registered for it",command));
+                throw new InvalidOperationException(string.Format("Failed to handle command {0} in bound context {1}, no handler was registered for it",command, m_BoundContext));
             }
             handler(command);
         } 

@@ -62,9 +62,9 @@ namespace Inceptum.Messaging.Sonic
         }
 
 
-        public IProcessingGroup CreateProcessingGroup(string name, Action onFailure)
+        public IProcessingGroup CreateProcessingGroup(Action onFailure)
         {
-            return new ProcessingGroupWrapper(name, m_Connection, m_JailedTag);
+            return new ProcessingGroupWrapper( m_Connection, m_JailedTag);
         }
 
         #region IDisposable Members

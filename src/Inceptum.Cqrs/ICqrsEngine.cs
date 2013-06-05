@@ -3,8 +3,8 @@
     public interface ICqrsEngine
     {
         void Init();
-        CommandDispatcher CommandDispatcher { get; }
-        EventDispatcher EventDispatcher { get; }
         void SendCommand<T>(T command, string boundContext);
+        void WireEventsListener(object eventListener);
+        void WireCommandsHandler(object commandsHandler, string localBoundContext);
     }
 }

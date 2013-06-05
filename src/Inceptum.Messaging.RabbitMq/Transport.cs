@@ -33,7 +33,7 @@ namespace Inceptum.Messaging.RabbitMq
 
         }
 
-        public IProcessingGroup CreateProcessingGroup(string name, Action onFailure)
+        public IProcessingGroup CreateProcessingGroup(Action onFailure)
         {
             if(m_IsDisposed.WaitOne(0))
                 throw new ObjectDisposedException("Transport is disposed");

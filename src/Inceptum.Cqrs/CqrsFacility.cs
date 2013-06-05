@@ -16,9 +16,9 @@ namespace Castle.MicroKernel.Registration
             return registration.ExtendedProperties(new { IsEventsListener=true });
         }  
         
-        public static ComponentRegistration<T> AsCommandsHandler<T>(this ComponentRegistration<T> registration) where T : class
+        public static ComponentRegistration<T> AsCommandsHandler<T>(this ComponentRegistration<T> registration, string localBoundContext) where T : class
         {
-            return registration.ExtendedProperties(new { IsCommandsHandler = true });
+            return registration.ExtendedProperties(new { CommandsHandlerFor = localBoundContext });
         }
     }
 }
@@ -60,12 +60,12 @@ namespace Inceptum.Cqrs
 
         private void registerEventsListener(IHandler handler)
         {
-            m_CqrsEngine.EventDispatcher.Wire(Kernel.Resolve(handler.ComponentModel.Name, handler.ComponentModel.Services.First()));
+            m_CqrsEngine.WireEventsListener(Kernel.Resolve(handler.ComponentModel.Name, handler.ComponentModel.Services.First()));
         }
 
-        private void registerIsCommandsHandler(IHandler handler)
+        private void registerIsCommandsHandler(IHandler handler, string localBoundContext)
         {
-            m_CqrsEngine.CommandDispatcher.Wire(Kernel.Resolve(handler.ComponentModel.Name, handler.ComponentModel.Services.First()));
+            m_CqrsEngine.WireCommandsHandler(Kernel.Resolve(handler.ComponentModel.Name, handler.ComponentModel.Services.First()), localBoundContext);
         }
 
 
@@ -73,10 +73,11 @@ namespace Inceptum.Cqrs
         private void onComponentRegistered(string key, IHandler handler)
         {
             var isEventsListener = (bool) (handler.ComponentModel.ExtendedProperties["IsEventsListener"] ?? false);
-            var isCommandsHandler = (bool)(handler.ComponentModel.ExtendedProperties["IsCommandsHandler"] ?? false);
+            var commandsHandlerFor = (string)(handler.ComponentModel.ExtendedProperties["CommandsHandlerFor"]);
+            var isCommandsHandler = commandsHandlerFor != null;
 
             if(isCommandsHandler&& isEventsListener)
-                throw new InvalidOperationException("Class can not be events listener and commands handler simultaneousely");
+                throw new InvalidOperationException("Component can not be events listener and commands handler simultaneousely");
             
             if (isEventsListener)
             {
@@ -95,11 +96,11 @@ namespace Inceptum.Cqrs
             {
                 if (handler.CurrentState == HandlerState.WaitingDependency)
                 {
-                    m_WaitList.Add(handler, registerIsCommandsHandler);
+                    m_WaitList.Add(handler, handler1 => registerIsCommandsHandler(handler,commandsHandlerFor));
                 }
                 else
                 {
-                    registerIsCommandsHandler(handler);
+                    registerIsCommandsHandler(handler, commandsHandlerFor);
                 }
             }
 

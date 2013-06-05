@@ -94,7 +94,7 @@ namespace Inceptum.Messaging
                 if (processingGroup==null)
                 {
                     processingGroup = new ProcessingGroupWrapper(transportId,name);
-                    processingGroup.SetProcessingGroup(transport.CreateProcessingGroup(name, () => processProcessingGroupFailure(processingGroup)));
+                    processingGroup.SetProcessingGroup(transport.CreateProcessingGroup(() => processProcessingGroupFailure(processingGroup)));
                     m_ProcessingGroups.Add(processingGroup);
                 }
                 if(onFailure!=null)
