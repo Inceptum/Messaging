@@ -82,6 +82,22 @@ namespace Inceptum.Messaging
 
         public void Send<TMessage>(TMessage message, Endpoint endpoint, int ttl)
         {
+            var serializedMessage = serializeMessage(endpoint.SerializationFormat, message);
+            send(serializedMessage,endpoint,ttl);
+        }
+
+ 
+
+        public void Send(object message, Endpoint endpoint)
+        {
+            var type = getMessageType(message.GetType());
+            var bytes = m_SerializationManager.SerializeObject(endpoint.SerializationFormat, message);
+            var serializedMessage = new BinaryMessage { Bytes = bytes, Type = type };
+            send(serializedMessage,endpoint,MESSAGE_DEFAULT_LIFESPAN);
+        }
+        
+        private void send(BinaryMessage message, Endpoint endpoint, int ttl)
+        {
             if (endpoint.Destination == null) throw new ArgumentException("Destination can not be null");
             if (m_Disposing.WaitOne(0))
                 throw new InvalidOperationException("Engine is disposing");
@@ -91,8 +107,9 @@ namespace Inceptum.Messaging
                 try
                 {
                     var processingGroup = m_TransportManager.GetProcessingGroup(endpoint.TransportId,endpoint.Destination);
-                    var serializedMessage = serializeMessage(endpoint.SerializationFormat,message);
-                    processingGroup.Send(endpoint.Destination, serializedMessage, ttl);
+                    //m_SerializationManager.SerializeObject(endpoint.SerializationFormat, message)
+                //    var serializedMessage = serialize(endpoint.SerializationFormat, message);
+                    processingGroup.Send(endpoint.Destination, message, ttl);
                 }
                 catch (Exception e)
                 {
@@ -392,6 +409,7 @@ namespace Inceptum.Messaging
             var bytes = m_SerializationManager.Serialize(format,message);
             return new BinaryMessage{Bytes=bytes,Type=type};
         }
+    
 
         private string getMessageType(Type type)
         {

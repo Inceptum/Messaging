@@ -16,6 +16,7 @@ namespace Inceptum.Messaging.Contract
         IDisposable SubscribeOnTransportEvents(TrasnportEventHandler handler);
         void Send<TMessage>(TMessage message, Endpoint endpoint);
         void Send<TMessage>(TMessage message, Endpoint endpoint, int ttl);
+        void Send(object message, Endpoint endpoint);
         IDisposable Subscribe<TMessage>(Endpoint endpoint, Action<TMessage> callback);
         IDisposable Subscribe(Endpoint endpoint, Action<object> callback, bool failOnUnknownType, params Type[] knownTypes);
         TResponse SendRequest<TRequest, TResponse>(TRequest request, Endpoint endpoint, long timeout = TransportConstants.DEFAULT_REQUEST_TIMEOUT);
