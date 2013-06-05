@@ -27,10 +27,6 @@ namespace Inceptum.Cqrs
 
     public class CqrsFacility:AbstractFacility
     {
-        private Endpoint[] m_EventEndpoints=new Endpoint[0];
-        private Endpoint[] m_CommandEndpoints = new Endpoint[0];
-        private Type[] m_EventTypes;
-        private Type[] m_CommandTypes;
         private readonly List<IHandler> m_EventListenerWaitList = new List<IHandler>();
         private ICqrsEngine m_CqrsEngine;
 

@@ -15,9 +15,7 @@ namespace Inceptum.Cqrs
     class CommitDispatcher : IDispatchCommits
     {
         private CqrsEngine m_CqrsEngine;
-        readonly Dictionary<Type, Action<object>> m_Callers = new Dictionary<Type, Action<object>>();
         private string m_BoundContext;
-
 
         public CommitDispatcher(CqrsEngine cqrsEngine,string boundContext)
         {
@@ -33,35 +31,9 @@ namespace Inceptum.Cqrs
         {
             foreach (EventMessage @event in commit.Events)
             {
-                publishEvent(@event.Body);
-/*
-                //TODO: dirty implementation affecting performance. Need to update inceptum messaging to handle such scenario
-                MethodInfo method = typeof(IMessagingEngine).GetMethods().FirstOrDefault(m => m.Name == "Send" && m.GetParameters().Count() == 2);
-                MethodInfo genericMethod = method.MakeGenericMethod(new[] { @event.Body.GetType() });
-                genericMethod.Invoke(m_MessagingEngine, new[] { @event.Body, m_Endpoint });
-*/
+                m_CqrsEngine.PublishEvent(@event.Body,m_BoundContext);
             }
         }
-
-        private void publishEvent(object e)
-        {
-            Action<object> caller;
-            lock (m_Callers)
-            {
-                var type = e.GetType();
-                if (!m_Callers.TryGetValue(type, out caller))
-                {
-                    var @event = Expression.Parameter(typeof(object), "event");
-                    var call = Expression.Call(Expression.Constant(m_CqrsEngine), "PublishEvent", new[] { type }, @event, Expression.Convert(@event, type),Expression.Constant(m_BoundContext));
-                    var lambda = (Expression<Action<object>>)Expression.Lambda(call, @event);
-                    caller=lambda.Compile();                    
-                    m_Callers.Add(type,caller);
-                }
-            }
-            
-            caller(e);
-        }
-
     }
 
     public class CqrsEngine : ICqrsEngine, IDisposable
@@ -120,11 +92,11 @@ namespace Inceptum.Cqrs
             }
         }
 
-        public void PublishEvent<T>(T @event,string boundContext)
+        public void PublishEvent(object @event,string boundContext)
         {
             //TODO: add configuration validation: local BC can publisdh particular event type only to single EP
             var bc = m_LocalBoundContexts.FirstOrDefault(c => c.Key == boundContext);
-            var routing = bc.Value.EventsRouting.FirstOrDefault(r => r.Types.Contains(typeof (T)));
+            var routing = bc.Value.EventsRouting.FirstOrDefault(r => r.Types.Contains(@event.GetType()));
             if (routing != null)
             {
                 var endpoint = routing.PublishEndpoint.Value;
