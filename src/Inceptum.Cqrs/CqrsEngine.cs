@@ -62,14 +62,14 @@ namespace Inceptum.Cqrs
             config(configurator);
             m_LocalBoundContexts = configurator.LocalBoundContexts.ToDictionary(bc => bc.Name);
             m_RemoteBoundContexts = configurator.RemoteBoundContexts.ToDictionary(bc => bc.Name);
-            foreach (var localBoundContext in m_LocalBoundContexts.Values)
-            {
-                localBoundContext.InitEventStore(new CommitDispatcher(this,localBoundContext.Name));
-            }
-        }
+         }
 
         public void Init()
         {
+            foreach (var localBoundContext in m_LocalBoundContexts.Values)
+            {
+                localBoundContext.InitEventStore(new CommitDispatcher(this, localBoundContext.Name));
+            }
             subscribe();
         }
 
@@ -92,7 +92,7 @@ namespace Inceptum.Cqrs
             }
         }
 
-        public void PublishEvent(object @event,string boundContext)
+        internal void PublishEvent(object @event,string boundContext)
         {
             //TODO: add configuration validation: local BC can publisdh particular event type only to single EP
             var bc = m_LocalBoundContexts.FirstOrDefault(c => c.Key == boundContext);
