@@ -16,32 +16,32 @@ using Rhino.Mocks;
 
 namespace Inceptum.Cqrs.Tests
 {
-    internal class CommandHandler
+    internal class CommandsHandler
     {
-        private CqrsEngine m_CqrsEngine;
-        private MessagingEngine m_MessagingEngine;
-
-        public CommandHandler(CqrsEngine cqrsEngine, MessagingEngine messagingEngine)
-        {
-            m_MessagingEngine = messagingEngine;
-            m_CqrsEngine = cqrsEngine;
-        }
+        public readonly List<string> HandledCommands = new List<string>();
 
         private void Handle(string m)
         {
             Console.WriteLine("Command received:" + m);
-            //m_MessagingEngine.Send("event fired by command", new Endpoint("test", "unistream.processing.events", true, "json"));
-            m_CqrsEngine.PublishEvent("event fired by command", "integration");
+           // m_CqrsEngine.PublishEvent("event fired by command", "integration");
+            HandledCommands.Add(m);
         }
     }
+
+
     internal class EventListener
     {
+        public readonly List<Tuple<string, string>> EventsWithBoundContext = new List<Tuple<string, string>>();
+        public readonly List<string> Events = new List<string>();
+
         void Handle(string m,string boundContext)
         {
+            EventsWithBoundContext.Add(Tuple.Create(m,boundContext));
             Console.WriteLine(boundContext+":"+m);
         } 
         void Handle(string m)
         {
+            Events.Add(m);
             Console.WriteLine(m);
         } 
     }
@@ -52,21 +52,34 @@ namespace Inceptum.Cqrs.Tests
     public class CqrsFacilityTests
     {
         [Test]
-        public void EventHandlerWiringTest()
+        public void EventsListenerWiringTest()
         {
             var container=new WindsorContainer();
-            container.Register(
-                Component.For<IMessagingEngine>().Instance(MockRepository.GenerateMock<IMessagingEngine>()));
+            container.Register(Component.For<IMessagingEngine>().Instance(MockRepository.GenerateMock<IMessagingEngine>()));
             container.AddFacility<CqrsFacility>();
-            container.Register(Component.For<EventListener>().AsEventListener());
+            container.Register(Component.For<EventListener>().AsEventsListener());
             var cqrsEngine = container.Resolve<ICqrsEngine>();
+            var eventListener = container.Resolve<EventListener>();
             cqrsEngine.EventDispatcher.Dispacth("test","bc");
+            Assert.That(eventListener.EventsWithBoundContext, Is.EqualTo(new[] { Tuple.Create("test", "bc") }),"Event was not dispatched");
+            Assert.That(eventListener.Events, Is.EqualTo(new[] { "test" }), "Event was not dispatched");
+        }
 
-
+       [Test]
+        public void CommandsHandlerWiringTest()
+        {
+            var container=new WindsorContainer();
+            container.Register(Component.For<IMessagingEngine>().Instance(MockRepository.GenerateMock<IMessagingEngine>()));
+            container.AddFacility<CqrsFacility>();
+            container.Register(Component.For<CommandsHandler>().AsCommandsHandler());
+            var cqrsEngine = container.Resolve<ICqrsEngine>();
+            var commandsHandler = container.Resolve<CommandsHandler>();
+            cqrsEngine.CommandDispatcher.Dispacth("test","bc");
+            Assert.That(commandsHandler.HandledCommands, Is.EqualTo(new[] { "test" }), "Event was not dispatched");
         }
 
         [Test]
-        public void Method_Scenario_Expected()
+        public void CqrsEngineTest()
         {
             var serializationManager = new SerializationManager();
             serializationManager.RegisterSerializerFactory(new JsonSerializerFactory());
@@ -85,13 +98,10 @@ namespace Inceptum.Cqrs.Tests
                                                    .PublishingEvents(typeof(string)).To(eventExchange).RoutedTo(eventQueue)
                                                    .ListeningCommands(typeof(string)).On(commandExchange).RoutedFrom(commandQueue)
                                                    );
-/*            var c=new CqrsEngine(messagingEngine, config => config
+            var c=new CqrsEngine(messagingEngine, config => config
                                                .WithRemoteBoundContext("integration")
                                                    .ListeningCommands(typeof(TestCommand)).On(new Endpoint())
                                                    .PublishingEvents(typeof(TransferCreatedEvent)).To(new Endpoint())
-                                               .WithLocalBoundContext("someBC")
-                                                   .ListeningCommands(typeof(TestCommand)).On(new Endpoint())
-                                                   .PublishingEvents().To(new Endpoint())
                                                .WithLocalBoundContext("testBC")
                                                    .ListeningCommands(typeof(TestCommand)).On(new Endpoint("test", "unistream.u1.commands", true))
                                                    .PublishingEvents(typeof (int)).To(new Endpoint()).RoutedTo(new Endpoint())
@@ -103,9 +113,11 @@ namespace Inceptum.Cqrs.Tests
                                                                                 .UsingJsonSerialization()
                                                                                 .UsingSynchronousDispatchScheduler()
                                                                                     .DispatchTo(dispatchCommits))
-                                               );*/
+                                               ); 
+
+
             cqrsEngine.EventDispatcher.Wire(new EventListener());
-            cqrsEngine.CommandDispatcher.Wire(new CommandHandler(cqrsEngine,messagingEngine));
+            cqrsEngine.CommandDispatcher.Wire(new CommandsHandler());
             cqrsEngine.Init();
           //  messagingEngine.Send("test", new Endpoint("test", "unistream.u1.commands", true,"json"));
               cqrsEngine.SendCommand("test", "integration");

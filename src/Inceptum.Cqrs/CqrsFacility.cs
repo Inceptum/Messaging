@@ -2,20 +2,23 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using Castle.Core;
 using Castle.MicroKernel;
 using Castle.MicroKernel.Facilities;
 using Castle.MicroKernel.Registration;
-using Inceptum.Messaging.Contract;
 
 
 namespace Castle.MicroKernel.Registration
 {
     public static class ComponentRegistrationExtensions
     {
-        public static ComponentRegistration<T> AsEventListener<T>(this ComponentRegistration<T> registration) where T : class
+        public static ComponentRegistration<T> AsEventsListener<T>(this ComponentRegistration<T> registration) where T : class
         {
-            return registration.ExtendedProperties(new { IsEventListener=true });
+            return registration.ExtendedProperties(new { IsEventsListener=true });
+        }  
+        
+        public static ComponentRegistration<T> AsCommandsHandler<T>(this ComponentRegistration<T> registration) where T : class
+        {
+            return registration.ExtendedProperties(new { IsCommandsHandler = true });
         }
     }
 }
@@ -27,7 +30,7 @@ namespace Inceptum.Cqrs
 
     public class CqrsFacility:AbstractFacility
     {
-        private readonly List<IHandler> m_EventListenerWaitList = new List<IHandler>();
+        private readonly Dictionary<IHandler, Action<IHandler>> m_WaitList = new Dictionary<IHandler, Action<IHandler>>();
         private ICqrsEngine m_CqrsEngine;
 
 
@@ -48,38 +51,61 @@ namespace Inceptum.Cqrs
 
         private void processWaitList()
         {
-
-            foreach (var factoryHandler in m_EventListenerWaitList.ToArray().Where(factoryHandler => factoryHandler.CurrentState == HandlerState.Valid))
+            foreach (var pair in m_WaitList.ToArray().Where(pair => pair.Key.CurrentState == HandlerState.Valid))
             {
-                registerEventListener(factoryHandler);
-                m_EventListenerWaitList.Remove(factoryHandler);
+                pair.Value(pair.Key);
+                m_WaitList.Remove(pair.Key);
             }
         }
 
-        private void registerEventListener(IHandler handler)
+        private void registerEventsListener(IHandler handler)
         {
             m_CqrsEngine.EventDispatcher.Wire(Kernel.Resolve(handler.ComponentModel.Name, handler.ComponentModel.Services.First()));
+        }
+
+        private void registerIsCommandsHandler(IHandler handler)
+        {
+            m_CqrsEngine.CommandDispatcher.Wire(Kernel.Resolve(handler.ComponentModel.Name, handler.ComponentModel.Services.First()));
         }
 
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         private void onComponentRegistered(string key, IHandler handler)
         {
+            var isEventsListener = (bool) (handler.ComponentModel.ExtendedProperties["IsEventsListener"] ?? false);
+            var isCommandsHandler = (bool)(handler.ComponentModel.ExtendedProperties["IsCommandsHandler"] ?? false);
 
-
-            if ((bool)(handler.ComponentModel.ExtendedProperties["IsEventListener"] ?? false))
+            if(isCommandsHandler&& isEventsListener)
+                throw new InvalidOperationException("Class can not be events listener and commands handler simultaneousely");
+            
+            if (isEventsListener)
             {
                 if (handler.CurrentState == HandlerState.WaitingDependency)
                 {
-                    m_EventListenerWaitList.Add(handler);
+                    m_WaitList.Add(handler,registerEventsListener);
                 }
                 else
                 {
-                    registerEventListener(handler);
+                    registerEventsListener(handler);
+                }
+            }
+
+
+            if (isCommandsHandler)
+            {
+                if (handler.CurrentState == HandlerState.WaitingDependency)
+                {
+                    m_WaitList.Add(handler, registerIsCommandsHandler);
+                }
+                else
+                {
+                    registerIsCommandsHandler(handler);
                 }
             }
 
             processWaitList();
         }
+
+        
     }
 }
