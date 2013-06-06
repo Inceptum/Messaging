@@ -32,14 +32,20 @@ namespace Inceptum.Cqrs
     {
         private readonly Dictionary<IHandler, Action<IHandler>> m_WaitList = new Dictionary<IHandler, Action<IHandler>>();
         private ICqrsEngine m_CqrsEngine;
+        private Action<Configurator> m_Config= configurator => { };
 
+
+        public CqrsFacility Configure(Action<Configurator> config)
+        {
+            m_Config = config;
+            return this;
+        }
 
         protected override void Init()
         {
-            Action<Configurator> config = c => { };
             Kernel.Register(Component.For<ICqrsEngine>().ImplementedBy<CqrsEngine>().DependsOn(new
                 {
-                    config
+                    config=m_Config
                 }));
 
             Kernel.ComponentRegistered += onComponentRegistered;
