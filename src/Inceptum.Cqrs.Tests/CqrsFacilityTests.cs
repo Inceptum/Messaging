@@ -98,6 +98,7 @@ namespace Inceptum.Cqrs.Tests
                                                .WithLocalBoundContext("integration")
                                                    .PublishingEvents(typeof(string)).To(eventExchange).RoutedTo(eventQueue)
                                                    .ListeningCommands(typeof(string)).On(commandExchange).RoutedFrom(commandQueue)
+                                                   //.ListeningCommands(typeof(string)).locally()
                                                    );
             var c=new CqrsEngine(messagingEngine, config => config
                                                .WithRemoteBoundContext("integration")

@@ -86,6 +86,13 @@ namespace Inceptum.Cqrs
             }
         }
 
+        public void SendLocalCommand<T>(T command,string boundContext )
+        {
+            //TODO: add configuration validation: 2 BC can not listen for commands on same EP, remote BC can listen for particular command type only on single EP
+            var bc = m_LocalBoundContexts.FirstOrDefault(c => c.Key == boundContext);
+            bc.Value.CommandDispatcher.Dispacth(command);
+        }
+
         public  void PublishEvent(object @event,string boundContext)
         {
             //TODO: add configuration validation: local BC can publisdh particular event type only to single EP

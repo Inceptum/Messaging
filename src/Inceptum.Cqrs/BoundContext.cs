@@ -22,6 +22,10 @@ namespace Inceptum.Cqrs
             get { return m_CommandDispatcher; }
         }
 
+        public bool IsLocal
+        {
+            get { return m_IsLocal; }
+        }
 
         public BoundContext(string name, bool isLocal)
         {
