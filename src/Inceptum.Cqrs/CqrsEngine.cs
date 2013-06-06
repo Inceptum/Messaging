@@ -14,10 +14,10 @@ namespace Inceptum.Cqrs
 
     public class CommitDispatcher : IDispatchCommits
     {
-        private CqrsEngine m_CqrsEngine;
-        private string m_BoundContext;
+        private readonly ICqrsEngine m_CqrsEngine;
+        private readonly string m_BoundContext;
 
-        public CommitDispatcher(CqrsEngine cqrsEngine,string boundContext)
+        public CommitDispatcher(ICqrsEngine cqrsEngine,string boundContext)
         {
             m_BoundContext = boundContext;
             m_CqrsEngine = cqrsEngine;
