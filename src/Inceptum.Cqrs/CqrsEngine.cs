@@ -12,7 +12,7 @@ using Inceptum.Messaging.Contract;
 namespace Inceptum.Cqrs
 {
 
-    class CommitDispatcher : IDispatchCommits
+    public class CommitDispatcher : IDispatchCommits
     {
         private CqrsEngine m_CqrsEngine;
         private string m_BoundContext;
@@ -86,7 +86,7 @@ namespace Inceptum.Cqrs
             }
         }
 
-        internal void PublishEvent(object @event,string boundContext)
+        public  void PublishEvent(object @event,string boundContext)
         {
             //TODO: add configuration validation: local BC can publisdh particular event type only to single EP
             var bc = m_LocalBoundContexts.FirstOrDefault(c => c.Key == boundContext);
