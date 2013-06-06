@@ -71,7 +71,7 @@ namespace Inceptum.Cqrs.Tests
         {
             var container=new WindsorContainer();
             container.Register(Component.For<IMessagingEngine>().Instance(MockRepository.GenerateMock<IMessagingEngine>()));
-            container.AddFacility<CqrsFacility>();
+            container.AddFacility<CqrsFacility>(f=>f.Configure(configurator => { }));
             container.Register(Component.For<CommandsHandler>().AsCommandsHandler("test"));
             var cqrsEngine = container.Resolve<ICqrsEngine>();
             var commandsHandler = container.Resolve<CommandsHandler>();
