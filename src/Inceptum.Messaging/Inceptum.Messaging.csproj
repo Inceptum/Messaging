@@ -56,6 +56,12 @@
     <Reference Include="System.Reactive.Interfaces">
       <HintPath>..\packages\Rx-Interfaces.2.1.30214.0\lib\Net40\System.Reactive.Interfaces.dll</HintPath>
     </Reference>
+    <Reference Include="System.Reactive.Linq">
+      <HintPath>..\packages\Rx-Linq.2.1.30214.0\lib\Net40\System.Reactive.Linq.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reactive.PlatformServices">
+      <HintPath>..\packages\Rx-PlatformServices.2.1.30214.0\lib\Net40\System.Reactive.PlatformServices.dll</HintPath>
+    </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -85,7 +91,7 @@
     <Compile Include="Contract\TransportException.cs" />
     <Compile Include="Contract\TransportOutdatedException.cs" />
     <Compile Include="Contract\TransportOutdateEventArgs.cs" />
-    <Compile Include="InMemoryTransport\InMemoryTransportFactory.cs" />
+    <Compile Include="InMemory\InMemoryTransportFactory.cs" />
     <Compile Include="ISerializerFactory.cs" />
     <Compile Include="ITransportFactory.cs" />
     <Compile Include="Serialization\JsonSerializer.cs" />
