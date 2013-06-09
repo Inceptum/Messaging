@@ -9,7 +9,7 @@
             m_Name = name;
         }
 
-        public void Apply(BC boundContext)
+        public void Create(BoundContext boundContext)
         {
             boundContext.Name = m_Name;
         }

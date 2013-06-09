@@ -55,8 +55,7 @@ namespace Inceptum.Messaging.Castle
                 throw new Exception("Messaging facility can be configured via transports parameter or via MessagingConfiguration property, not both.");
 
             Kernel.Register(
-                Component.For<IMessagingEngine>().ImplementedBy<MessagingEngine>(),
-                Component.For<ISerializationManager>().ImplementedBy<SerializationManager>()
+                Component.For<IMessagingEngine>().ImplementedBy<MessagingEngine>()
                 );
             
             if (messagingConfiguration != null)
@@ -71,11 +70,9 @@ namespace Inceptum.Messaging.Castle
             }
             
 
-            m_SerializationManager = Kernel.Resolve<ISerializationManager>();
+            m_SerializationManager = Kernel.Resolve<IMessagingEngine>().SerializationManager;
             Kernel.ComponentRegistered += onComponentRegistered;
             Kernel.ComponentModelCreated += ProcessModel;
-            Kernel.Register(Component.For<ISerializerFactory>().ImplementedBy<ProtobufSerializerFactory>());
-            Kernel.Register(Component.For<ISerializerFactory>().ImplementedBy<JsonSerializerFactory>());
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]

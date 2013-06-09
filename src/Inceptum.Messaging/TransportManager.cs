@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Inceptum.Messaging.Contract;
+using Inceptum.Messaging.InMemory;
 using Inceptum.Messaging.Transports;
 
 namespace Inceptum.Messaging
@@ -144,7 +145,7 @@ namespace Inceptum.Messaging
 
         public TransportManager(ITransportResolver transportResolver, params ITransportFactory[] transportFactories)
         {
-            m_TransportFactories = transportFactories;
+            m_TransportFactories = transportFactories.Concat(new []{new InMemoryTransportFactory()}).ToArray();
             if (transportResolver == null) throw new ArgumentNullException("transportResolver");
             m_TransportResolver = transportResolver;
         }

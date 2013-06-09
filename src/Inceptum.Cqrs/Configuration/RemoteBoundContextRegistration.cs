@@ -33,7 +33,7 @@ namespace Inceptum.Cqrs.Configuration
             m_Registration = registration;
         }
 
-        public RemoteBoundContextRegistration On(Endpoint publishEndpoint)
+        public RemoteBoundContextRegistration On(string publishEndpoint)
         {
             m_Registration.AddSubscribedCommands(m_Types, publishEndpoint);
             return m_Registration;
@@ -51,7 +51,7 @@ namespace Inceptum.Cqrs.Configuration
             m_Types = types;
         }
 
-        public RemoteBoundContextRegistration To(Endpoint listenEndpoint)
+        public RemoteBoundContextRegistration To(string listenEndpoint)
         {
             m_Registration.AddSubscribedEvents(m_Types, listenEndpoint);
             return m_Registration;

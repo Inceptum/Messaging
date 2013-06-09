@@ -1,4 +1,4 @@
-﻿using System;
+﻿/*using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -58,7 +58,7 @@ namespace Inceptum.Cqrs.Tests
             container.Register(Component.For<IMessagingEngine>().Instance(MockRepository.GenerateMock<IMessagingEngine>()));
             container.AddFacility<CqrsFacility>();
             container.Register(Component.For<EventListener>().AsEventsListener()/*,
-                Classes.FromThisAssembly().BasedOn(typeof(object)).WithService.AllInterfaces().*/);
+                Classes.FromThisAssembly().BasedOn(typeof(object)).WithService.AllInterfaces().#1#);
             CqrsEngine cqrsEngine = (CqrsEngine) container.Resolve<ICqrsEngine>();
             var eventListener = container.Resolve<EventListener>();
             cqrsEngine.EventDispatcher.Dispacth("test","bc");
@@ -72,7 +72,7 @@ namespace Inceptum.Cqrs.Tests
         {
             var container=new WindsorContainer();
             container.Register(Component.For<IMessagingEngine>().Instance(MockRepository.GenerateMock<IMessagingEngine>()));
-            container.AddFacility<CqrsFacility>(f=>f.Configure(configurator => { }));
+            container.AddFacility<CqrsFacility>(f=>f.BoundContexts(configurator => { }));
             container.Register(Component.For<CommandsHandler>().AsCommandsHandler("test"));
             var cqrsEngine = container.Resolve<ICqrsEngine>();
             var commandsHandler = container.Resolve<CommandsHandler>();
@@ -185,4 +185,4 @@ namespace Inceptum.Cqrs.Tests
         }
     }
 
-}
+}*/

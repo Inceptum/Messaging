@@ -9,6 +9,7 @@ using Castle.Core.Logging;
 using Inceptum.Core.Utils;
 using Inceptum.Messaging.Contract;
 using Inceptum.Messaging.InMemory;
+using Inceptum.Messaging.Serialization;
 using Inceptum.Messaging.Transports;
 
 namespace Inceptum.Messaging
@@ -32,29 +33,35 @@ namespace Inceptum.Messaging
         /// ctor for tests
         /// </summary>
         /// <param name="transportManager"></param>
-        /// <param name="serializationManager"></param>
-        internal MessagingEngine(TransportManager transportManager, ISerializationManager serializationManager)
+        internal MessagingEngine(TransportManager transportManager)
         {
             if (transportManager == null) throw new ArgumentNullException("transportManager");
-            if (serializationManager == null) throw new ArgumentNullException("serializationManager");
             m_TransportManager = transportManager;
-            m_SerializationManager = serializationManager;
+            m_SerializationManager = new SerializationManager();
             m_RequestTimeoutManager = new SchedulingBackgroundWorker("RequestTimeoutManager", () => stopTimeoutedRequests());
             createMessagingHandle(() => stopTimeoutedRequests(true));
+
         }
 
 
 
-        public MessagingEngine(ITransportResolver transportResolver, ISerializationManager serializationManager,params ITransportFactory[] transportFactories)
-            : this(new TransportManager(transportResolver, transportFactories), serializationManager)
+
+
+        public MessagingEngine(ITransportResolver transportResolver, params ITransportFactory[] transportFactories)
+            : this(new TransportManager(transportResolver, transportFactories))
         {
         } 
         
-        public MessagingEngine(ITransportResolver transportResolver, ISerializationManager serializationManager)
-            : this(new TransportManager(transportResolver, new ITransportFactory[]{new InMemoryTransportFactory()}), serializationManager)
+        public MessagingEngine(ITransportResolver transportResolver)
+            : this(new TransportManager(transportResolver))
         {
         }
 
+
+        public ISerializationManager SerializationManager
+        {
+            get { return m_SerializationManager; }
+        }
 
         public ILogger Logger
         {
@@ -146,7 +153,7 @@ namespace Inceptum.Messaging
             }
         }
 
-        public IDisposable Subscribe(Endpoint endpoint, Action<object> callback, bool failOnUnknownType, params Type[] knownTypes)
+        public IDisposable Subscribe(Endpoint endpoint, Action<object> callback, Action<string> unknownTypeCallback, params Type[] knownTypes)
         {
             if (endpoint.Destination == null) throw new ArgumentException("Destination can not be null");
             if (m_Disposing.WaitOne(0))
@@ -163,14 +170,7 @@ namespace Inceptum.Messaging
                             Type messageType;
                             if (!dictionary.TryGetValue(m.Type, out messageType))
                             {
-
-                                if (failOnUnknownType)
-                                {
-                                    throw new ProcessingException(string.Format("Received message with unknown type header {0}. Transport: {1}, Queue: {2}", m.Type,
-                                                   endpoint.TransportId, endpoint.Destination));
-                                }
-
-                                Logger.DebugFormat("Received message with unknown type header {0} from. Ignoring. Transport: {1}, Queue: {2}", m.Type, endpoint.TransportId, endpoint.Destination);
+                                unknownTypeCallback(m.Type);
                                 return;
                             }
                             processMessage(m, messageType, callback, endpoint);

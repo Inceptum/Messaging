@@ -2,6 +2,6 @@
 {
     interface IBoundContextDescriptor
     {
-        void Apply(BC boundContext);
+        void Create(BoundContext boundContext);
     }
 }
