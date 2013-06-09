@@ -26,8 +26,8 @@ namespace Inceptum.Messaging.Tests
         {
             using (var transport = new InMemoryTransport())
             {
-                ManualResetEvent delivered1=new ManualResetEvent(false);
-                ManualResetEvent delivered2=new ManualResetEvent(false);
+                var delivered1=new ManualResetEvent(false);
+                var delivered2=new ManualResetEvent(false);
                 IProcessingGroup processingGroup = transport.CreateProcessingGroup(null);
                 processingGroup.Subscribe(TEST_TOPIC, message =>
                     {
