@@ -57,7 +57,8 @@ namespace Inceptum.Cqrs.Tests
             var container=new WindsorContainer();
             container.Register(Component.For<IMessagingEngine>().Instance(MockRepository.GenerateMock<IMessagingEngine>()));
             container.AddFacility<CqrsFacility>();
-            container.Register(Component.For<EventListener>().AsEventsListener());
+            container.Register(Component.For<EventListener>().AsEventsListener()/*,
+                Classes.FromThisAssembly().BasedOn(typeof(object)).WithService.AllInterfaces().*/);
             CqrsEngine cqrsEngine = (CqrsEngine) container.Resolve<ICqrsEngine>();
             var eventListener = container.Resolve<EventListener>();
             cqrsEngine.EventDispatcher.Dispacth("test","bc");

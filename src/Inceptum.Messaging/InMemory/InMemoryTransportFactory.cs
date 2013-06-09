@@ -31,7 +31,7 @@ namespace Inceptum.Messaging.InMemory
     internal class InMemoryTransport : ITransport
     {
         readonly Dictionary<string,Subject<BinaryMessage>> m_Topics=new Dictionary<string, Subject<BinaryMessage>>();
-        List<InMemoryProcessingGroup> m_ProcessingGroups = new List<InMemoryProcessingGroup>();
+        readonly List<InMemoryProcessingGroup> m_ProcessingGroups = new List<InMemoryProcessingGroup>();
 
 
         public Subject<BinaryMessage> this[string name]

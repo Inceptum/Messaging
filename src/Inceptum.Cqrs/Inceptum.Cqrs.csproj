@@ -75,6 +75,13 @@
     </Compile>
     <Compile Include="BoundContext.cs" />
     <Compile Include="CommandDispatcher.cs" />
+    <Compile Include="Configuration\BC.cs" />
+    <Compile Include="Configuration\BoundContextRegistration.cs" />
+    <Compile Include="Configuration\IBoundContextDescriptor.cs" />
+    <Compile Include="Configuration\LocalBoundContextRegistration.cs" />
+    <Compile Include="Configuration\NameDescriptor.cs" />
+    <Compile Include="Configuration\RemoteBoundContextRegistration.cs" />
+    <Compile Include="Configuration\SubscriptionDescriptor.cs" />
     <Compile Include="Configurator.cs" />
     <Compile Include="CqrsEngine.cs" />
     <Compile Include="CqrsFacility.cs" />

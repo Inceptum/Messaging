@@ -8,6 +8,7 @@ using System.Threading;
 using Castle.Core.Logging;
 using Inceptum.Core.Utils;
 using Inceptum.Messaging.Contract;
+using Inceptum.Messaging.InMemory;
 using Inceptum.Messaging.Transports;
 
 namespace Inceptum.Messaging
@@ -46,6 +47,11 @@ namespace Inceptum.Messaging
 
         public MessagingEngine(ITransportResolver transportResolver, ISerializationManager serializationManager,params ITransportFactory[] transportFactories)
             : this(new TransportManager(transportResolver, transportFactories), serializationManager)
+        {
+        } 
+        
+        public MessagingEngine(ITransportResolver transportResolver, ISerializationManager serializationManager)
+            : this(new TransportManager(transportResolver, new ITransportFactory[]{new InMemoryTransportFactory()}), serializationManager)
         {
         }
 
