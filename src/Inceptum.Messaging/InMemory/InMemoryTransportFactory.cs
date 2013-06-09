@@ -31,6 +31,7 @@ namespace Inceptum.Messaging.InMemory
     internal class InMemoryTransport : ITransport
     {
         readonly Dictionary<string,Subject<BinaryMessage>> m_Topics=new Dictionary<string, Subject<BinaryMessage>>();
+        List<InMemoryProcessingGroup> m_ProcessingGroups = new List<InMemoryProcessingGroup>();
 
 
         public Subject<BinaryMessage> this[string name]
@@ -72,12 +73,24 @@ namespace Inceptum.Messaging.InMemory
         }
         public void Dispose()
         {
-
+            lock (m_ProcessingGroups)
+            {
+                foreach (var processingGroup in m_ProcessingGroups)
+                {
+                    processingGroup.Dispose();
+                }
+            }
+            
         }
 
         public IProcessingGroup CreateProcessingGroup(Action onFailure)
         {
-            return new InMemoryProcessingGroup(this);
+            var processingGroup = new InMemoryProcessingGroup(this);
+            lock (m_ProcessingGroups)
+            {
+                m_ProcessingGroups.Add(processingGroup);
+                return processingGroup;
+            }
         }
     }
 
@@ -139,7 +152,10 @@ namespace Inceptum.Messaging.InMemory
 
         public void Dispose()
         {
+            var finishedProcessing=new ManualResetEvent(false);
             m_Subscriptions.Dispose();
+            m_Scheduler.Schedule(() => finishedProcessing.Set());
+            finishedProcessing.WaitOne();
             m_Scheduler.Dispose();
         }
       
