@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Inceptum.Messaging.InMemory;
 using Inceptum.Messaging.Transports;
 using NUnit.Framework;
@@ -18,17 +19,38 @@ namespace Inceptum.Messaging.Tests
     [TestFixture]
     public class InMemoryTransportTests
     {
-        private const string TEST_QUEUE = "test.queue";
+        private const string TEST_TOPIC = "test.queue";
         
         [Test]
         public void SendTest()
         {
             using (var transport = new InMemoryTransport())
             {
+                ManualResetEvent delivered1=new ManualResetEvent(false);
+                ManualResetEvent delivered2=new ManualResetEvent(false);
                 IProcessingGroup processingGroup = transport.CreateProcessingGroup(null);
-                processingGroup.Send(TEST_QUEUE, new BinaryMessage { Bytes = new byte[] { 0x0, 0x1, 0x2 }, Type = typeof(byte[]).Name }, 0);
-                processingGroup.Subscribe(TEST_QUEUE, message => Console.WriteLine("message:" + message.Type), typeof(byte[]).Name);
+                processingGroup.Subscribe(TEST_TOPIC, message =>
+                    {
+                        delivered1.Set();
+                        Console.WriteLine("subscription1: message:" + message.Type);
+                    }, typeof(byte[]).Name);
+                
+                processingGroup.Subscribe(TEST_TOPIC, message =>
+                    {
+                        delivered2.Set();
+                        Console.WriteLine("subscription2: message:" + message.Type);
+                    }, typeof(byte[]).Name);
+                 
+
+                processingGroup.Send(TEST_TOPIC, new BinaryMessage { Bytes = new byte[] { 0x0, 0x1, 0x2 }, Type = typeof(byte[]).Name }, 0);
+
+                
+                Assert.That(delivered1.WaitOne(1000), Is.True, "message was not delivered to all subscribers");
+                Assert.That(delivered2.WaitOne(1000), Is.True, "message was not delivered to all subscribers");
+                Thread.Sleep(1000);
             }
+
+
         }
 
 
@@ -43,8 +65,8 @@ namespace Inceptum.Messaging.Tests
                 var received = new ManualResetEvent(false);
 
                 var processingGroup = transport.CreateProcessingGroup(null);
-                processingGroup.RegisterHandler(TEST_QUEUE, message => new BinaryMessage { Bytes = response, Type = typeof(byte[]).Name }, null);
-                processingGroup.SendRequest(TEST_QUEUE, new BinaryMessage { Bytes = request, Type = typeof(byte[]).Name }, message =>
+                processingGroup.RegisterHandler(TEST_TOPIC, message => new BinaryMessage { Bytes = response, Type = typeof(byte[]).Name }, null);
+                processingGroup.SendRequest(TEST_TOPIC, new BinaryMessage { Bytes = request, Type = typeof(byte[]).Name }, message =>
                 {
                     actualResponse = message.Bytes;
                     received.Set();
@@ -61,15 +83,34 @@ namespace Inceptum.Messaging.Tests
             {
                 var ev = new AutoResetEvent(false);
                 IProcessingGroup processingGroup = transport.CreateProcessingGroup(null);
-                IDisposable subscription = processingGroup.Subscribe(TEST_QUEUE, message => ev.Set(), null);
-                processingGroup.Send(TEST_QUEUE, new BinaryMessage { Bytes = new byte[] { 0x0, 0x1, 0x2 }, Type = null }, 0);
+                IDisposable subscription = processingGroup.Subscribe(TEST_TOPIC, message => ev.Set(), null);
+                processingGroup.Send(TEST_TOPIC, new BinaryMessage { Bytes = new byte[] { 0x0, 0x1, 0x2 }, Type = null }, 0);
                 Assert.That(ev.WaitOne(500), Is.True, "Message was not delivered");
                 subscription.Dispose();
                 Assert.That(ev.WaitOne(500), Is.False, "Message was delivered for canceled subscription");
             }
         }
 
-        
+        [Test]
+        public void DisposeTest()
+        {
+            ManualResetEvent delivered = new ManualResetEvent(false);
+            int deliveredMessagesCount = 0;
+            var transport = new InMemoryTransport();
+                IProcessingGroup processingGroup = transport.CreateProcessingGroup(null);
+                processingGroup.Subscribe(TEST_TOPIC, message =>
+                    {
+                        delivered.WaitOne();
+                        Interlocked.Increment(ref deliveredMessagesCount);
+                    }, null);
+                processingGroup.Send(TEST_TOPIC,new BinaryMessage(), 0);
+
+            var task = Task.Factory.StartNew(transport.Dispose);
+            Assert.That(task.Wait(200), Is.False,"transport was disposd before all message processing finished");
+            delivered.Set();
+            Assert.That(task.Wait(1000), Is.True, "transport was not disposd after all message processing finished");
+        }
+
 
     }
 
