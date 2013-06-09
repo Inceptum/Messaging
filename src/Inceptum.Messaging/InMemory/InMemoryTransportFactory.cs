@@ -9,7 +9,7 @@ using Inceptum.Messaging.Transports;
 
 namespace Inceptum.Messaging.InMemory
 {
-    public class InMemoryTransportFactory : ITransportFactory
+    internal class InMemoryTransportFactory : ITransportFactory
     {
         readonly Dictionary<TransportInfo,InMemoryTransport> m_Transports=new Dictionary<TransportInfo, InMemoryTransport>(); 
         public string Name { get { return "InMemory"; } }

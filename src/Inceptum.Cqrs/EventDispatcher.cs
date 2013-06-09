@@ -9,7 +9,7 @@ namespace Inceptum.Cqrs
     public class EventDispatcher
     {
         readonly Dictionary<Type, List<Action<object, string>>> m_Handlers = new Dictionary<Type, List<Action<object, string>>>();
-
+ 
 
         public void Wire(object o)
         {

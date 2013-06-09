@@ -11,6 +11,20 @@ namespace Inceptum.Messaging.Serialization
         private readonly ReaderWriterLockSlim m_SerializerLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
         private readonly Dictionary<Tuple<string,Type>, object> m_Serializers = new Dictionary<Tuple<string, Type>, object>();
 
+        public SerializationManager()
+        {
+            
+        }
+        public SerializationManager(params ISerializerFactory[] serializerFactories)
+        {
+            RegisterSerializerFactory(new JsonSerializerFactory());
+            RegisterSerializerFactory(new ProtobufSerializerFactory());
+            foreach (var serializerFactory in serializerFactories)
+            {
+                RegisterSerializerFactory(serializerFactory);
+            }
+        }
+
         #region ISerializationManager Members
 
         public byte[] Serialize<TMessage>(string format, TMessage message)

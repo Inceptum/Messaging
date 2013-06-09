@@ -73,21 +73,19 @@
     <Compile Include="..\SolutionInfo.cs">
       <Link>Properties\SolutionInfo.cs</Link>
     </Compile>
-    <Compile Include="BoundContext.cs" />
     <Compile Include="CommandDispatcher.cs" />
-    <Compile Include="Configuration\BC.cs" />
+    <Compile Include="Configuration\BoundContext.cs" />
     <Compile Include="Configuration\BoundContextRegistration.cs" />
     <Compile Include="Configuration\IBoundContextDescriptor.cs" />
     <Compile Include="Configuration\LocalBoundContextRegistration.cs" />
     <Compile Include="Configuration\NameDescriptor.cs" />
     <Compile Include="Configuration\RemoteBoundContextRegistration.cs" />
+    <Compile Include="Configuration\RoutingDescriptor.cs" />
     <Compile Include="Configuration\SubscriptionDescriptor.cs" />
-    <Compile Include="Configurator.cs" />
     <Compile Include="CqrsEngine.cs" />
     <Compile Include="CqrsFacility.cs" />
     <Compile Include="EventDispatcher.cs" />
     <Compile Include="ICqrsEngine.cs" />
-    <Compile Include="MessageRouting.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

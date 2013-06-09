@@ -104,7 +104,7 @@ namespace Inceptum.Messaging.Tests
                         Interlocked.Increment(ref deliveredMessagesCount);
                     }, null);
                 processingGroup.Send(TEST_TOPIC,new BinaryMessage(), 0);
-
+            Thread.Sleep(200);
             var task = Task.Factory.StartNew(transport.Dispose);
             Assert.That(task.Wait(200), Is.False,"transport was disposd before all message processing finished");
             delivered.Set();

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reactive.Disposables;
@@ -7,7 +8,11 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using EventStore;
 using EventStore.Dispatcher;
+using Inceptum.Cqrs.Configuration;
+using Inceptum.Messaging;
 using Inceptum.Messaging.Contract;
+using Inceptum.Messaging.Serialization;
+using Inceptum.Messaging.Transports;
 
 namespace Inceptum.Cqrs
 {
@@ -36,35 +41,76 @@ namespace Inceptum.Cqrs
         }
     }
 
+    class InMemoryEndpointResolver:IEndpointResolver
+    {
+        public Endpoint Resolve(string endpoint)
+        {
+            return new Endpoint("inmemory",endpoint,true,"json");
+        }
+    }
+
     public class CqrsEngine : ICqrsEngine, IDisposable
     {
         private readonly EventDispatcher m_EventDispatcher = new EventDispatcher();
-        private readonly Dictionary<string, BoundContext> m_LocalBoundContexts = new Dictionary<string, BoundContext>();
+        private readonly CommandDispatcher m_CommandDispatcher = new CommandDispatcher();
         private readonly IMessagingEngine m_MessagingEngine;
-        private readonly Dictionary<string, BoundContext> m_RemoteBoundContexts = new Dictionary<string, BoundContext>();
-        private CompositeDisposable m_Subscription;
- 
+        private readonly CompositeDisposable m_Subscription=new CompositeDisposable();
+        private readonly IEndpointResolver m_EndpointResolver;
+        private BoundContext[] m_BoundContexts;
+        private readonly BoundContextRegistration[] m_Registrations;
+
         public EventDispatcher EventDispatcher
         {
             get { return m_EventDispatcher; }
         }
 
-        public CqrsEngine(IMessagingEngine messagingEngine,Action<Configurator> config )
+        public CqrsEngine(params BoundContextRegistration[] registrations):
+            this(new MessagingEngine(new TransportResolver(new Dictionary<string, TransportInfo> {{"inmemory", new TransportInfo("none", "none", "none", null, "inmemory")}})),
+            new InMemoryEndpointResolver(),
+            registrations
+            )
         {
+        }
+        public CqrsEngine(IMessagingEngine messagingEngine, IEndpointResolver endpointResolver,params BoundContextRegistration[] registrations)
+        {
+            m_Registrations = registrations;
+            m_EndpointResolver = endpointResolver;
             m_MessagingEngine = messagingEngine;
-            var configurator = new Configurator();
-            config(configurator);
-            m_LocalBoundContexts = configurator.LocalBoundContexts.ToDictionary(bc => bc.Name);
-            m_RemoteBoundContexts = configurator.RemoteBoundContexts.ToDictionary(bc => bc.Name);
          }
 
         public void Init()
         {
-            foreach (var localBoundContext in m_LocalBoundContexts.Values)
+            m_BoundContexts = m_Registrations.Select(r => r.Apply(new BoundContext())).ToArray();
+
+            foreach (var boundContext in m_BoundContexts)
             {
-                localBoundContext.InitEventStore(new CommitDispatcher(this, localBoundContext.Name));
+                foreach (var eventsSubscription in boundContext.EventsSubscriptions)
+                {
+                    var endpoint = m_EndpointResolver.Resolve(eventsSubscription.Key);
+                    BoundContext context = boundContext;
+                    subscribe(endpoint, @event => EventDispatcher.Dispacth(@event, context.Name), t => { }, eventsSubscription.Value.ToArray());
+                }
             }
-            subscribe();
+
+            foreach (var boundContext in m_BoundContexts)
+            {
+                foreach (var commandsSubscription in boundContext.CommandsSubscriptions)
+                {
+                    var endpoint = m_EndpointResolver.Resolve(commandsSubscription.Key);
+                    BoundContext context = boundContext;
+                    subscribe(endpoint, command => m_CommandDispatcher.Dispacth(command,context.Name), t=>{throw new InvalidOperationException("Unknown command received: "+t);}, commandsSubscription.Value.ToArray());
+                }
+            }
+
+            var uselessCommandsWirings = m_CommandDispatcher.KnownBoundContexts.Select(kc => m_BoundContexts.All(bc => bc.Name != kc)).ToArray();
+            if(uselessCommandsWirings.Any())
+                throw new ConfigurationException(string.Format("Command handlers registered for unknown bound contexts: {0} ",string.Join(",",uselessCommandsWirings)));
+
+        }
+
+        private void subscribe(Endpoint endpoint, Action<object> callback, Action<string> unknownTypeCallback, params Type[] knownTypes)
+        {
+            m_Subscription.Add(m_MessagingEngine.Subscribe(endpoint, callback, unknownTypeCallback, knownTypes));
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
@@ -76,87 +122,41 @@ namespace Inceptum.Cqrs
 
         public void SendCommand<T>(T command,string boundContext )
         {
-            //TODO: add configuration validation: 2 BC can not listen for commands on same EP, remote BC can listen for particular command type only on single EP
-            var bc = m_RemoteBoundContexts.Concat(m_LocalBoundContexts).FirstOrDefault(c => c.Key == boundContext);
-            var routing = bc.Value.CommandsRouting.FirstOrDefault(r => r.Types.Contains(typeof (T)));
-            if (routing != null)
+            var context = m_BoundContexts.FirstOrDefault(bc => bc.Name == boundContext);
+            if (context == null)
+                throw new ArgumentException(string.Format("bound context {0} not found",boundContext),"boundContext");
+            string endpoint;
+            if (!context.CommandRoutes.TryGetValue(typeof (T), out endpoint))
             {
-                var endpoint = routing.PublishEndpoint.Value;
-                m_MessagingEngine.Send(command, endpoint);
+                throw new InvalidOperationException(string.Format("bound context '{0}' does not support command '{1}'",boundContext,typeof(T)));
             }
+            m_MessagingEngine.Send(command, m_EndpointResolver.Resolve(endpoint));
+            
         }
-
-        public void SendLocalCommand<T>(T command,string boundContext )
-        {
-            //TODO: add configuration validation: 2 BC can not listen for commands on same EP, remote BC can listen for particular command type only on single EP
-            var bc = m_LocalBoundContexts.FirstOrDefault(c => c.Key == boundContext);
-            bc.Value.CommandDispatcher.Dispacth(command);
-        }
+ 
 
         public  void PublishEvent(object @event,string boundContext)
         {
-            //TODO: add configuration validation: local BC can publisdh particular event type only to single EP
-            var bc = m_LocalBoundContexts.FirstOrDefault(c => c.Key == boundContext);
-            var routing = bc.Value.EventsRouting.FirstOrDefault(r => r.Types.Contains(@event.GetType()));
-            if (routing != null)
+            var context = m_BoundContexts.FirstOrDefault(bc => bc.Name == boundContext);
+            if (context == null)
+                throw new ArgumentException(string.Format("bound context {0} not found", boundContext), "boundContext");
+            string endpoint;
+            if (!context.EventRoutes.TryGetValue(@event.GetType(), out endpoint))
             {
-                var endpoint = routing.PublishEndpoint.Value;
-                m_MessagingEngine.Send(@event, endpoint);
+                throw new InvalidOperationException(string.Format("bound context '{0}' does not support event '{1}'", boundContext, @event.GetType()));
             }
+            m_MessagingEngine.Send(@event, m_EndpointResolver.Resolve(endpoint));
         }
-
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        private void subscribe()
-        {
-            var eventEndpointBindings = from bc in m_RemoteBoundContexts.Concat(m_LocalBoundContexts)
-                                        from routing in bc.Value.EventsRouting
-                                        let subscribeEndpoint = routing.SubscribeEndpoint
-                                        where subscribeEndpoint != null
-                                        group routing by new {endpoint = subscribeEndpoint.Value, boundContext = bc.Key}
-                                        into grouping
-                                        select new
-                                                {
-                                                    grouping.Key.boundContext,
-                                                    grouping.Key.endpoint,
-                                                    types = grouping.SelectMany(p => p.Types).Distinct().ToArray()
-                                                };
-
-            var commandEndpointBindings = from bc in m_LocalBoundContexts
-                                          from routing in bc.Value.CommandsRouting
-                                          let subscribeEndpoint = routing.SubscribeEndpoint
-                                          where subscribeEndpoint != null
-                                          group routing by new { endpoint = subscribeEndpoint.Value, boundContext = bc.Value }
-                                          into grouping
-                                          select new
-                                                  {
-                                                      grouping.Key.boundContext,
-                                                      grouping.Key.endpoint,
-                                                      types = grouping.SelectMany(p => p.Types).Distinct().ToArray()
-                                                  };
-
-
-            var eventSubscriptions =
-                eventEndpointBindings.Select(binding => m_MessagingEngine.Subscribe(binding.endpoint, @event => m_EventDispatcher.Dispacth(@event, binding.boundContext), false, binding.types));
-            var commandSubscriptions =
-                commandEndpointBindings.Select(binding => m_MessagingEngine.Subscribe(binding.endpoint, command => binding.boundContext.CommandDispatcher.Dispacth(command), false, binding.types));
-
-            m_Subscription = new CompositeDisposable(eventSubscriptions.Concat(commandSubscriptions).ToArray());
-        }
-
 
         public void WireEventsListener(object eventListener)
         {
             EventDispatcher.Wire(eventListener);
         }
 
-        public void WireCommandsHandler(object commandsHandler,string localBoundContext)
+        public void WireCommandsHandler(object commandsHandler, string boundContext)
         {
-            BoundContext bc;
-            if (!m_LocalBoundContexts.TryGetValue(localBoundContext, out bc))
-            {
-                throw new ArgumentException(string.Format("Bound context '{0}' not found",localBoundContext),"localBoundContext");
-            }
-            bc.CommandDispatcher.Wire(commandsHandler);
+            //TODO: check that same object is not wired for more then one BC
+            m_CommandDispatcher.Wire(commandsHandler,boundContext);
         }
     }
 

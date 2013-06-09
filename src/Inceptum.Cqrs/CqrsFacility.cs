@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using Castle.MicroKernel;
 using Castle.MicroKernel.Facilities;
 using Castle.MicroKernel.Registration;
+using Inceptum.Cqrs.Configuration;
 
 
 namespace Castle.MicroKernel.Registration
@@ -32,12 +33,12 @@ namespace Inceptum.Cqrs
     {
         private readonly Dictionary<IHandler, Action<IHandler>> m_WaitList = new Dictionary<IHandler, Action<IHandler>>();
         private ICqrsEngine m_CqrsEngine;
-        private Action<Configurator> m_Config= configurator => { };
+        private BoundContext[] m_BoundContexts;
 
 
-        public CqrsFacility Configure(Action<Configurator> config)
+        public CqrsFacility BoundContexts(params BoundContext[] boundContexts)
         {
-            m_Config = config;
+            m_BoundContexts = boundContexts;
             return this;
         }
 
@@ -45,7 +46,7 @@ namespace Inceptum.Cqrs
         {
             Kernel.Register(Component.For<ICqrsEngine>().ImplementedBy<CqrsEngine>().DependsOn(new
                 {
-                    config=m_Config
+                    boundContexts = m_BoundContexts
                 }));
 
             Kernel.ComponentRegistered += onComponentRegistered;
