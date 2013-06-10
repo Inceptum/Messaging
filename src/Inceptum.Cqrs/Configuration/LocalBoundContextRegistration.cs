@@ -62,7 +62,7 @@ namespace Inceptum.Cqrs.Configuration
             m_Registration.AddSubscribedCommands(m_Types, m_ListenEndpoint);
             return m_Registration;
         }
-        public LocalBoundContextRegistration RoutedToSameEndpoint( )
+        public LocalBoundContextRegistration RoutedFromSameEndpoint( )
         {
             return RoutedFrom(m_ListenEndpoint);
         }
@@ -83,8 +83,6 @@ namespace Inceptum.Cqrs.Configuration
         {
             return new RoutedToDescriptor(m_Registration, m_Types, publishEndpoint);
         }
-
- 
     }
 
     public class RoutedToDescriptor  
