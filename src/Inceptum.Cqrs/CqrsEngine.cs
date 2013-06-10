@@ -45,7 +45,7 @@ namespace Inceptum.Cqrs
     {
         public Endpoint Resolve(string endpoint)
         {
-            return new Endpoint("inmemory",endpoint,true,"json");
+            return new Endpoint("InMemory", endpoint, true, "json");
         }
     }
 
@@ -65,12 +65,14 @@ namespace Inceptum.Cqrs
         }
 
         public CqrsEngine(params BoundContextRegistration[] registrations):
-            this(new MessagingEngine(new TransportResolver(new Dictionary<string, TransportInfo> {{"inmemory", new TransportInfo("none", "none", "none", null, "inmemory")}})),
+            this(new MessagingEngine(new TransportResolver(new Dictionary<string, TransportInfo> { { "InMemory", new TransportInfo("none", "none", "none", null, "InMemory") } })),
             new InMemoryEndpointResolver(),
             registrations
             )
         {
         }
+
+
         public CqrsEngine(IMessagingEngine messagingEngine, IEndpointResolver endpointResolver,params BoundContextRegistration[] registrations)
         {
             m_Registrations = registrations;
@@ -102,7 +104,7 @@ namespace Inceptum.Cqrs
                 }
             }
 
-            var uselessCommandsWirings = m_CommandDispatcher.KnownBoundContexts.Select(kc => m_BoundContexts.All(bc => bc.Name != kc)).ToArray();
+            var uselessCommandsWirings = m_CommandDispatcher.KnownBoundContexts.Where(kc => m_BoundContexts.All(bc => bc.Name != kc)).ToArray();
             if(uselessCommandsWirings.Any())
                 throw new ConfigurationException(string.Format("Command handlers registered for unknown bound contexts: {0} ",string.Join(",",uselessCommandsWirings)));
 
@@ -131,7 +133,6 @@ namespace Inceptum.Cqrs
                 throw new InvalidOperationException(string.Format("bound context '{0}' does not support command '{1}'",boundContext,typeof(T)));
             }
             m_MessagingEngine.Send(command, m_EndpointResolver.Resolve(endpoint));
-            
         }
  
 
@@ -148,15 +149,17 @@ namespace Inceptum.Cqrs
             m_MessagingEngine.Send(@event, m_EndpointResolver.Resolve(endpoint));
         }
 
-        public void WireEventsListener(object eventListener)
+        public ICqrsEngine WireEventsListener(object eventListener)
         {
             EventDispatcher.Wire(eventListener);
+            return this;
         }
 
-        public void WireCommandsHandler(object commandsHandler, string boundContext)
+        public ICqrsEngine WireCommandsHandler(object commandsHandler, string boundContext)
         {
             //TODO: check that same object is not wired for more then one BC
             m_CommandDispatcher.Wire(commandsHandler,boundContext);
+            return this;
         }
     }
 

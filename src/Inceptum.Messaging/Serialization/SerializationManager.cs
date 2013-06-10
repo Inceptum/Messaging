@@ -13,17 +13,18 @@ namespace Inceptum.Messaging.Serialization
 
         public SerializationManager()
         {
-            
+            RegisterSerializerFactory(new JsonSerializerFactory());
+            RegisterSerializerFactory(new ProtobufSerializerFactory());            
         }
+/*
         public SerializationManager(params ISerializerFactory[] serializerFactories)
         {
-            RegisterSerializerFactory(new JsonSerializerFactory());
-            RegisterSerializerFactory(new ProtobufSerializerFactory());
             foreach (var serializerFactory in serializerFactories)
             {
                 RegisterSerializerFactory(serializerFactory);
             }
         }
+*/
 
         #region ISerializationManager Members
 

@@ -42,7 +42,7 @@ namespace Inceptum.Cqrs.Configuration
                             .PublishingEvents(typeof (object)).To("eventsExhange").RoutedToSameEndpoint()
                             .PublishingEvents(typeof (object)).To("eventsExhange").NotRouted()
                             .ListeningCommands(typeof (int)).On("commandsExhange").RoutedFrom("commandsQueue")
-                            .ListeningCommands(typeof (int)).On("commandsExhange").RoutedToSameEndpoint()
+                            .ListeningCommands(typeof (int)).On("commandsExhange").RoutedFromSameEndpoint()
                             //.WithEventStore()
                 };
         }
