@@ -46,7 +46,7 @@ namespace Inceptum.Cqrs
         {
             Kernel.Register(Component.For<ICqrsEngine>().ImplementedBy<CqrsEngine>().DependsOn(new
                 {
-                    boundContexts = m_BoundContexts
+                    registrations = m_BoundContexts
                 }));
 
             Kernel.ComponentRegistered += onComponentRegistered;
