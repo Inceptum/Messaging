@@ -33,10 +33,10 @@ namespace Inceptum.Cqrs
     {
         private readonly Dictionary<IHandler, Action<IHandler>> m_WaitList = new Dictionary<IHandler, Action<IHandler>>();
         private ICqrsEngine m_CqrsEngine;
-        private BoundContext[] m_BoundContexts;
+        private BoundContextRegistration[] m_BoundContexts;
 
 
-        public CqrsFacility BoundContexts(params BoundContext[] boundContexts)
+        public CqrsFacility BoundContexts(params BoundContextRegistration[] boundContexts)
         {
             m_BoundContexts = boundContexts;
             return this;
