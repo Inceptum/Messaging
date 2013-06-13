@@ -46,9 +46,12 @@ namespace Inceptum.Cqrs.Tests
         public void Method_Scenario_Expected()
         {
             var engine = new CqrsEngine(BoundContext.Local("local")
-                                                    .PublishingEvents(typeof (int)).To("events").RoutedToSameEndpoint()
+                                                    .PublishingEvents(typeof (int)).To("events").RoutedTo("eventQueue")//RoutedToSameEndpoint()
                                                     .ListeningCommands(typeof(string)).On("commands1").RoutedFromSameEndpoint()
-                                                    .ListeningCommands(typeof(DateTime)).On("commands2").RoutedFromSameEndpoint());
+                                                    .ListeningCommands(typeof(DateTime)).On("commands2").RoutedFromSameEndpoint()/*
+                                                    .WithEventSource()
+                                                    .WithAggregates()
+                                                    .WithDocumentStore()*/);
             engine
                 .WireCommandsHandler(new CommandHandler(engine),"local")
                 .WireEventsListener(new EventsListener());

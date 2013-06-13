@@ -30,7 +30,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
 
         private const string TEST_QUEUE = "test.queue";
         private const string TEST_EXCHANGE = "test.exchange";
-        private const string HOST = "192.168.1.5";
+        private const string HOST = "sr-tls01-s01.test-s02.uniservers.ru";
         private IConnection m_Connection;
         private IModel m_Channel;
         private ConnectionFactory m_Factory;
@@ -208,8 +208,9 @@ namespace Inceptum.Messaging.RabbitMq.Tests
         [Test]
         [Ignore]
         [TestCase(10, TestName = "10b")]
+        [TestCase(1024, TestName = "1Kb")]
         [TestCase(8912, TestName = "8Kb")]
-        [TestCase(1048576, TestName = "8Mb")]
+        [TestCase(1024*1024, TestName = "1Mb")]
         public void PerformanceTest(int messageSize)
         {
             var messageBytes = new byte[messageSize];
@@ -219,16 +220,17 @@ namespace Inceptum.Messaging.RabbitMq.Tests
             {
                 IProcessingGroup processingGroup = transport.CreateProcessingGroup( null);
                 Stopwatch sw = Stopwatch.StartNew();
+                processingGroup.Send(TEST_EXCHANGE, new BinaryMessage { Bytes = messageBytes, Type = typeof(byte[]).Name }, 0);
                 int sendCounter;
-                for (sendCounter = 0; sw.ElapsedMilliseconds < 2000; sendCounter++)
+                for (sendCounter = 0; sw.ElapsedMilliseconds < 4000; sendCounter++)
                     processingGroup.Send(TEST_EXCHANGE, new BinaryMessage {Bytes = messageBytes, Type = typeof (byte[]).Name}, 0);
                 int receiveCounter = 0;
 
                 var ev = new ManualResetEvent(false);
                 processingGroup.Subscribe(TEST_QUEUE, message => receiveCounter++, typeof (byte[]).Name);
-                ev.WaitOne(1000);
-                Console.WriteLine("Send: {0} per second", sendCounter/2);
-                Console.WriteLine("Receive: {0} per second", receiveCounter);
+                ev.WaitOne(2000);
+                Console.WriteLine("Send: {0} per second. {1:0.00} Mbit/s", sendCounter/4, 1.0*sendCounter*messageSize/4/1024/1024*8);
+                Console.WriteLine("Receive: {0} per second. {1:0.00}  Mbit/s", receiveCounter / 2, 1.0 * receiveCounter * messageSize / 2 / 1024 / 1024 * 8);
             }
         }
 
