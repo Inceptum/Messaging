@@ -2,8 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Castle.Core;
 using Castle.MicroKernel;
+using Castle.MicroKernel.Context;
 using Castle.MicroKernel.Facilities;
+using Castle.MicroKernel.ModelBuilder;
 using Castle.MicroKernel.Registration;
 using Inceptum.Cqrs.Configuration;
 
@@ -60,19 +63,24 @@ namespace Inceptum.Cqrs
         {
             foreach (var pair in m_WaitList.ToArray().Where(pair => pair.Key.CurrentState == HandlerState.Valid))
             {
-                pair.Value(pair.Key);
-                m_WaitList.Remove(pair.Key);
+                if (pair.Key.TryResolve(CreationContext.CreateEmpty())!=null)
+                {
+                    pair.Value(pair.Key);
+                    m_WaitList.Remove(pair.Key);
+                }
             }
         }
 
         private void registerEventsListener(IHandler handler)
         {
-            m_CqrsEngine.WireEventsListener(Kernel.Resolve(handler.ComponentModel.Name, handler.ComponentModel.Services.First()));
+            m_CqrsEngine.WireEventsListener(handler.Resolve(CreationContext.CreateEmpty()));
         }
 
         private void registerIsCommandsHandler(IHandler handler, string localBoundContext)
         {
-            m_CqrsEngine.WireCommandsHandler(Kernel.Resolve(handler.ComponentModel.Name, handler.ComponentModel.Services.First()), localBoundContext);
+
+            object commandsHandler = handler.Resolve(CreationContext.CreateEmpty());
+            m_CqrsEngine.WireCommandsHandler(commandsHandler, localBoundContext);
         }
 
 
@@ -101,6 +109,7 @@ namespace Inceptum.Cqrs
 
             if (isCommandsHandler)
             {
+ 
                 if (handler.CurrentState == HandlerState.WaitingDependency)
                 {
                     m_WaitList.Add(handler, h => registerIsCommandsHandler(h,commandsHandlerFor));
@@ -111,9 +120,11 @@ namespace Inceptum.Cqrs
                 }
             }
 
-            processWaitList();
+            //processWaitList();
         }
 
         
     }
+
+  
 }
