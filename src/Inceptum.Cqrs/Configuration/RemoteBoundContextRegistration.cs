@@ -35,7 +35,7 @@ namespace Inceptum.Cqrs.Configuration
 
         public RemoteBoundContextRegistration On(string publishEndpoint)
         {
-            m_Registration.AddSubscribedCommands(m_Types, publishEndpoint);
+            m_Registration.AddCommandsRoute(m_Types, publishEndpoint);
             return m_Registration;
         }
     }
