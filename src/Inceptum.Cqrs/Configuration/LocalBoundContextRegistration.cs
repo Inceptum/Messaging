@@ -62,9 +62,16 @@ namespace Inceptum.Cqrs.Configuration
             m_Registration.AddSubscribedCommands(m_Types, m_ListenEndpoint);
             return m_Registration;
         }
+
         public LocalBoundContextRegistration RoutedFromSameEndpoint( )
         {
             return RoutedFrom(m_ListenEndpoint);
+        }
+
+        public LocalBoundContextRegistration NotRouted()
+        {
+            m_Registration.AddSubscribedEvents(m_Types, m_ListenEndpoint);
+            return m_Registration;
         }
     }
 
