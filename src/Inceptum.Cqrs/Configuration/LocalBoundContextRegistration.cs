@@ -107,8 +107,8 @@ namespace Inceptum.Cqrs.Configuration
 
         public LocalBoundContextRegistration RoutedTo(string listenEndpoint)
         {
-            m_Registration.AddEventsRoute(m_Types, listenEndpoint);
-            m_Registration.AddSubscribedEvents(m_Types, m_PublishEndpoint);
+            m_Registration.AddEventsRoute(m_Types, m_PublishEndpoint);
+            m_Registration.AddSubscribedEvents(m_Types, listenEndpoint);
             return m_Registration;
         }   
         
@@ -119,7 +119,7 @@ namespace Inceptum.Cqrs.Configuration
 
         public LocalBoundContextRegistration NotRouted()
         {
-            m_Registration.AddSubscribedEvents(m_Types, m_PublishEndpoint);
+            m_Registration.AddEventsRoute(m_Types, m_PublishEndpoint);
             return m_Registration;
         }
     }
