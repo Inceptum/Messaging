@@ -70,7 +70,7 @@ namespace Inceptum.Cqrs.Configuration
 
         public LocalBoundContextRegistration NotRouted()
         {
-            m_Registration.AddSubscribedEvents(m_Types, m_ListenEndpoint);
+            m_Registration.AddSubscribedCommands(m_Types, m_ListenEndpoint);
             return m_Registration;
         }
     }
