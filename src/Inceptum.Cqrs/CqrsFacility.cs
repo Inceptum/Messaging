@@ -103,7 +103,7 @@ namespace Inceptum.Cqrs
             {
                 if (handler.CurrentState == HandlerState.WaitingDependency)
                 {
-                    m_WaitList.Add(handler, handler1 => registerIsCommandsHandler(handler,commandsHandlerFor));
+                    m_WaitList.Add(handler, h => registerIsCommandsHandler(h,commandsHandlerFor));
                 }
                 else
                 {
