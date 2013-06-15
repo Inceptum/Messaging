@@ -6,72 +6,75 @@ using System.Reflection;
 
 namespace Inceptum.Cqrs.Configuration
 {
-    public class CommandDispatcher
+    internal class CommandDispatcher
     {
-        readonly Dictionary<Type, Action<object, IEventPublisher>> m_Handlers = new Dictionary<Type, Action<object, IEventPublisher>>();
-        private readonly BoundedContext m_BoundedContext;
+        readonly Dictionary<Type, Action<object>> m_Handlers = new Dictionary<Type, Action<object>>();
+        private readonly string m_BoundedContext;
 
-        public CommandDispatcher(BoundedContext boundedContext)
+        public CommandDispatcher(string boundedContext)
         {
             m_BoundedContext = boundedContext;
         }
 
-        public void Wire(object o)
+        public void Wire(object o, params OptionalParameter[] parameters)
         {
             if (o == null) throw new ArgumentNullException("o");
-            var handledTypes = o.GetType().GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
-                                .Where(m => m.Name == "Handle" && !m.IsGenericMethod && m.GetParameters().Length == 1)
-                                .Select(m => m.GetParameters().First().ParameterType)
-                                .Where(p => !p.IsInterface);
 
-            foreach (var type in handledTypes)
+            var handleMethods = o.GetType().GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
+                .Where(m => m.Name == "Handle" &&
+                    !m.IsGenericMethod &&
+                    m.GetParameters().Length > 0 &&
+                    !m.GetParameters().First().ParameterType.IsInterface)
+                .Select(m => new
+                {
+                    method = m,
+                    eventType = m.GetParameters().First().ParameterType,
+                    callParameters = m.GetParameters().Skip(1).Select(p => new
+                    {
+                        parameter = p,
+                        optionalParameter = parameters.FirstOrDefault(par => par.Name == p.Name || par.Name == null && p.ParameterType == par.Type),
+                    })
+                })
+                .Where(m => m.callParameters.All(p => p.parameter != null));
+
+
+            foreach (var method in handleMethods)
             {
-                registerHandler(type, o,false);
-            }
-
-            handledTypes = o.GetType().GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
-                            .Where(m => m.Name == "Handle" && !m.IsGenericMethod && m.GetParameters().Length == 2 && m.GetParameters()[1].ParameterType == typeof(IEventPublisher))
-                            .Select(m => m.GetParameters().First().ParameterType)
-                            .Where(p => !p.IsInterface);
-
-            foreach (var type in handledTypes)
-            {
-                registerHandler(type, o,true);
+                registerHandler(method.eventType, o, method.callParameters.ToDictionary(p => p.parameter, p => p.optionalParameter.Value));
             }
 
         }
 
-        private void registerHandler(Type parameterType, object o, bool hasEventPublisherParam)
+        private void registerHandler(Type commandType, object o, Dictionary<ParameterInfo, object> optionalParameters)
         {
             var command = Expression.Parameter(typeof(object), "command");
-            var eventPublisher = Expression.Parameter(typeof(IEventPublisher), "eventPublisher");
-            Expression[] parameters = hasEventPublisherParam
-                                          ? new Expression[] { Expression.Convert(command, parameterType), eventPublisher }
-                                          : new Expression[] { Expression.Convert(command, parameterType) };
+
+            Expression[] parameters =
+                new Expression[] { Expression.Convert(command, commandType) }.Concat(optionalParameters.Select(p => Expression.Constant(p.Value))).ToArray();
             var call = Expression.Call(Expression.Constant(o), "Handle", null, parameters);
-            var lambda = (Expression<Action<object, IEventPublisher>>)Expression.Lambda(call, command, eventPublisher);
+            var lambda = (Expression<Action<object>>)Expression.Lambda(call, command);
 
  
-            Action<object, IEventPublisher> handler;
-            if (!m_Handlers.TryGetValue(parameterType, out handler))
+            Action<object> handler;
+            if (!m_Handlers.TryGetValue(commandType, out handler))
             {
-                m_Handlers.Add(parameterType, lambda.Compile());
+                m_Handlers.Add(commandType, lambda.Compile());
                 return;
             }
             throw new InvalidOperationException(string.Format(
-                "Only one handler per command is allowed. Command {0} handler is already registered in bound context {1}. Can not register {2} as handler for it", parameterType, m_BoundedContext.Name, o));
+                "Only one handler per command is allowed. Command {0} handler is already registered in bound context {1}. Can not register {2} as handler for it", commandType, m_BoundedContext, o));
 
         }
 
         public void Dispacth(object command)
         {
-            Action<object, IEventPublisher> handler;
+            Action<object> handler;
 
             if (!m_Handlers.TryGetValue(command.GetType(), out handler))
             {
-                throw new InvalidOperationException(string.Format("Failed to handle command {0} in bound context {1}, no handler was registered for it", command, m_BoundedContext.Name));
+                throw new InvalidOperationException(string.Format("Failed to handle command {0} in bound context {1}, no handler was registered for it", command, m_BoundedContext));
             }
-            handler(command,m_BoundedContext.EventsPublisher);
+            handler(command);
         }
     }
 }

@@ -14,11 +14,12 @@ namespace Inceptum.Cqrs.Configuration
         internal EventDispatcher EventDispatcher { get; private set; }
         public string Name { get; set; }
 
-        internal BoundedContext(CqrsEngine cqrsEngine)
+        internal BoundedContext(CqrsEngine cqrsEngine,string name)
         {
+            Name = name;
             EventsPublisher = new EventsPublisher(cqrsEngine, this);
-            CommandDispatcher = new CommandDispatcher(this);
-            EventDispatcher = new EventDispatcher(this);
+            CommandDispatcher = new CommandDispatcher(Name);
+            EventDispatcher = new EventDispatcher(Name);
         }
          
     }
