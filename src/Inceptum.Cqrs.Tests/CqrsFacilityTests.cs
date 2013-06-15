@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using Castle.Core.Logging;
+using Castle.Facilities.Startable;
 using Castle.MicroKernel.Registration;
 using Castle.Windsor;
 using EventStore;
@@ -51,8 +52,13 @@ namespace Inceptum.Cqrs.Tests
 
     class CqrEngineDependentComponent
     {
+        public  static bool Started { get; set; }
         public CqrEngineDependentComponent(ICqrsEngine engine)
         {
+        }
+        public void Start()
+        {
+            Started = true;
         }
     }
 
@@ -60,7 +66,7 @@ namespace Inceptum.Cqrs.Tests
     public class CqrsFacilityTests
     {
         [Test]
-        public void CqrsEngineIsResolvableASDependencyOnlyAfterInit()
+        public void CqrsEngineIsResolvableAsDependencyOnlyAfterInit()
         {
             bool reslovedCqrsDependentComponentBeforeInit = false;
             var container = new WindsorContainer();
@@ -72,15 +78,29 @@ namespace Inceptum.Cqrs.Tests
                 container.Resolve<CqrEngineDependentComponent>();
                 reslovedCqrsDependentComponentBeforeInit = true;
             }
-            catch (Exception)
+            catch (Exception e)
             {
-
+                Console.WriteLine(e);
             }
             var cqrsEngine = container.Resolve<ICqrsEngine>();
             cqrsEngine.Init();
 
             container.Resolve<CqrEngineDependentComponent>();
             Assert.That(reslovedCqrsDependentComponentBeforeInit,Is.False,"ICqrsEngine was resolved as dependency before it was initialized");
+        }
+
+        [Test]
+        public void CqrsEngineIsResolvableAsDependencyOnlyAfterInitStartableFacility()
+        {
+            var container = new WindsorContainer();
+            container.AddFacility<CqrsFacility>()
+                     .AddFacility<StartableFacility>();// (f => f.DeferredTryStart());
+            container.Register(Component.For<IMessagingEngine>().Instance(MockRepository.GenerateMock<IMessagingEngine>()));
+            container.Register(Component.For<CqrEngineDependentComponent>().StartUsingMethod("Start"));
+            Assert.That(CqrEngineDependentComponent.Started,Is.False,"Component was started before CqrsEngine initialization");
+            var cqrsEngine = container.Resolve<ICqrsEngine>();
+            cqrsEngine.Init();
+            Assert.That(CqrEngineDependentComponent.Started, Is.True, "Component was not started after CqrsEngine initialization");
         }
 
 

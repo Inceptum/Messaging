@@ -51,6 +51,7 @@ namespace Inceptum.Cqrs
 
     public class CqrsEngine : ICqrsEngine, IDisposable
     {
+        
         private readonly EventDispatcher m_EventDispatcher = new EventDispatcher();
         private readonly CommandDispatcher m_CommandDispatcher = new CommandDispatcher();
         private readonly IMessagingEngine m_MessagingEngine;
@@ -58,6 +59,7 @@ namespace Inceptum.Cqrs
         private readonly IEndpointResolver m_EndpointResolver;
         private BoundContext[] m_BoundContexts;
         private readonly BoundContextRegistration[] m_Registrations;
+        public event OnInitizlizedDelegate Initialized;
 
         public EventDispatcher EventDispatcher
         {
@@ -107,7 +109,13 @@ namespace Inceptum.Cqrs
             var uselessCommandsWirings = m_CommandDispatcher.KnownBoundContexts.Where(kc => m_BoundContexts.All(bc => bc.Name != kc)).ToArray();
             if(uselessCommandsWirings.Any())
                 throw new ConfigurationException(string.Format("Command handlers registered for unknown bound contexts: {0} ",string.Join(",",uselessCommandsWirings)));
+            IsInitialized = true;
 
+            var onInitialized = Initialized;
+            if (onInitialized != null)
+            {
+                onInitialized();
+            }
         }
 
         private void subscribe(Endpoint endpoint, Action<object> callback, Action<string> unknownTypeCallback, params Type[] knownTypes)
@@ -148,6 +156,8 @@ namespace Inceptum.Cqrs
             }
             m_MessagingEngine.Send(@event, m_EndpointResolver.Resolve(endpoint));
         }
+
+        public bool IsInitialized { get; private set; }
 
         public ICqrsEngine WireEventsListener(object eventListener)
         {
