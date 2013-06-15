@@ -156,7 +156,7 @@ namespace Inceptum.Cqrs.Tests
 
     public class TestSaga
     {
-        private void Handle(int @event, string boundedContext /*, ICommandSender*/)
+        private void Handle(int @event , ICqrsEngine engine, string boundedContext)
         {
             Console.WriteLine("Event cought by saga:"+@event);
         }

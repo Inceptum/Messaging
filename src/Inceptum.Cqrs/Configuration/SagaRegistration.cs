@@ -46,7 +46,7 @@ namespace Inceptum.Cqrs.Configuration
             foreach (var boundContext in m_BoundContexts)
             {
                 var context = cqrsEngine.BoundedContexts.FirstOrDefault(bc => bc.Name == boundContext);
-                context.EventDispatcher.Wire(m_Saga);
+                context.EventDispatcher.Wire(m_Saga,new OptionalParameter<ICqrsEngine>(cqrsEngine));
             }
         }
 

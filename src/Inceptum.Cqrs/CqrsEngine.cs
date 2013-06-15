@@ -50,7 +50,7 @@ namespace Inceptum.Cqrs
     }
 
      
-    public class CqrsEngine : ICqrsEngine, IDisposable
+    public class CqrsEngine : ICqrsEngine
     {
         private readonly IMessagingEngine m_MessagingEngine;
         private readonly CompositeDisposable m_Subscription=new CompositeDisposable();
@@ -116,11 +116,6 @@ namespace Inceptum.Cqrs
                     subscribe(endpoint, command =>context.CommandDispatcher.Dispacth(command), t=>{throw new InvalidOperationException("Unknown command received: "+t);}, commandsSubscription.Value.ToArray());
                 }
             }
-
-            var uselessCommandsWirings = new string[0];//m_CommandDispatcher.KnownBoundedContexts.Where(kbc => m_BoundedContexts.All(bc => bc.Name != kbc)).ToArray());
-            if(uselessCommandsWirings.Any())
-                throw new ConfigurationErrorsException(string.Format("Command handlers registered for unknown bound contexts: {0}",string.Join(",",uselessCommandsWirings)));
- 
         }
 
         private void subscribe(Endpoint endpoint, Action<object> callback, Action<string> unknownTypeCallback, params Type[] knownTypes)
