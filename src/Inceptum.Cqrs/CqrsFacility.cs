@@ -7,7 +7,9 @@ using Castle.MicroKernel;
 using Castle.MicroKernel.Context;
 using Castle.MicroKernel.Facilities;
 using Castle.MicroKernel.ModelBuilder;
+using Castle.MicroKernel.ModelBuilder.Inspectors;
 using Castle.MicroKernel.Registration;
+using Inceptum.Cqrs;
 using Inceptum.Cqrs.Configuration;
 
 
@@ -26,17 +28,18 @@ namespace Castle.MicroKernel.Registration
         }
     }
 }
+ 
 
 namespace Inceptum.Cqrs
 {
 
 
 
-    public class CqrsFacility:AbstractFacility
+    public class CqrsFacility : AbstractFacility, ISubDependencyResolver
     {
         private readonly Dictionary<IHandler, Action<IHandler>> m_WaitList = new Dictionary<IHandler, Action<IHandler>>();
         private ICqrsEngine m_CqrsEngine;
-        private BoundContextRegistration[] m_BoundContexts;
+        private BoundContextRegistration[] m_BoundContexts = new BoundContextRegistration[0];
 
 
         public CqrsFacility BoundContexts(params BoundContextRegistration[] boundContexts)
@@ -51,24 +54,26 @@ namespace Inceptum.Cqrs
                 {
                     registrations = m_BoundContexts
                 }));
-
+            Kernel.Resolver.AddSubResolver(this);
             Kernel.ComponentRegistered += onComponentRegistered;
             Kernel.HandlersChanged += (ref bool changed) => processWaitList();
             m_CqrsEngine = Kernel.Resolve<ICqrsEngine>();
+            //Trigger startable facility (it tries to start components on Kernel.ComponentRegistered)
+            m_CqrsEngine.Initialized += () => Kernel.Register(Component.For<CqrsEngineBarier>());
         }
 
-       
+        private class CqrsEngineBarier
+        {
+        }
+
 
         private void processWaitList()
         {
-            foreach (var pair in m_WaitList.ToArray().Where(pair => pair.Key.CurrentState == HandlerState.Valid))
+            foreach (var pair in m_WaitList.ToArray().Where(pair => pair.Key.CurrentState == HandlerState.Valid && pair.Key.TryResolve(CreationContext.CreateEmpty()) != null))
             {
-                if (pair.Key.TryResolve(CreationContext.CreateEmpty())!=null)
-                {
                 pair.Value(pair.Key);
                 m_WaitList.Remove(pair.Key);
             }
-        }
         }
 
         private void registerEventsListener(IHandler handler)
@@ -88,17 +93,17 @@ namespace Inceptum.Cqrs
         private void onComponentRegistered(string key, IHandler handler)
         {
             var isEventsListener = (bool) (handler.ComponentModel.ExtendedProperties["IsEventsListener"] ?? false);
-            var commandsHandlerFor = (string)(handler.ComponentModel.ExtendedProperties["CommandsHandlerFor"]);
+            var commandsHandlerFor = (string) (handler.ComponentModel.ExtendedProperties["CommandsHandlerFor"]);
             var isCommandsHandler = commandsHandlerFor != null;
 
-            if(isCommandsHandler&& isEventsListener)
+            if (isCommandsHandler && isEventsListener)
                 throw new InvalidOperationException("Component can not be events listener and commands handler simultaneousely");
-            
+
             if (isEventsListener)
             {
                 if (handler.CurrentState == HandlerState.WaitingDependency)
                 {
-                    m_WaitList.Add(handler,registerEventsListener);
+                    m_WaitList.Add(handler, registerEventsListener);
                 }
                 else
                 {
@@ -109,10 +114,10 @@ namespace Inceptum.Cqrs
 
             if (isCommandsHandler)
             {
- 
+
                 if (handler.CurrentState == HandlerState.WaitingDependency)
                 {
-                    m_WaitList.Add(handler, h => registerIsCommandsHandler(h,commandsHandlerFor));
+                    m_WaitList.Add(handler, h => registerIsCommandsHandler(h, commandsHandlerFor));
                 }
                 else
                 {
@@ -120,11 +125,18 @@ namespace Inceptum.Cqrs
                 }
             }
 
-            //processWaitList();
         }
 
-        
+        public bool CanResolve(CreationContext context, ISubDependencyResolver contextHandlerResolver, ComponentModel model, DependencyModel dependency)
+        {
+            return dependency.TargetItemType == typeof (ICqrsEngine) ; 
+        }
+
+        public object Resolve(CreationContext context, ISubDependencyResolver contextHandlerResolver, ComponentModel model, DependencyModel dependency)
+        {
+            return m_CqrsEngine.IsInitialized?m_CqrsEngine:null;
+        }
     }
 
-  
+
 }
