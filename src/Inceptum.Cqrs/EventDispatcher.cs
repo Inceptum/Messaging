@@ -66,21 +66,20 @@ namespace Inceptum.Cqrs
             }
         }
 
-        private void registerHandler(Type parameterType, object o, Dictionary<ParameterInfo,object> optionalParameters)
+        private void registerHandler(Type eventType, object o, Dictionary<ParameterInfo,object> optionalParameters)
         {
             var @event = Expression.Parameter(typeof(object), "event");
+         
             Expression[] parameters =
-                new Expression[] {Expression.Convert(@event, parameterType)}.Concat(optionalParameters.Select(p => Expression.Constant(p.Value))).ToArray();
+                new Expression[] {Expression.Convert(@event, eventType)}.Concat(optionalParameters.Select(p => Expression.Constant(p.Value))).ToArray();
             var call = Expression.Call(Expression.Constant(o), "Handle", null, parameters);
-
-
             var lambda = (Expression<Action<object>>)Expression.Lambda(call, @event);
 
             List<Action<object>> list;
-            if (!m_Handlers.TryGetValue(parameterType, out list))
+            if (!m_Handlers.TryGetValue(eventType, out list))
             {
                 list = new List<Action<object>>();
-                m_Handlers.Add(parameterType, list);
+                m_Handlers.Add(eventType, list);
             }
             list.Add(lambda.Compile());
 
