@@ -61,9 +61,14 @@ namespace Inceptum.Cqrs
         private readonly BoundContextRegistration[] m_Registrations;
         public event OnInitizlizedDelegate Initialized;
 
-        public EventDispatcher EventDispatcher
+        internal EventDispatcher EventDispatcher
         {
             get { return m_EventDispatcher; }
+        }
+
+        public CommandDispatcher CommandDispatcher
+        {
+            get { return m_CommandDispatcher; }
         }
 
         public CqrsEngine(params BoundContextRegistration[] registrations):
