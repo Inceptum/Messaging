@@ -40,7 +40,6 @@ namespace Inceptum.Cqrs.Configuration
         protected BoundedContextRegistration(string name)
         {
             m_Name = name;
-            AddDescriptor(new NameDescriptor(name));
             AddDescriptor(new SubscriptionDescriptor(m_EventsSubscriptions, m_CommandsSubscriptions));
             AddDescriptor(new RoutingDescriptor(m_EventRoutes, m_CommandRoutes));
         }
@@ -53,7 +52,7 @@ namespace Inceptum.Cqrs.Configuration
 
         void IRegistration.Create(CqrsEngine cqrsEngine)
         {
-            var boundedContext=new BoundedContext(cqrsEngine);
+            var boundedContext=new BoundedContext(cqrsEngine,Name);
             foreach (var descriptor in m_Configurators)
             {
                 descriptor.Create(boundedContext, cqrsEngine.ResolveDependency);

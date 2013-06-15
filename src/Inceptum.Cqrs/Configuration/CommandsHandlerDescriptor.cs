@@ -18,8 +18,7 @@ namespace Inceptum.Cqrs.Configuration
         {
             foreach (var handler in ResolvedDependencies)
             {
-                boundedContext.CommandDispatcher.Wire(handler);
-                
+                boundedContext.CommandDispatcher.Wire(handler,new OptionalParameter<IEventPublisher>(boundedContext.EventsPublisher));
             }
         }
 

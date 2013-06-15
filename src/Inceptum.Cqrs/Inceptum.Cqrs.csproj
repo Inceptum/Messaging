@@ -87,7 +87,6 @@
     <Compile Include="Configuration\IEventPublisher.cs" />
     <Compile Include="Configuration\LocalBoundedContext.cs" />
     <Compile Include="Configuration\LocalBoundedContextRegistration.cs" />
-    <Compile Include="Configuration\NameDescriptor.cs" />
     <Compile Include="Configuration\ProjectionDescriptor.cs" />
     <Compile Include="Configuration\RemoteBoundedContext.cs" />
     <Compile Include="Configuration\RemoteBoundedContextRegistration.cs" />
