@@ -3,13 +3,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using Inceptum.Cqrs.Configuration;
 
 namespace Inceptum.Cqrs
 {
     public class EventDispatcher
     {
         readonly Dictionary<Type, List<Action<object, string>>> m_Handlers = new Dictionary<Type, List<Action<object, string>>>();
- 
+        private BoundedContext m_BoundedContext;
+
+        public EventDispatcher(BoundedContext boundedContext)
+        {
+            m_BoundedContext = boundedContext;
+        }
 
         public void Wire(object o)
         {
@@ -55,14 +61,14 @@ namespace Inceptum.Cqrs
             
         }
       
-        public void Dispacth(object @event, string boundedContext)
+        public void Dispacth(object @event)
         {
             List<Action<object,string>> list;
             if (!m_Handlers.TryGetValue(@event.GetType(), out list))
                 return;
             foreach (var handler in list)
             {
-                handler(@event, boundedContext);
+                handler(@event, m_BoundedContext.Name);
                 //TODO: event handling
             }
         }

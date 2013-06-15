@@ -15,8 +15,13 @@ namespace Inceptum.Cqrs.Configuration
             m_CommandsSubscriptions = commandsSubscriptions;
             m_EventsSubscriptions = eventsSubscriptions;
         }
+        public IEnumerable<Type> GetDependedncies()
+        {
+            return new Type[0];
+        }
 
-        public void Create(BoundedContext boundedContext)
+
+        public void Create(BoundedContext boundedContext, Func<Type, object> resolve)
         {
             var eventSubscriptions = from pair in m_EventsSubscriptions
                                      group pair by pair.Value
@@ -30,6 +35,11 @@ namespace Inceptum.Cqrs.Configuration
                                             into grouping
                                             select new { endpoint = grouping.Key, types = grouping.Select(g => g.Key) };
             boundedContext.CommandsSubscriptions = commandsSubscriptions.ToDictionary(o => o.endpoint, o => o.types);
+        }
+
+        public void Process(BoundedContext boundedContext, CqrsEngine cqrsEngine)
+        {
+
         }
     }
 }

@@ -3,12 +3,56 @@ using Inceptum.Messaging.Contract;
 
 namespace Inceptum.Cqrs.Configuration
 {
-    public class LocalBoundedContextRegistration : BoundedContextRegistration
+    public class LocalBoundedContextRegistration : BoundedContextRegistration 
     {
         public LocalBoundedContextRegistration(string name)
             : base(name)
         {
         }
+        public LocalBoundedContextRegistration WithCommandsHandler(object handler)
+        {
+            if (handler == null) throw new ArgumentNullException("handler");
+            AddDescriptor(new CommandsHandlerDescriptor(handler));
+            return this;
+        }
+        public LocalBoundedContextRegistration WithCommandsHandler<T>()
+        {
+            AddDescriptor(new CommandsHandlerDescriptor(typeof(T)));
+            return this;
+        }  
+        
+        public LocalBoundedContextRegistration WithCommandsHandlers(params Type[] handlers)
+        {
+            AddDescriptor(new CommandsHandlerDescriptor(handlers));
+            return this;
+        }
+      
+        public LocalBoundedContextRegistration WithCommandsHandler(Type handler)
+        {
+            if (handler == null) throw new ArgumentNullException("handler");
+            AddDescriptor(new CommandsHandlerDescriptor(handler));
+            return this;
+        }
+
+       public LocalBoundedContextRegistration WithProjection(object projection,string fromBoundContext)
+       {
+           RegisterProjections(projection, fromBoundContext);
+           return this;
+       }
+ 
+        public LocalBoundedContextRegistration WithProjection(Type projection,string fromBoundContext)
+       {
+           RegisterProjections(projection, fromBoundContext);
+           return this;
+       }
+
+        public LocalBoundedContextRegistration WithProjection<TListener>(string fromBoundContext)
+       {
+           RegisterProjections(typeof(TListener), fromBoundContext);
+           return this;
+       }
+
+      
 
         public LocalListeningCommandsDescriptor ListeningCommands(params Type[] types)
         {
@@ -19,6 +63,9 @@ namespace Inceptum.Cqrs.Configuration
         {
             return new LocalPublishingEventsDescriptor(types, this);
         }
+
+
+
     }
 
 

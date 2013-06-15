@@ -1,34 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
-using Inceptum.Messaging.Contract;
 
 namespace Inceptum.Cqrs.Configuration
 {
-     
-
-    public interface IEndpointResolver
-    {
-        Endpoint Resolve(string endpoint);
-    }
-
-
     public class BoundedContext
     {
+        internal Dictionary<Type, string> EventRoutes { get; set; }
         internal Dictionary<string, IEnumerable<Type>> EventsSubscriptions { get; set; }
         internal Dictionary<string, IEnumerable<Type>> CommandsSubscriptions { get; set; }
         internal Dictionary<Type, string> CommandRoutes { get; set; }
-        internal Dictionary<Type, string> EventRoutes { get; set; }
+        internal EventsPublisher EventsPublisher { get; private set; }
+        internal CommandDispatcher CommandDispatcher { get; private set; }
+        internal EventDispatcher EventDispatcher { get; private set; }
         public string Name { get; set; }
 
-        public static LocalBoundedContextRegistration Local(string name)
+        internal BoundedContext(CqrsEngine cqrsEngine)
         {
-            return new LocalBoundedContextRegistration(name);
+            EventsPublisher = new EventsPublisher(cqrsEngine, this);
+            CommandDispatcher = new CommandDispatcher(this);
+            EventDispatcher = new EventDispatcher(this);
         }
-
-        public static RemoteBoundedContextRegistration Remote(string name)
-        {
-            return new RemoteBoundedContextRegistration(name);
-        }
-       
+         
     }
 }

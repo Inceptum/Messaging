@@ -6,30 +6,68 @@ using Inceptum.Messaging.Contract;
 
 namespace Inceptum.Cqrs.Configuration
 {
-    public class BoundedContextRegistration
+ 
+
+    public interface IRegistration
+    {
+        void Create(CqrsEngine cqrsEngine);
+        void Process(CqrsEngine cqrsEngine);
+        IEnumerable<Type> Dependencies { get; }
+    }
+
+    public class BoundedContextRegistration : IRegistration
     {
         readonly Dictionary<Type, string> m_EventsSubscriptions = new Dictionary<Type, string>();
         readonly Dictionary<Type, string> m_CommandsSubscriptions = new Dictionary<Type, string>();
         readonly List<IBoundedContextDescriptor> m_Configurators = new List<IBoundedContextDescriptor>();
         readonly Dictionary<Type, string> m_CommandRoutes=new Dictionary<Type, string>();
         readonly Dictionary<Type, string> m_EventRoutes=new Dictionary<Type, string>();
+
+        Type[] m_Dependencies=new Type[0];
         private readonly string m_Name;
 
-        public BoundedContextRegistration(string name)
+        public IEnumerable<Type> Dependencies
         {
-            m_Name = name;
-            m_Configurators.Add(new NameDescriptor(name));
-            m_Configurators.Add(new SubscriptionDescriptor(m_EventsSubscriptions,m_CommandsSubscriptions));
-            m_Configurators.Add(new RoutingDescriptor(m_EventRoutes, m_CommandRoutes));
+            get { return m_Dependencies; }
         }
 
-        internal BoundedContext Apply(BoundedContext boundedContext)
+
+        public string Name
         {
+            get { return m_Name; }
+        }
+
+        protected BoundedContextRegistration(string name)
+        {
+            m_Name = name;
+            AddDescriptor(new NameDescriptor(name));
+            AddDescriptor(new SubscriptionDescriptor(m_EventsSubscriptions, m_CommandsSubscriptions));
+            AddDescriptor(new RoutingDescriptor(m_EventRoutes, m_CommandRoutes));
+        }
+
+        protected void AddDescriptor(IBoundedContextDescriptor descriptor)
+        {
+            m_Dependencies = m_Dependencies.Concat(descriptor.GetDependedncies()).Distinct().ToArray();
+            m_Configurators.Add(descriptor);
+        }
+
+        void IRegistration.Create(CqrsEngine cqrsEngine)
+        {
+            var boundedContext=new BoundedContext(cqrsEngine);
             foreach (var descriptor in m_Configurators)
             {
-                descriptor.Create(boundedContext);
+                descriptor.Create(boundedContext, cqrsEngine.ResolveDependency);
             }
-            return boundedContext;
+            cqrsEngine.BoundedContexts.Add(boundedContext);
+        }
+
+        void IRegistration.Process(CqrsEngine cqrsEngine)
+        {
+            var boundedContext = cqrsEngine.BoundedContexts.FirstOrDefault(bc => bc.Name == Name);
+            foreach (var descriptor in m_Configurators)
+            {
+                descriptor.Process(boundedContext, cqrsEngine);
+            }
         }
 
         internal void AddSubscribedEvents(IEnumerable<Type> types, string endpoint)
@@ -76,6 +114,19 @@ namespace Inceptum.Cqrs.Configuration
                 m_EventRoutes.Add(type, endpoint); 
             }
         }
-    
+
+
+        protected void RegisterProjections(object projection, string fromBoundContext)
+        {
+            if (projection == null) throw new ArgumentNullException("projection");
+            AddDescriptor(new ProjectionDescriptor(projection, fromBoundContext));
+        }  
+        
+        protected void RegisterProjections(Type projection, string fromBoundContext)
+        {
+            if (projection == null) throw new ArgumentNullException("projection");
+            AddDescriptor(new ProjectionDescriptor(projection, fromBoundContext));
+        }
+ 
     }
 }

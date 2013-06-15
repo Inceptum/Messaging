@@ -17,7 +17,7 @@ using Inceptum.Messaging.Transports;
 namespace Inceptum.Cqrs
 {
 
-    public class CommitDispatcher : IDispatchCommits
+/*    public class CommitDispatcher : IDispatchCommits
     {
         private readonly ICqrsEngine m_CqrsEngine;
         private readonly string m_BoundedContext;
@@ -39,7 +39,7 @@ namespace Inceptum.Cqrs
                 m_CqrsEngine.PublishEvent(@event.Body,m_BoundedContext);
             }
         }
-    }
+    }*/
 
     class InMemoryEndpointResolver:IEndpointResolver
     {
@@ -49,30 +49,26 @@ namespace Inceptum.Cqrs
         }
     }
 
+     
     public class CqrsEngine : ICqrsEngine, IDisposable
     {
-        
-        private readonly EventDispatcher m_EventDispatcher = new EventDispatcher();
-        private readonly CommandDispatcher m_CommandDispatcher = new CommandDispatcher();
         private readonly IMessagingEngine m_MessagingEngine;
         private readonly CompositeDisposable m_Subscription=new CompositeDisposable();
         private readonly IEndpointResolver m_EndpointResolver;
-        private BoundedContext[] m_BoundedContexts;
-        private readonly BoundedContextRegistration[] m_Registrations;
-        public event OnInitizlizedDelegate Initialized;
+        internal List<BoundedContext> BoundedContexts { get; private set; }
+        private readonly IRegistration[] m_Registrations;
+        private readonly Func<Type,object> m_DependencyResolver;
 
-        internal EventDispatcher EventDispatcher
+
+        public CqrsEngine(params IRegistration[] registrations) :
+            this(Activator.CreateInstance, new MessagingEngine(new TransportResolver(new Dictionary<string, TransportInfo> { { "InMemory", new TransportInfo("none", "none", "none", null, "InMemory") } })),
+            new InMemoryEndpointResolver(),
+            registrations
+            )
         {
-            get { return m_EventDispatcher; }
         }
-
-        public CommandDispatcher CommandDispatcher
-        {
-            get { return m_CommandDispatcher; }
-        }
-
-        public CqrsEngine(params BoundedContextRegistration[] registrations):
-            this(new MessagingEngine(new TransportResolver(new Dictionary<string, TransportInfo> { { "InMemory", new TransportInfo("none", "none", "none", null, "InMemory") } })),
+        public CqrsEngine(Func<Type,object> dependencyResolver, params IRegistration[] registrations) :
+            this(dependencyResolver,new MessagingEngine(new TransportResolver(new Dictionary<string, TransportInfo> { { "InMemory", new TransportInfo("none", "none", "none", null, "InMemory") } })),
             new InMemoryEndpointResolver(),
             registrations
             )
@@ -80,47 +76,51 @@ namespace Inceptum.Cqrs
         }
 
 
-        public CqrsEngine(IMessagingEngine messagingEngine, IEndpointResolver endpointResolver,params BoundedContextRegistration[] registrations)
+        public CqrsEngine(Func<Type, object> dependencyResolver, IMessagingEngine messagingEngine, IEndpointResolver endpointResolver, params IRegistration[] registrations)
         {
+            m_DependencyResolver = dependencyResolver;
             m_Registrations = registrations;
             m_EndpointResolver = endpointResolver;
             m_MessagingEngine = messagingEngine;
-         }
+            BoundedContexts=new List<BoundedContext>();
+            init();
+        }
 
-        public void Init()
+        private void init()
         {
-            m_BoundedContexts = m_Registrations.Select(r => r.Apply(new BoundedContext())).ToArray();
-
-            foreach (var boundedContext in m_BoundedContexts)
+            foreach (var registration in m_Registrations)
+            {
+                registration.Create(this);
+            }
+            foreach (var registration in m_Registrations)
+            {
+                registration.Process(this);
+            }
+ 
+            foreach (var boundedContext in BoundedContexts)
             {
                 foreach (var eventsSubscription in boundedContext.EventsSubscriptions)
                 {
                     var endpoint = m_EndpointResolver.Resolve(eventsSubscription.Key);
                     BoundedContext context = boundedContext;
-                    subscribe(endpoint, @event => EventDispatcher.Dispacth(@event, context.Name), t => { }, eventsSubscription.Value.ToArray());
+                    subscribe(endpoint, @event => context.EventDispatcher.Dispacth(@event), t => { }, eventsSubscription.Value.ToArray());
                 }
             }
 
-            foreach (var boundedContext in m_BoundedContexts)
+            foreach (var boundedContext in BoundedContexts)
             {
                 foreach (var commandsSubscription in boundedContext.CommandsSubscriptions)
                 {
                     var endpoint = m_EndpointResolver.Resolve(commandsSubscription.Key);
                     BoundedContext context = boundedContext;
-                    subscribe(endpoint, command => m_CommandDispatcher.Dispacth(command,context.Name), t=>{throw new InvalidOperationException("Unknown command received: "+t);}, commandsSubscription.Value.ToArray());
+                    subscribe(endpoint, command =>context.CommandDispatcher.Dispacth(command), t=>{throw new InvalidOperationException("Unknown command received: "+t);}, commandsSubscription.Value.ToArray());
                 }
             }
 
-            var uselessCommandsWirings = m_CommandDispatcher.KnownBoundedContexts.Where(kbc => m_BoundedContexts.All(bc => bc.Name != kbc)).ToArray();
+            var uselessCommandsWirings = new string[0];//m_CommandDispatcher.KnownBoundedContexts.Where(kbc => m_BoundedContexts.All(bc => bc.Name != kbc)).ToArray());
             if(uselessCommandsWirings.Any())
                 throw new ConfigurationErrorsException(string.Format("Command handlers registered for unknown bound contexts: {0}",string.Join(",",uselessCommandsWirings)));
-            IsInitialized = true;
-
-            var onInitialized = Initialized;
-            if (onInitialized != null)
-            {
-                onInitialized();
-            }
+ 
         }
 
         private void subscribe(Endpoint endpoint, Action<object> callback, Action<string> unknownTypeCallback, params Type[] knownTypes)
@@ -137,7 +137,7 @@ namespace Inceptum.Cqrs
 
         public void SendCommand<T>(T command,string boundedContext )
         {
-            var context = m_BoundedContexts.FirstOrDefault(bc => bc.Name == boundedContext);
+            var context = BoundedContexts.FirstOrDefault(bc => bc.Name == boundedContext);
             if (context == null)
                 throw new ArgumentException(string.Format("bound context {0} not found",boundedContext),"boundedContext");
             string endpoint;
@@ -149,38 +149,15 @@ namespace Inceptum.Cqrs
         }
  
 
-        public  void PublishEvent(object @event,string boundedContext)
+        internal void PublishEvent(object @event,string endpoint)
         {
-            var context = m_BoundedContexts.FirstOrDefault(bc => bc.Name == boundedContext);
-            if (context == null)
-                throw new ArgumentException(string.Format("bound context {0} not found", boundedContext), "boundedContext");
-            string endpoint;
-            if (!context.EventRoutes.TryGetValue(@event.GetType(), out endpoint))
-            {
-                throw new InvalidOperationException(string.Format("bound context '{0}' does not support event '{1}'", boundedContext, @event.GetType()));
-            }
             m_MessagingEngine.Send(@event, m_EndpointResolver.Resolve(endpoint));
         }
 
-        public bool IsInitialized { get; private set; }
 
-        public ICqrsEngine WireEventsListener(object eventListener)
+        internal object ResolveDependency(Type type)
         {
-            if(IsInitialized)
-                throw new InvalidOperationException("Can not wire event listener when CqrsEngine is initilized");
-            EventDispatcher.Wire(eventListener);
-            return this;
-        }
-
-        public ICqrsEngine WireCommandsHandler(object commandsHandler, string boundedContext)
-        {
-            if (IsInitialized)
-                throw new InvalidOperationException("Can not wire commands handler when CqrsEngine is initilized");
-            //TODO: check that same object is not wired for more then one BC
-            m_CommandDispatcher.Wire(commandsHandler,boundedContext);
-            return this;
+            return m_DependencyResolver(type);
         }
     }
-
-
 }
