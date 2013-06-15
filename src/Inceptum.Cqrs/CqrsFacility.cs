@@ -33,10 +33,10 @@ namespace Inceptum.Cqrs
     {
         private readonly Dictionary<IHandler, Action<IHandler>> m_WaitList = new Dictionary<IHandler, Action<IHandler>>();
         private ICqrsEngine m_CqrsEngine;
-        private BoundContext[] m_BoundContexts;
+        private BoundContextRegistration[] m_BoundContexts = new BoundContextRegistration[0];
 
 
-        public CqrsFacility BoundContexts(params BoundContext[] boundContexts)
+        public CqrsFacility BoundContexts(params BoundContextRegistration[] boundContexts)
         {
             m_BoundContexts = boundContexts;
             return this;
@@ -46,7 +46,7 @@ namespace Inceptum.Cqrs
         {
             Kernel.Register(Component.For<ICqrsEngine>().ImplementedBy<CqrsEngine>().DependsOn(new
                 {
-                    boundContexts = m_BoundContexts
+                    registrations = m_BoundContexts
                 }));
 
             Kernel.ComponentRegistered += onComponentRegistered;
