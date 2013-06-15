@@ -65,10 +65,10 @@ namespace Inceptum.Cqrs
             {
                 if (pair.Key.TryResolve(CreationContext.CreateEmpty())!=null)
                 {
-                    pair.Value(pair.Key);
-                    m_WaitList.Remove(pair.Key);
-                }
+                pair.Value(pair.Key);
+                m_WaitList.Remove(pair.Key);
             }
+        }
         }
 
         private void registerEventsListener(IHandler handler)
