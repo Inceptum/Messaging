@@ -63,6 +63,17 @@ namespace Inceptum.Cqrs.Tests
     [TestFixture]
     public class CqrsFacilityTests
     {
+
+        [Test]
+        [ExpectedException(ExpectedMessage = "Component can not be events listener and commands handler simultaneousely")]
+        public void ComponentCanNotBeEventsListenerAndCommandsHandlerSimultaneousely()
+        {
+            var container = new WindsorContainer();
+            container.AddFacility<CqrsFacility>(f=>f.BoundedContexts(BoundedContext.Local("bc")));
+            container.Register(Component.For<CommandsHandler>().AsCommandsHandler("bc").AsEventsListener());
+        }
+
+
         [Test]
         public void CqrsEngineIsResolvableAsDependencyOnlyAfterInit()
         {
@@ -136,7 +147,7 @@ namespace Inceptum.Cqrs.Tests
 
     public class FakeEndpointResolver : IEndpointResolver
     {
-        private Dictionary<string, Endpoint> m_Endpoints = new Dictionary<string, Endpoint>
+        private readonly Dictionary<string, Endpoint> m_Endpoints = new Dictionary<string, Endpoint>
             {
                 {"eventExchange", new Endpoint("test", "unistream.processing.events", true, "json")},
                 {"eventQueue", new Endpoint("test", "unistream.processing.UPlusAdapter.TransferPublisher", true, "json")},
