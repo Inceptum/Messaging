@@ -166,12 +166,16 @@ namespace Inceptum.Cqrs
 
         public ICqrsEngine WireEventsListener(object eventListener)
         {
+            if(IsInitialized)
+                throw new InvalidOperationException("Can not wire event listener when CqrsEngine is initilized");
             EventDispatcher.Wire(eventListener);
             return this;
         }
 
         public ICqrsEngine WireCommandsHandler(object commandsHandler, string boundedContext)
         {
+            if (IsInitialized)
+                throw new InvalidOperationException("Can not wire commands handler when CqrsEngine is initilized");
             //TODO: check that same object is not wired for more then one BC
             m_CommandDispatcher.Wire(commandsHandler,boundedContext);
             return this;
