@@ -25,7 +25,7 @@ namespace Inceptum.Cqrs
             }        
             
             handledTypes = o.GetType().GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
-                .Where(m => m.Name == "Handle" && !m.IsGenericMethod && m.GetParameters().Length == 2 && m.GetParameters()[1].Name == "boundContext" && m.GetParameters()[1].ParameterType==typeof(string))
+                .Where(m => m.Name == "Handle" && !m.IsGenericMethod && m.GetParameters().Length == 2 && m.GetParameters()[1].Name == "boundedContext" && m.GetParameters()[1].ParameterType==typeof(string))
                 .Select(m => m.GetParameters().First().ParameterType)
                 .Where(p=>!p.IsInterface);
 
@@ -35,15 +35,15 @@ namespace Inceptum.Cqrs
             }
         }
 
-        private void registerHandler(Type parameterType, object o,bool hasBoundContextParam)
+        private void registerHandler(Type parameterType, object o,bool hasBoundedContextParam)
         {
             var @event = Expression.Parameter(typeof(object), "event");
-            var boundContext = Expression.Parameter(typeof(string), "boundContext");
-            Expression[] parameters =hasBoundContextParam
-                ? new Expression[] { Expression.Convert(@event, parameterType) ,boundContext}
+            var boundedContext = Expression.Parameter(typeof(string), "boundedContext");
+            Expression[] parameters =hasBoundedContextParam
+                ? new Expression[] { Expression.Convert(@event, parameterType) ,boundedContext}
                 : new Expression[] { Expression.Convert(@event, parameterType) };
             var call = Expression.Call(Expression.Constant(o), "Handle", null, parameters);
-            var lambda = (Expression<Action<object, string>>)Expression.Lambda(call, @event, boundContext);
+            var lambda = (Expression<Action<object, string>>)Expression.Lambda(call, @event, boundedContext);
 
             List<Action<object, string>> list;
             if (!m_Handlers.TryGetValue(parameterType, out list))
@@ -55,14 +55,14 @@ namespace Inceptum.Cqrs
             
         }
       
-        public void Dispacth(object @event, string boundContext)
+        public void Dispacth(object @event, string boundedContext)
         {
             List<Action<object,string>> list;
             if (!m_Handlers.TryGetValue(@event.GetType(), out list))
                 return;
             foreach (var handler in list)
             {
-                handler(@event, boundContext);
+                handler(@event, boundedContext);
                 //TODO: event handling
             }
         }

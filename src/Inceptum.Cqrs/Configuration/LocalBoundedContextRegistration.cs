@@ -3,9 +3,9 @@ using Inceptum.Messaging.Contract;
 
 namespace Inceptum.Cqrs.Configuration
 {
-    public class LocalBoundContextRegistration : BoundContextRegistration
+    public class LocalBoundedContextRegistration : BoundedContextRegistration
     {
-        public LocalBoundContextRegistration(string name)
+        public LocalBoundedContextRegistration(string name)
             : base(name)
         {
         }
@@ -26,10 +26,10 @@ namespace Inceptum.Cqrs.Configuration
 
     public class LocalListeningCommandsDescriptor
     {
-        private readonly LocalBoundContextRegistration m_Registration;
+        private readonly LocalBoundedContextRegistration m_Registration;
         private readonly Type[] m_Types;
 
-        public LocalListeningCommandsDescriptor(Type[] types, LocalBoundContextRegistration registration)
+        public LocalListeningCommandsDescriptor(Type[] types, LocalBoundedContextRegistration registration)
         {
             m_Types = types;
             m_Registration = registration;
@@ -45,30 +45,30 @@ namespace Inceptum.Cqrs.Configuration
 
     public class RoutedFromDescriptor
     {
-        private readonly LocalBoundContextRegistration m_Registration;
+        private readonly LocalBoundedContextRegistration m_Registration;
         private readonly Type[] m_Types;
         private readonly string m_ListenEndpoint;
 
-        public RoutedFromDescriptor(LocalBoundContextRegistration registration, Type[] types, string listenEndpoint)
+        public RoutedFromDescriptor(LocalBoundedContextRegistration registration, Type[] types, string listenEndpoint)
         {
             m_ListenEndpoint = listenEndpoint;
             m_Types = types;
             m_Registration = registration;
         }
 
-        public LocalBoundContextRegistration RoutedFrom(string publishEndpoint)
+        public LocalBoundedContextRegistration RoutedFrom(string publishEndpoint)
         {
             m_Registration.AddCommandsRoute(m_Types, publishEndpoint);
             m_Registration.AddSubscribedCommands(m_Types, m_ListenEndpoint);
             return m_Registration;
         }
 
-        public LocalBoundContextRegistration RoutedFromSameEndpoint( )
+        public LocalBoundedContextRegistration RoutedFromSameEndpoint( )
         {
             return RoutedFrom(m_ListenEndpoint);
         }
 
-        public LocalBoundContextRegistration NotRouted()
+        public LocalBoundedContextRegistration NotRouted()
         {
             m_Registration.AddSubscribedCommands(m_Types, m_ListenEndpoint);
             return m_Registration;
@@ -78,9 +78,9 @@ namespace Inceptum.Cqrs.Configuration
     public class LocalPublishingEventsDescriptor
     {
         private readonly Type[] m_Types;
-        private readonly LocalBoundContextRegistration m_Registration;
+        private readonly LocalBoundedContextRegistration m_Registration;
 
-        public LocalPublishingEventsDescriptor(Type[] types, LocalBoundContextRegistration registration)
+        public LocalPublishingEventsDescriptor(Type[] types, LocalBoundedContextRegistration registration)
         {
             m_Registration = registration;
             m_Types = types;
@@ -94,30 +94,30 @@ namespace Inceptum.Cqrs.Configuration
 
     public class RoutedToDescriptor  
     {
-        private readonly LocalBoundContextRegistration m_Registration;
+        private readonly LocalBoundedContextRegistration m_Registration;
         private readonly Type[] m_Types;
         private readonly string m_PublishEndpoint;
 
-        public RoutedToDescriptor(LocalBoundContextRegistration registration, Type[] types, string publishEndpoint)
+        public RoutedToDescriptor(LocalBoundedContextRegistration registration, Type[] types, string publishEndpoint)
         {
             m_PublishEndpoint = publishEndpoint;
             m_Types = types;
             m_Registration = registration;
         }
 
-        public LocalBoundContextRegistration RoutedTo(string listenEndpoint)
+        public LocalBoundedContextRegistration RoutedTo(string listenEndpoint)
         {
             m_Registration.AddEventsRoute(m_Types, m_PublishEndpoint);
             m_Registration.AddSubscribedEvents(m_Types, listenEndpoint);
             return m_Registration;
         }   
         
-        public LocalBoundContextRegistration RoutedToSameEndpoint()
+        public LocalBoundedContextRegistration RoutedToSameEndpoint()
         {
             return RoutedTo(m_PublishEndpoint);
         }  
 
-        public LocalBoundContextRegistration NotRouted()
+        public LocalBoundedContextRegistration NotRouted()
         {
             m_Registration.AddEventsRoute(m_Types, m_PublishEndpoint);
             return m_Registration;

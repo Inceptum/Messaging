@@ -5,7 +5,7 @@ using Inceptum.Messaging.Contract;
 
 namespace Inceptum.Cqrs.Configuration
 {
-    class SubscriptionDescriptor : IBoundContextDescriptor
+    class SubscriptionDescriptor : IBoundedContextDescriptor
     {
         private readonly Dictionary<Type, string> m_EventsSubscriptions;
         private readonly Dictionary<Type, string> m_CommandsSubscriptions;
@@ -16,20 +16,20 @@ namespace Inceptum.Cqrs.Configuration
             m_EventsSubscriptions = eventsSubscriptions;
         }
 
-        public void Create(BoundContext boundContext)
+        public void Create(BoundedContext boundedContext)
         {
             var eventSubscriptions = from pair in m_EventsSubscriptions
                                      group pair by pair.Value
                                          into grouping
                                          select new { endpoint = grouping.Key, types = grouping.Select(g => g.Key) };
-            boundContext.EventsSubscriptions = eventSubscriptions.ToDictionary(o => o.endpoint, o => o.types);
+            boundedContext.EventsSubscriptions = eventSubscriptions.ToDictionary(o => o.endpoint, o => o.types);
 
 
             var commandsSubscriptions = from pair in m_CommandsSubscriptions
                                         group pair by pair.Value
                                             into grouping
                                             select new { endpoint = grouping.Key, types = grouping.Select(g => g.Key) };
-            boundContext.CommandsSubscriptions = commandsSubscriptions.ToDictionary(o => o.endpoint, o => o.types);
+            boundedContext.CommandsSubscriptions = commandsSubscriptions.ToDictionary(o => o.endpoint, o => o.types);
         }
     }
 }

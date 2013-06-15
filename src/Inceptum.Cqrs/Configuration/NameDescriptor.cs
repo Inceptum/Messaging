@@ -1,6 +1,6 @@
 ﻿namespace Inceptum.Cqrs.Configuration
 {
-    class NameDescriptor : IBoundContextDescriptor
+    class NameDescriptor : IBoundedContextDescriptor
     {
         private string m_Name;
 
@@ -9,9 +9,9 @@
             m_Name = name;
         }
 
-        public void Create(BoundContext boundContext)
+        public void Create(BoundedContext boundedContext)
         {
-            boundContext.Name = m_Name;
+            boundedContext.Name = m_Name;
         }
     }
 }

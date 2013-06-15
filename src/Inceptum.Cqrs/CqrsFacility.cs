@@ -6,28 +6,10 @@ using Castle.Core;
 using Castle.MicroKernel;
 using Castle.MicroKernel.Context;
 using Castle.MicroKernel.Facilities;
-using Castle.MicroKernel.ModelBuilder;
-using Castle.MicroKernel.ModelBuilder.Inspectors;
 using Castle.MicroKernel.Registration;
-using Inceptum.Cqrs;
 using Inceptum.Cqrs.Configuration;
 
 
-namespace Castle.MicroKernel.Registration
-{
-    public static class ComponentRegistrationExtensions
-    {
-        public static ComponentRegistration<T> AsEventsListener<T>(this ComponentRegistration<T> registration) where T : class
-        {
-            return registration.ExtendedProperties(new { IsEventsListener=true });
-        }  
-        
-        public static ComponentRegistration<T> AsCommandsHandler<T>(this ComponentRegistration<T> registration, string localBoundContext) where T : class
-        {
-            return registration.ExtendedProperties(new { CommandsHandlerFor = localBoundContext });
-        }
-    }
-}
  
 
 namespace Inceptum.Cqrs
@@ -39,12 +21,12 @@ namespace Inceptum.Cqrs
     {
         private readonly Dictionary<IHandler, Action<IHandler>> m_WaitList = new Dictionary<IHandler, Action<IHandler>>();
         private ICqrsEngine m_CqrsEngine;
-        private BoundContextRegistration[] m_BoundContexts = new BoundContextRegistration[0];
+        private BoundedContextRegistration[] m_BoundedContexts = new BoundedContextRegistration[0];
 
 
-        public CqrsFacility BoundContexts(params BoundContextRegistration[] boundContexts)
+        public CqrsFacility BoundedContexts(params BoundedContextRegistration[] boundedContexts)
         {
-            m_BoundContexts = boundContexts;
+            m_BoundedContexts = boundedContexts;
             return this;
         }
 
@@ -52,7 +34,7 @@ namespace Inceptum.Cqrs
         {
             Kernel.Register(Component.For<ICqrsEngine>().ImplementedBy<CqrsEngine>().DependsOn(new
                 {
-                    registrations = m_BoundContexts
+                    registrations = m_BoundedContexts
                 }));
             Kernel.Resolver.AddSubResolver(this);
             Kernel.ComponentRegistered += onComponentRegistered;
@@ -81,11 +63,11 @@ namespace Inceptum.Cqrs
             m_CqrsEngine.WireEventsListener(handler.Resolve(CreationContext.CreateEmpty()));
         }
 
-        private void registerIsCommandsHandler(IHandler handler, string localBoundContext)
+        private void registerIsCommandsHandler(IHandler handler, string localBoundedContext)
         {
 
             object commandsHandler = handler.Resolve(CreationContext.CreateEmpty());
-            m_CqrsEngine.WireCommandsHandler(commandsHandler, localBoundContext);
+            m_CqrsEngine.WireCommandsHandler(commandsHandler, localBoundedContext);
         }
 
 

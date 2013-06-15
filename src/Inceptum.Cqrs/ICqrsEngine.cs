@@ -3,10 +3,10 @@
     public interface ICqrsEngine
     {
         void Init();
-        void SendCommand<T>(T command, string boundContext);
+        void SendCommand<T>(T command, string boundedContext);
         ICqrsEngine WireEventsListener(object eventListener);
-        ICqrsEngine WireCommandsHandler(object commandsHandler, string localBoundContext);
-        void PublishEvent(object @event, string boundContext);
+        ICqrsEngine WireCommandsHandler(object commandsHandler, string localBoundedContext);
+        void PublishEvent(object @event, string boundedContext);
         bool IsInitialized { get;  }
         event OnInitizlizedDelegate Initialized;
 

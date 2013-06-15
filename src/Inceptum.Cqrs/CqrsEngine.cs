@@ -20,11 +20,11 @@ namespace Inceptum.Cqrs
     public class CommitDispatcher : IDispatchCommits
     {
         private readonly ICqrsEngine m_CqrsEngine;
-        private readonly string m_BoundContext;
+        private readonly string m_BoundedContext;
 
-        public CommitDispatcher(ICqrsEngine cqrsEngine,string boundContext)
+        public CommitDispatcher(ICqrsEngine cqrsEngine,string boundedContext)
         {
-            m_BoundContext = boundContext;
+            m_BoundedContext = boundedContext;
             m_CqrsEngine = cqrsEngine;
         }
 
@@ -36,7 +36,7 @@ namespace Inceptum.Cqrs
         {
             foreach (EventMessage @event in commit.Events)
             {
-                m_CqrsEngine.PublishEvent(@event.Body,m_BoundContext);
+                m_CqrsEngine.PublishEvent(@event.Body,m_BoundedContext);
             }
         }
     }
@@ -57,8 +57,8 @@ namespace Inceptum.Cqrs
         private readonly IMessagingEngine m_MessagingEngine;
         private readonly CompositeDisposable m_Subscription=new CompositeDisposable();
         private readonly IEndpointResolver m_EndpointResolver;
-        private BoundContext[] m_BoundContexts;
-        private readonly BoundContextRegistration[] m_Registrations;
+        private BoundedContext[] m_BoundedContexts;
+        private readonly BoundedContextRegistration[] m_Registrations;
         public event OnInitizlizedDelegate Initialized;
 
         internal EventDispatcher EventDispatcher
@@ -71,7 +71,7 @@ namespace Inceptum.Cqrs
             get { return m_CommandDispatcher; }
         }
 
-        public CqrsEngine(params BoundContextRegistration[] registrations):
+        public CqrsEngine(params BoundedContextRegistration[] registrations):
             this(new MessagingEngine(new TransportResolver(new Dictionary<string, TransportInfo> { { "InMemory", new TransportInfo("none", "none", "none", null, "InMemory") } })),
             new InMemoryEndpointResolver(),
             registrations
@@ -80,7 +80,7 @@ namespace Inceptum.Cqrs
         }
 
 
-        public CqrsEngine(IMessagingEngine messagingEngine, IEndpointResolver endpointResolver,params BoundContextRegistration[] registrations)
+        public CqrsEngine(IMessagingEngine messagingEngine, IEndpointResolver endpointResolver,params BoundedContextRegistration[] registrations)
         {
             m_Registrations = registrations;
             m_EndpointResolver = endpointResolver;
@@ -89,29 +89,29 @@ namespace Inceptum.Cqrs
 
         public void Init()
         {
-            m_BoundContexts = m_Registrations.Select(r => r.Apply(new BoundContext())).ToArray();
+            m_BoundedContexts = m_Registrations.Select(r => r.Apply(new BoundedContext())).ToArray();
 
-            foreach (var boundContext in m_BoundContexts)
+            foreach (var boundedContext in m_BoundedContexts)
             {
-                foreach (var eventsSubscription in boundContext.EventsSubscriptions)
+                foreach (var eventsSubscription in boundedContext.EventsSubscriptions)
                 {
                     var endpoint = m_EndpointResolver.Resolve(eventsSubscription.Key);
-                    BoundContext context = boundContext;
+                    BoundedContext context = boundedContext;
                     subscribe(endpoint, @event => EventDispatcher.Dispacth(@event, context.Name), t => { }, eventsSubscription.Value.ToArray());
                 }
             }
 
-            foreach (var boundContext in m_BoundContexts)
+            foreach (var boundedContext in m_BoundedContexts)
             {
-                foreach (var commandsSubscription in boundContext.CommandsSubscriptions)
+                foreach (var commandsSubscription in boundedContext.CommandsSubscriptions)
                 {
                     var endpoint = m_EndpointResolver.Resolve(commandsSubscription.Key);
-                    BoundContext context = boundContext;
+                    BoundedContext context = boundedContext;
                     subscribe(endpoint, command => m_CommandDispatcher.Dispacth(command,context.Name), t=>{throw new InvalidOperationException("Unknown command received: "+t);}, commandsSubscription.Value.ToArray());
                 }
             }
 
-            var uselessCommandsWirings = m_CommandDispatcher.KnownBoundContexts.Where(kc => m_BoundContexts.All(bc => bc.Name != kc)).ToArray();
+            var uselessCommandsWirings = m_CommandDispatcher.KnownBoundedContexts.Where(kc => m_BoundedContexts.All(bc => bc.Name != kc)).ToArray();
             if(uselessCommandsWirings.Any())
                 throw new ConfigurationException(string.Format("Command handlers registered for unknown bound contexts: {0} ",string.Join(",",uselessCommandsWirings)));
             IsInitialized = true;
@@ -135,29 +135,29 @@ namespace Inceptum.Cqrs
                 m_Subscription.Dispose();
         }
 
-        public void SendCommand<T>(T command,string boundContext )
+        public void SendCommand<T>(T command,string boundedContext )
         {
-            var context = m_BoundContexts.FirstOrDefault(bc => bc.Name == boundContext);
+            var context = m_BoundedContexts.FirstOrDefault(bc => bc.Name == boundedContext);
             if (context == null)
-                throw new ArgumentException(string.Format("bound context {0} not found",boundContext),"boundContext");
+                throw new ArgumentException(string.Format("bound context {0} not found",boundedContext),"boundedContext");
             string endpoint;
             if (!context.CommandRoutes.TryGetValue(typeof (T), out endpoint))
             {
-                throw new InvalidOperationException(string.Format("bound context '{0}' does not support command '{1}'",boundContext,typeof(T)));
+                throw new InvalidOperationException(string.Format("bound context '{0}' does not support command '{1}'",boundedContext,typeof(T)));
             }
             m_MessagingEngine.Send(command, m_EndpointResolver.Resolve(endpoint));
         }
  
 
-        public  void PublishEvent(object @event,string boundContext)
+        public  void PublishEvent(object @event,string boundedContext)
         {
-            var context = m_BoundContexts.FirstOrDefault(bc => bc.Name == boundContext);
+            var context = m_BoundedContexts.FirstOrDefault(bc => bc.Name == boundedContext);
             if (context == null)
-                throw new ArgumentException(string.Format("bound context {0} not found", boundContext), "boundContext");
+                throw new ArgumentException(string.Format("bound context {0} not found", boundedContext), "boundedContext");
             string endpoint;
             if (!context.EventRoutes.TryGetValue(@event.GetType(), out endpoint))
             {
-                throw new InvalidOperationException(string.Format("bound context '{0}' does not support event '{1}'", boundContext, @event.GetType()));
+                throw new InvalidOperationException(string.Format("bound context '{0}' does not support event '{1}'", boundedContext, @event.GetType()));
             }
             m_MessagingEngine.Send(@event, m_EndpointResolver.Resolve(endpoint));
         }
@@ -170,10 +170,10 @@ namespace Inceptum.Cqrs
             return this;
         }
 
-        public ICqrsEngine WireCommandsHandler(object commandsHandler, string boundContext)
+        public ICqrsEngine WireCommandsHandler(object commandsHandler, string boundedContext)
         {
             //TODO: check that same object is not wired for more then one BC
-            m_CommandDispatcher.Wire(commandsHandler,boundContext);
+            m_CommandDispatcher.Wire(commandsHandler,boundedContext);
             return this;
         }
     }
