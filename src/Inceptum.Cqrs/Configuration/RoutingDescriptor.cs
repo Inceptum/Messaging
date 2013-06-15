@@ -14,10 +14,19 @@ namespace Inceptum.Cqrs.Configuration
             m_EventRoutes = eventRoutes;
         }
 
-        public void Create(BoundedContext boundedContext)
+        public IEnumerable<Type> GetDependedncies()
+        {
+            return new Type[0];
+        }
+
+        public void Create(BoundedContext boundedContext, Func<Type, object> resolve)
         {
             boundedContext.CommandRoutes = m_CommandRoutes;
             boundedContext.EventRoutes = m_EventRoutes;
+        }
+
+        public void Process(BoundedContext boundedContext, CqrsEngine cqrsEngine)
+        {
         }
     }
 }

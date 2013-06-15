@@ -20,21 +20,20 @@ namespace Inceptum.Cqrs.Tests
         private readonly ICqrsEngine m_Engine;
         private int counter = 0;
 
-        public CommandHandler(ICqrsEngine engine)
+        public CommandHandler()
         {
-            m_Engine = engine;
         }
 
-        public void Handle(string command)
+        public void Handle(string command,IEventPublisher eventPublisher)
         {
             Console.WriteLine("command recived:" +command);
-            m_Engine.PublishEvent(++counter, "local");
-        } 
-        
-        public void Handle(DateTime command)
+            eventPublisher.PublishEvent(++counter);
+        }
+
+        public void Handle(DateTime command, IEventPublisher eventPublisher)
         {
             Console.WriteLine("command recived:" +command);
-            m_Engine.PublishEvent(++counter,"local");
+            eventPublisher.PublishEvent(++counter);
         }
     }
 
@@ -51,45 +50,16 @@ namespace Inceptum.Cqrs.Tests
     {
 
         [Test]
-        [ExpectedException(typeof(ConfigurationErrorsException),ExpectedMessage = "Can not register System.String as command in bound context test, it is already registered as event")]
+        [ExpectedException(typeof(ConfigurationErrorsException),ExpectedMessage = "Can not register System.String as command in bound context bc, it is already registered as event")]
         public void BoundedContextCanNotHaveEvetAndCommandOfSameType()
         {
-            new CqrsEngine(BoundedContext.Local("bc")
+            new CqrsEngine(LocalBoundedContext.Named("bc")
                                                      .PublishingEvents(typeof(string)).To("eventExchange").RoutedTo("eventQueue")
                                                      .ListeningCommands(typeof (string)).On("commandExchange").RoutedFrom("commandQueue"));
         }
 
 
-        [Test]
-        [ExpectedException(typeof(ConfigurationErrorsException), ExpectedMessage = "Command handlers registered for unknown bound contexts: unknownBc1,unknownBc2")]
-        public void HandlerForUnknownCommandTest()
-        {
-            var cqrsEngine = new CqrsEngine(BoundedContext.Local("bc").ListeningCommands(typeof (int)).On("commandExchange").RoutedFrom("commandQueue"));
-            cqrsEngine.WireCommandsHandler(new CommandsHandler(), "unknownBc1");
-            cqrsEngine.WireCommandsHandler(new CommandsHandler(), "unknownBc2");
-            cqrsEngine.Init();
-        }
-
-
-        [Test]
-        [ExpectedException(typeof(InvalidOperationException))]
-        public void EventsListenerWiringIsNotAllowedWhenEngineIsInitilizedTest()
-        {
-            var cqrsEngine = new CqrsEngine();
-            cqrsEngine.Init();
-            cqrsEngine.WireEventsListener(new CommandsHandler());
-            
-        }
-        [Test]
-        [ExpectedException(typeof(InvalidOperationException))]
-        public void CommandsHandlerWiringIsNotAllowedWhenEngineIsInitilizedTest()
-        {
-            var cqrsEngine = new CqrsEngine(BoundedContext.Local("bc").ListeningCommands(typeof(int)).On("commandExchange").RoutedFrom("commandQueue"));
-            cqrsEngine.Init();
-            cqrsEngine.WireCommandsHandler(new CommandsHandler(), "bc");
-            
-        }
-
+       
         [Test]
         [Ignore("investigation test")]
         public void CqrsEngineTest()
@@ -103,15 +73,19 @@ namespace Inceptum.Cqrs.Tests
             };
 
 
-            var cqrsEngine = new CqrsEngine(messagingEngine, new FakeEndpointResolver(), BoundedContext.Local("integration")
+            var cqrsEngine = new CqrsEngine(Activator.CreateInstance,messagingEngine, new FakeEndpointResolver(), LocalBoundedContext.Named("integration")
                                                    .PublishingEvents(typeof(int)).To("eventExchange").RoutedTo("eventQueue")
                                                    .ListeningCommands(typeof(string)).On("commandExchange").RoutedFrom("commandQueue")
+                                                   .WithCommandsHandler<CommandsHandler>(),
+                                                   LocalBoundedContext.Named("bc").WithProjection<EventListener>("integration")
+
+                                                   
                 //.ListeningCommands(typeof(string)).locally()
                                                    );
-            /* var c=new CqrsEngine(messagingEngine, BoundedContext.Remote("integration")
+            /* var c=new CqrsEngine(messagingEngine, RemoteBoundedContext.Named("integration")
                                                     .ListeningCommands(typeof(TestCommand)).On(new Endpoint())
                                                     .PublishingEvents(typeof(TransferCreatedEvent)).To(new Endpoint()),
-                                                    BoundedContext.Local("testBC")
+                                                    LocalBoundedContext.Named("testBC")
                                                     .ListeningCommands(typeof(TestCommand)).On(new Endpoint("test", "unistream.u1.commands", true))
                                                     .ListeningCommands(typeof(int)).On(new Endpoint("test", "unistream.u1.commands", true))
                                                     .PublishingEvents(typeof (int)).To(new Endpoint()).RoutedTo(new Endpoint())
@@ -126,9 +100,7 @@ namespace Inceptum.Cqrs.Tests
                                                 ); */
 
 
-            cqrsEngine.WireEventsListener(new EventListener());
-            cqrsEngine.WireCommandsHandler(new CommandsHandler(), "integration");
-            cqrsEngine.Init();
+         
             //  messagingEngine.Send("test", new Endpoint("test", "unistream.u1.commands", true,"json"));
             cqrsEngine.SendCommand("test", "integration");
             Thread.Sleep(3000);
@@ -138,34 +110,43 @@ namespace Inceptum.Cqrs.Tests
         {
             var registrations = new BoundedContextRegistration[]
                 {
-                    BoundedContext.Remote("remote")
+                    RemoteBoundedContext.Named("remote")
                             .PublishingEvents(typeof (object)).To("eventsExhange")
                             .ListeningCommands().On("commandsQueue"),
-                    BoundedContext.Local("local2")
+                    LocalBoundedContext.Named("local2")
                             .PublishingEvents(typeof (object)).To("eventsExhange").RoutedTo("eventsQueue")
                             .PublishingEvents(typeof (object)).To("eventsExhange").RoutedToSameEndpoint()
                             .PublishingEvents(typeof (object)).To("eventsExhange").NotRouted()
                             .ListeningCommands(typeof (int)).On("commandsExhange").RoutedFrom("commandsQueue")
                             .ListeningCommands(typeof (int)).On("commandsExhange").RoutedFromSameEndpoint()
                             .ListeningCommands(typeof (int)).On("commandsExhange").NotRouted()
+                            .WithCommandsHandler<CommandHandler>()
                             //.WithEventStore()
                 };
         }
         [Test]
         public void Method_Scenario_Expected()
         {
-            var engine = new CqrsEngine(BoundedContext.Local("local")
-                                                    .PublishingEvents(typeof (int)).To("events").RoutedTo("eventQueue")//RoutedToSameEndpoint()
-                                                    .ListeningCommands(typeof(string)).On("commands1").RoutedFromSameEndpoint()
-                                                    .ListeningCommands(typeof(DateTime)).On("commands2").RoutedFromSameEndpoint()/*
-                                                    .WithEventSource()
-                                                    .WithAggregates()
-                                                    .WithDocumentStore()*/);
-            engine
-                .WireCommandsHandler(new CommandHandler(engine),"local")
-                .WireEventsListener(new EventsListener());
-            engine.Init();
-            
+            var engine = new CqrsEngine(
+                            LocalBoundedContext.Named("local")
+                                .PublishingEvents(typeof (int)).To("events").RoutedTo("events")
+                                .ListeningCommands(typeof(string)).On("commands1").RoutedFromSameEndpoint()
+                                .ListeningCommands(typeof(DateTime)).On("commands2").RoutedFromSameEndpoint()
+                                .WithCommandsHandler<CommandHandler>(),
+                            LocalBoundedContext.Named("projections")
+                                .WithProjection<EventsListener>("local"),
+                            RemoteBoundedContext.Named("remote")
+                                .ListeningCommands(typeof(object)).On("remoteCommands")
+                                .PublishingEvents(typeof(int)).To("remoteEvents"),
+                            Saga<TestSaga>.Listening("local","projections"),
+                            Saga.Instance(new TestSaga()).Listening("local","projections")
+                            );
+/*
+                                                                .WithEventSource()
+                                                                .WithAggregates()
+                                                                .WithDocumentStore());
+             * */
+
             engine.SendCommand("test","local");
             engine.SendCommand(DateTime.Now,"local");
 
@@ -173,4 +154,11 @@ namespace Inceptum.Cqrs.Tests
         }
     }
 
+    public class TestSaga
+    {
+        private void Handle(int @event, string boundedContext /*, ICommandSender*/)
+        {
+            Console.WriteLine("Event cought by saga:"+@event);
+        }
+    }
 }

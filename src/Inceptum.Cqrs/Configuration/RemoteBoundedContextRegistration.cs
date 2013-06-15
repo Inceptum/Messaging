@@ -3,7 +3,7 @@ using Inceptum.Messaging.Contract;
 
 namespace Inceptum.Cqrs.Configuration
 {
-    public class RemoteBoundedContextRegistration : BoundedContextRegistration
+    public class RemoteBoundedContextRegistration : BoundedContextRegistration 
     {
         public RemoteBoundedContextRegistration(string name) : base(name)
         {

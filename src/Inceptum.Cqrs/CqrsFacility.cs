@@ -8,20 +8,23 @@ using Castle.MicroKernel.Context;
 using Castle.MicroKernel.Facilities;
 using Castle.MicroKernel.Registration;
 using Inceptum.Cqrs.Configuration;
+using IRegistration = Inceptum.Cqrs.Configuration.IRegistration;
 
-
- 
 
 namespace Inceptum.Cqrs
 {
 
 
-
-    public class CqrsFacility : AbstractFacility, ISubDependencyResolver
+    interface ICqrsEngineBootstrapper
     {
+        void Start();
+    }
+    public class CqrsFacility : AbstractFacility,  ICqrsEngineBootstrapper
+    {
+        private readonly string m_EngineComponetName = Guid.NewGuid().ToString();
         private readonly Dictionary<IHandler, Action<IHandler>> m_WaitList = new Dictionary<IHandler, Action<IHandler>>();
-        private ICqrsEngine m_CqrsEngine;
         private BoundedContextRegistration[] m_BoundedContexts = new BoundedContextRegistration[0];
+        private List<SagaRegistration> m_Sagas = new List<SagaRegistration>();
 
 
         public CqrsFacility BoundedContexts(params BoundedContextRegistration[] boundedContexts)
@@ -32,21 +35,12 @@ namespace Inceptum.Cqrs
 
         protected override void Init()
         {
-            Kernel.Register(Component.For<ICqrsEngine>().ImplementedBy<CqrsEngine>().DependsOn(new
-                {
-                    registrations = m_BoundedContexts
-                }));
-            Kernel.Resolver.AddSubResolver(this);
+            Func<Type, object> dependencyResolver = Kernel.Resolve;
+            Kernel.Register(Component.For<ICqrsEngineBootstrapper>().Instance(this));
             Kernel.ComponentRegistered += onComponentRegistered;
             Kernel.HandlersChanged += (ref bool changed) => processWaitList();
-            m_CqrsEngine = Kernel.Resolve<ICqrsEngine>();
-            //Trigger startable facility (it tries to start components on Kernel.ComponentRegistered)
-            m_CqrsEngine.Initialized += () => Kernel.Register(Component.For<CqrsEngineBarier>());
         }
-
-        private class CqrsEngineBarier
-        {
-        }
+ 
 
 
         private void processWaitList()
@@ -57,66 +51,78 @@ namespace Inceptum.Cqrs
                 m_WaitList.Remove(pair.Key);
             }
         }
-
-        private void registerEventsListener(IHandler handler)
-        {
-            m_CqrsEngine.WireEventsListener(handler.Resolve(CreationContext.CreateEmpty()));
-        }
-
-        private void registerIsCommandsHandler(IHandler handler, string localBoundedContext)
-        {
-
-            object commandsHandler = handler.Resolve(CreationContext.CreateEmpty());
-            m_CqrsEngine.WireCommandsHandler(commandsHandler, localBoundedContext);
-        }
+      
 
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         private void onComponentRegistered(string key, IHandler handler)
         {
-            var isEventsListener = (bool) (handler.ComponentModel.ExtendedProperties["IsEventsListener"] ?? false);
-            var commandsHandlerFor = (string) (handler.ComponentModel.ExtendedProperties["CommandsHandlerFor"]);
-            var isCommandsHandler = commandsHandlerFor != null;
-
-            if (isCommandsHandler && isEventsListener)
-                throw new InvalidOperationException("Component can not be events listener and commands handler simultaneousely");
-
-            if (isEventsListener)
+            if (handler.ComponentModel.Name == m_EngineComponetName)
             {
-                if (handler.CurrentState == HandlerState.WaitingDependency)
+                var dependencyModels = m_BoundedContexts.Cast<IRegistration>().Concat(m_Sagas).SelectMany(bc => bc.Dependencies).Select(d => new DependencyModel(d.Name, d, false));
+                foreach (var dependencyModel in dependencyModels)
                 {
-                    m_WaitList.Add(handler, registerEventsListener);
+                    handler.ComponentModel.Dependencies.Add(dependencyModel);
                 }
-                else
-                {
-                    registerEventsListener(handler);
-                }
+                return;
+            }
+
+            var isCommandsHandler = (bool)(handler.ComponentModel.ExtendedProperties["IsCommandsHandler"] ?? false);
+            var isProjection = (bool)(handler.ComponentModel.ExtendedProperties["IsProjection"] ?? false);
+            var isSaga = (bool)(handler.ComponentModel.ExtendedProperties["isSaga"] ?? false);
+
+            if (isCommandsHandler && isProjection)
+                throw new InvalidOperationException("Component can not be projection and commands handler simultaneousely");
+
+            if (isProjection)
+            {
+                var projectedBoundContext = (string)(handler.ComponentModel.ExtendedProperties["ProjectedBoundContext"]);
+                var boundContext = (string)(handler.ComponentModel.ExtendedProperties["BoundContext"]);
+                var registration = m_BoundedContexts.FirstOrDefault(bc => bc.Name == boundContext);
+                if (registration == null)
+                    throw new ComponentRegistrationException(string.Format("Bounded context {0} was not registered", projectedBoundContext));
+                if (registration is RemoteBoundedContextRegistration)
+                    throw new ComponentRegistrationException(string.Format("Projection can be registered only for local bounded contexts. Bounded context {0} is remote", registration.Name));
+          
+                //TODO: decide which service to use
+                (registration as LocalBoundedContextRegistration).WithProjection(handler.ComponentModel.Services.First(), projectedBoundContext);
+ 
             }
 
 
-            if (isCommandsHandler)
-            {
+           if (isCommandsHandler)
+           {
+               var commandsHandlerFor = (string)(handler.ComponentModel.ExtendedProperties["CommandsHandlerFor"]);
 
-                if (handler.CurrentState == HandlerState.WaitingDependency)
-                {
-                    m_WaitList.Add(handler, h => registerIsCommandsHandler(h, commandsHandlerFor));
-                }
-                else
-                {
-                    registerIsCommandsHandler(handler, commandsHandlerFor);
-                }
+               var registration = m_BoundedContexts.FirstOrDefault(bc => bc.Name == commandsHandlerFor);
+               if(registration==null)
+                   throw new ComponentRegistrationException(string.Format("Bounded context {0} was not registered",commandsHandlerFor)); 
+               if(registration is RemoteBoundedContextRegistration)
+                   throw new ComponentRegistrationException(string.Format("Commands handler can be registered only for local bounded contexts. Bounded context {0} is remote",commandsHandlerFor));
+          
+               //TODO: decide which service to use
+               (registration as LocalBoundedContextRegistration).WithCommandsHandler(handler.ComponentModel.Services.First());
+ 
+           } 
+
+            if (isSaga)
+            {
+                var listenedBoundContexts = (string)(handler.ComponentModel.ExtendedProperties["ListenedBoundContexts"]);
+                m_Sagas.Add(Saga.OfType(handler.ComponentModel.Services.First()).Listening(listenedBoundContexts));
             }
 
         }
 
-        public bool CanResolve(CreationContext context, ISubDependencyResolver contextHandlerResolver, ComponentModel model, DependencyModel dependency)
-        {
-            return dependency.TargetItemType == typeof (ICqrsEngine) ; 
-        }
 
-        public object Resolve(CreationContext context, ISubDependencyResolver contextHandlerResolver, ComponentModel model, DependencyModel dependency)
+        public void Start()
         {
-            return m_CqrsEngine.IsInitialized?m_CqrsEngine:null;
+            Func<Type, object> dependencyResolver = Kernel.Resolve;
+            Kernel.Register(Component.For<ICqrsEngine>().ImplementedBy<CqrsEngine>().Named(m_EngineComponetName).DependsOn(new
+                {
+                    registrations = m_BoundedContexts.Cast<IRegistration>().Concat(m_Sagas).ToArray(),
+                    dependencyResolver
+                }));
+            Kernel.Resolve<ICqrsEngine>();
         }
     }
 

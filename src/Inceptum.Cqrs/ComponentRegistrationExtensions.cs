@@ -4,14 +4,31 @@ namespace Castle.MicroKernel.Registration
 {
     public static class ComponentRegistrationExtensions
     {
-        public static ComponentRegistration<T> AsEventsListener<T>(this ComponentRegistration<T> registration) where T : class
+        public static ComponentRegistration<T> AsProjection<T>(this ComponentRegistration<T> registration, string boundContext,string projectedBoundContext) where T : class
         {
-            return registration.ExtendedProperties(new { IsEventsListener=true });
+            return registration.ExtendedProperties(new
+                {
+                    IsProjection = true,
+                    ProjectedBoundContext = projectedBoundContext,
+                    BoundContext = boundContext
+                });
         }  
         
         public static ComponentRegistration<T> AsCommandsHandler<T>(this ComponentRegistration<T> registration, string localBoundedContext) where T : class
         {
-            return registration.ExtendedProperties(new { CommandsHandlerFor = localBoundedContext });
+            return registration.ExtendedProperties(new
+                {
+                    CommandsHandlerFor = localBoundedContext,
+                    IsCommandsHandler = true
+                });
+        }  
+        public static ComponentRegistration<T> AsSaga<T>(this ComponentRegistration<T> registration, params string[] boundedContexts) where T : class
+        {
+            return registration.ExtendedProperties(new
+                {
+                    ListenedBoundContexts = boundedContexts,
+                    IsSaga = true
+                });
         }
     }
 }
