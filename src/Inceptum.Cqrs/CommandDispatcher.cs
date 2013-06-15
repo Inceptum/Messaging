@@ -9,7 +9,8 @@ namespace Inceptum.Cqrs
     public class CommandDispatcher
     {
         readonly Dictionary<Tuple<Type, string>, Action<object>> m_Handlers = new Dictionary<Tuple<Type, string>, Action<object>>();
-        public string[] KnownBoundedContexts { get { return m_Handlers.Keys.Select(k => k.Item2).Distinct().ToArray(); } }
+        public IEnumerable<string> KnownBoundedContexts { get { return m_Handlers.Keys.Select(k => k.Item2).Distinct().ToArray(); } }
+        
         public void Wire(object o,string boundedContext)
         {
             if (o == null) throw new ArgumentNullException("o");

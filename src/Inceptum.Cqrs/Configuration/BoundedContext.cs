@@ -29,25 +29,6 @@ namespace Inceptum.Cqrs.Configuration
         {
             return new RemoteBoundedContextRegistration(name);
         }
-
-        static void test()
-        {
-            var registrations = new BoundedContextRegistration[]
-                {
-                    BoundedContext.Remote("remote")
-                            .PublishingEvents(typeof (object)).To("eventsExhange")
-                            .ListeningCommands().On("commandsQueue"),
-                    BoundedContext.Local("local2")
-                            .PublishingEvents(typeof (object)).To("eventsExhange").RoutedTo("eventsQueue")
-                            .PublishingEvents(typeof (object)).To("eventsExhange").RoutedToSameEndpoint()
-                            .PublishingEvents(typeof (object)).To("eventsExhange").NotRouted()
-                            .ListeningCommands(typeof (int)).On("commandsExhange").RoutedFrom("commandsQueue")
-                            .ListeningCommands(typeof (int)).On("commandsExhange").RoutedFromSameEndpoint()
-                            .ListeningCommands(typeof (int)).On("commandsExhange").NotRouted()
-                            //.WithEventStore()
-                };
-        }
-
        
     }
 }

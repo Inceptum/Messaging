@@ -62,13 +62,32 @@ namespace Inceptum.Cqrs.Tests
 
         [Test]
         [ExpectedException(typeof(ConfigurationErrorsException), ExpectedMessage = "Command handlers registered for unknown bound contexts: unknownBc1,unknownBc2")]
-
         public void HandlerForUnknownCommandTest()
         {
             var cqrsEngine = new CqrsEngine(BoundedContext.Local("bc").ListeningCommands(typeof (int)).On("commandExchange").RoutedFrom("commandQueue"));
             cqrsEngine.WireCommandsHandler(new CommandsHandler(), "unknownBc1");
             cqrsEngine.WireCommandsHandler(new CommandsHandler(), "unknownBc2");
             cqrsEngine.Init();
+        }
+
+
+        [Test]
+        [ExpectedException(typeof(InvalidOperationException))]
+        public void EventsListenerWiringIsNotAllowedWhenEngineIsInitilizedTest()
+        {
+            var cqrsEngine = new CqrsEngine();
+            cqrsEngine.Init();
+            cqrsEngine.WireEventsListener(new CommandsHandler());
+            
+        }
+        [Test]
+        [ExpectedException(typeof(InvalidOperationException))]
+        public void CommandsHandlerWiringIsNotAllowedWhenEngineIsInitilizedTest()
+        {
+            var cqrsEngine = new CqrsEngine(BoundedContext.Local("bc").ListeningCommands(typeof(int)).On("commandExchange").RoutedFrom("commandQueue"));
+            cqrsEngine.Init();
+            cqrsEngine.WireCommandsHandler(new CommandsHandler(), "bc");
+            
         }
 
         [Test]
@@ -113,6 +132,24 @@ namespace Inceptum.Cqrs.Tests
             //  messagingEngine.Send("test", new Endpoint("test", "unistream.u1.commands", true,"json"));
             cqrsEngine.SendCommand("test", "integration");
             Thread.Sleep(3000);
+        }
+
+        static void test()
+        {
+            var registrations = new BoundedContextRegistration[]
+                {
+                    BoundedContext.Remote("remote")
+                            .PublishingEvents(typeof (object)).To("eventsExhange")
+                            .ListeningCommands().On("commandsQueue"),
+                    BoundedContext.Local("local2")
+                            .PublishingEvents(typeof (object)).To("eventsExhange").RoutedTo("eventsQueue")
+                            .PublishingEvents(typeof (object)).To("eventsExhange").RoutedToSameEndpoint()
+                            .PublishingEvents(typeof (object)).To("eventsExhange").NotRouted()
+                            .ListeningCommands(typeof (int)).On("commandsExhange").RoutedFrom("commandsQueue")
+                            .ListeningCommands(typeof (int)).On("commandsExhange").RoutedFromSameEndpoint()
+                            .ListeningCommands(typeof (int)).On("commandsExhange").NotRouted()
+                            //.WithEventStore()
+                };
         }
         [Test]
         public void Method_Scenario_Expected()
