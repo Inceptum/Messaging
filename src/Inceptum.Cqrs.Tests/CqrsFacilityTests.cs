@@ -47,8 +47,7 @@ namespace Inceptum.Cqrs.Tests
             Console.WriteLine(m);
         } 
     }
-    // ReSharper disable InconsistentNaming
-    // ReSharper disable PossibleNullReferenceException
+    
 
     class CqrEngineDependentComponent
     {
@@ -110,9 +109,8 @@ namespace Inceptum.Cqrs.Tests
             var container=new WindsorContainer();
             container.Register(Component.For<IMessagingEngine>().Instance(MockRepository.GenerateMock<IMessagingEngine>()));
             container.AddFacility<CqrsFacility>();
-            container.Register(Component.For<EventListener>().AsEventsListener()/*,
-                Classes.FromThisAssembly().BasedOn(typeof(object)).WithService.AllInterfaces().*/);
-            CqrsEngine cqrsEngine = (CqrsEngine) container.Resolve<ICqrsEngine>();
+            container.Register(Component.For<EventListener>().AsEventsListener());
+            var cqrsEngine = (CqrsEngine) container.Resolve<ICqrsEngine>();
             var eventListener = container.Resolve<EventListener>();
             cqrsEngine.EventDispatcher.Dispacth("test","bc");
             Assert.That(eventListener.EventsWithBoundContext, Is.EqualTo(new[] { Tuple.Create("test", "bc") }),"Event was not dispatched");
@@ -120,16 +118,17 @@ namespace Inceptum.Cqrs.Tests
         }
 
         [Test]
-        [Ignore("incomplete test")]
         public void CommandsHandlerWiringTest()
         {
             var container=new WindsorContainer();
             container.Register(Component.For<IMessagingEngine>().Instance(MockRepository.GenerateMock<IMessagingEngine>()));
-            container.AddFacility<CqrsFacility>();
-            container.Register(Component.For<CommandsHandler>().AsCommandsHandler("test"));
-            var cqrsEngine = container.Resolve<ICqrsEngine>();
+            container.AddFacility<CqrsFacility>(f=>f.BoundContexts(BoundContext.Local("bc")));
+            container.Register(Component.For<CommandsHandler>().AsCommandsHandler("bc"));
+            var cqrsEngine = (CqrsEngine)container.Resolve<ICqrsEngine>();
+            cqrsEngine.Init();
+
             var commandsHandler = container.Resolve<CommandsHandler>();
-            //cqrsEngine.CommandDispatcher.Dispacth("test","bc");
+            cqrsEngine.CommandDispatcher.Dispacth("test","bc");
             Assert.That(commandsHandler.HandledCommands, Is.EqualTo(new[] { "test" }), "Event was not dispatched");
         }
 
@@ -149,7 +148,7 @@ namespace Inceptum.Cqrs.Tests
             var commandQueue", new Endpoint("test", "unistream.u1.commands", true, "json");*/
             
             var cqrsEngine= new CqrsEngine(messagingEngine,new FakeEndpointResolver(), BoundContext.Local("integration")
-                                                   .PublishingEvents(typeof(string)).To("eventExchange").RoutedTo("eventQueue")
+                                                   .PublishingEvents(typeof(int)).To("eventExchange").RoutedTo("eventQueue")
                                                    .ListeningCommands(typeof(string)).On("commandExchange").RoutedFrom("commandQueue")
                                                    //.ListeningCommands(typeof(string)).locally()
                                                    );
@@ -175,7 +174,7 @@ namespace Inceptum.Cqrs.Tests
             cqrsEngine.WireCommandsHandler(new CommandsHandler(), "integration");
             cqrsEngine.Init();
           //  messagingEngine.Send("test", new Endpoint("test", "unistream.u1.commands", true,"json"));
-              cqrsEngine.SendCommand("test", "integration");
+            cqrsEngine.SendCommand("test", "integration");
             Thread.Sleep(3000);
         }
     }
@@ -195,9 +194,7 @@ namespace Inceptum.Cqrs.Tests
         }
     }
 
-    // ReSharper restore InconsistentNaming
-    // ReSharper restore PossibleNullReferenceException
-
+ /*
 
     internal class Transfer
     {
@@ -250,5 +247,5 @@ namespace Inceptum.Cqrs.Tests
             transfer.CreationDate = e.CreationDate;
         }
     }
-
+*/
 }
