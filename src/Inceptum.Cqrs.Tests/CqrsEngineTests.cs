@@ -1,10 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using Castle.Core.Logging;
 using Inceptum.Cqrs.Configuration;
+using Inceptum.Messaging;
+using Inceptum.Messaging.Contract;
+using Inceptum.Messaging.RabbitMq;
+using Inceptum.Messaging.Serialization;
 using NUnit.Framework;
+using Rhino.Mocks;
 
 namespace Inceptum.Cqrs.Tests
 {
@@ -33,19 +40,72 @@ namespace Inceptum.Cqrs.Tests
 
     class EventsListener
     {
-        public void Handle(int e,string boundContext)
+        public void Handle(int e,string boundedContext)
         {
-            Console.WriteLine(boundContext+":"+e);
+            Console.WriteLine(boundedContext+":"+e);
         }  
     }
 
     [TestFixture]
     public class CqrsEngineTests
     {
+
+        [Test]
+        [ExpectedException(typeof(ConfigurationErrorsException),ExpectedMessage = "Can not register System.String as command in bound context test, it is already registered as event")]
+        public void BoundedContextCanNotHaveEvetAndCommandOfSameType()
+        {
+            new CqrsEngine(BoundedContext.Local("test")
+                                                     .PublishingEvents(typeof(string)).To("eventExchange").RoutedTo("eventQueue")
+                                                     .ListeningCommands(typeof (string)).On("commandExchange").RoutedFrom("commandQueue"));
+        }
+
+        [Test]
+        [Ignore("investigation test")]
+        public void CqrsEngineTest()
+        {
+            var serializationManager = new SerializationManager();
+            serializationManager.RegisterSerializerFactory(new JsonSerializerFactory());
+            var transportResolver = new TransportResolver(new Dictionary<string, TransportInfo> { { "test", new TransportInfo("localhost", "guest", "guest", null, "RabbitMq") } });
+            var messagingEngine = new MessagingEngine(transportResolver, new RabbitMqTransportFactory())
+            {
+                Logger = new ConsoleLogger(LoggerLevel.Debug)
+            };
+
+
+            var cqrsEngine = new CqrsEngine(messagingEngine, new FakeEndpointResolver(), BoundedContext.Local("integration")
+                                                   .PublishingEvents(typeof(int)).To("eventExchange").RoutedTo("eventQueue")
+                                                   .ListeningCommands(typeof(string)).On("commandExchange").RoutedFrom("commandQueue")
+                //.ListeningCommands(typeof(string)).locally()
+                                                   );
+            /* var c=new CqrsEngine(messagingEngine, BoundedContext.Remote("integration")
+                                                    .ListeningCommands(typeof(TestCommand)).On(new Endpoint())
+                                                    .PublishingEvents(typeof(TransferCreatedEvent)).To(new Endpoint()),
+                                                    BoundedContext.Local("testBC")
+                                                    .ListeningCommands(typeof(TestCommand)).On(new Endpoint("test", "unistream.u1.commands", true))
+                                                    .ListeningCommands(typeof(int)).On(new Endpoint("test", "unistream.u1.commands", true))
+                                                    .PublishingEvents(typeof (int)).To(new Endpoint()).RoutedTo(new Endpoint())
+                                                    .PublishingEvents(typeof (string)).To(new Endpoint())
+                                                    .WithEventStore(dispatchCommits => Wireup.Init()
+                                                                                             .LogToOutputWindow()
+                                                                                             .UsingInMemoryPersistence()
+                                                                                             .InitializeStorageEngine()
+                                                                                             .UsingJsonSerialization()
+                                                                                             .UsingSynchronousDispatchScheduler()
+                                                                                                 .DispatchTo(dispatchCommits))
+                                                ); */
+
+
+            cqrsEngine.WireEventsListener(new EventListener());
+            cqrsEngine.WireCommandsHandler(new CommandsHandler(), "integration");
+            cqrsEngine.Init();
+            //  messagingEngine.Send("test", new Endpoint("test", "unistream.u1.commands", true,"json"));
+            cqrsEngine.SendCommand("test", "integration");
+            Thread.Sleep(3000);
+        }
         [Test]
         public void Method_Scenario_Expected()
         {
-            var engine = new CqrsEngine(BoundContext.Local("local")
+            var engine = new CqrsEngine(BoundedContext.Local("local")
                                                     .PublishingEvents(typeof (int)).To("events").RoutedTo("eventQueue")//RoutedToSameEndpoint()
                                                     .ListeningCommands(typeof(string)).On("commands1").RoutedFromSameEndpoint()
                                                     .ListeningCommands(typeof(DateTime)).On("commands2").RoutedFromSameEndpoint()/*

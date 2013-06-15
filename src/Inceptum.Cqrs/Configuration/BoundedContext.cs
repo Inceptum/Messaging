@@ -12,7 +12,7 @@ namespace Inceptum.Cqrs.Configuration
     }
 
 
-    public class BoundContext
+    public class BoundedContext
     {
         internal Dictionary<string, IEnumerable<Type>> EventsSubscriptions { get; set; }
         internal Dictionary<string, IEnumerable<Type>> CommandsSubscriptions { get; set; }
@@ -20,24 +20,24 @@ namespace Inceptum.Cqrs.Configuration
         internal Dictionary<Type, string> EventRoutes { get; set; }
         public string Name { get; set; }
 
-        public static LocalBoundContextRegistration Local(string name)
+        public static LocalBoundedContextRegistration Local(string name)
         {
-            return new LocalBoundContextRegistration(name);
+            return new LocalBoundedContextRegistration(name);
         }
 
-        public static RemoteBoundContextRegistration Remote(string name)
+        public static RemoteBoundedContextRegistration Remote(string name)
         {
-            return new RemoteBoundContextRegistration(name);
+            return new RemoteBoundedContextRegistration(name);
         }
 
         static void test()
         {
-            var registrations = new BoundContextRegistration[]
+            var registrations = new BoundedContextRegistration[]
                 {
-                    BoundContext.Remote("remote")
+                    BoundedContext.Remote("remote")
                             .PublishingEvents(typeof (object)).To("eventsExhange")
                             .ListeningCommands().On("commandsQueue"),
-                    BoundContext.Local("local2")
+                    BoundedContext.Local("local2")
                             .PublishingEvents(typeof (object)).To("eventsExhange").RoutedTo("eventsQueue")
                             .PublishingEvents(typeof (object)).To("eventsExhange").RoutedToSameEndpoint()
                             .PublishingEvents(typeof (object)).To("eventsExhange").NotRouted()

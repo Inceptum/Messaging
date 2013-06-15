@@ -3,9 +3,9 @@ using Inceptum.Messaging.Contract;
 
 namespace Inceptum.Cqrs.Configuration
 {
-    public class RemoteBoundContextRegistration : BoundContextRegistration
+    public class RemoteBoundedContextRegistration : BoundedContextRegistration
     {
-        public RemoteBoundContextRegistration(string name) : base(name)
+        public RemoteBoundedContextRegistration(string name) : base(name)
         {
         }
 
@@ -24,16 +24,16 @@ namespace Inceptum.Cqrs.Configuration
 
     public class RemoteListeningCommandsDescriptor
     {
-        private readonly RemoteBoundContextRegistration m_Registration;
+        private readonly RemoteBoundedContextRegistration m_Registration;
         private readonly Type[] m_Types;
 
-        public RemoteListeningCommandsDescriptor(Type[] types, RemoteBoundContextRegistration registration)
+        public RemoteListeningCommandsDescriptor(Type[] types, RemoteBoundedContextRegistration registration)
         {
             m_Types = types;
             m_Registration = registration;
         }
 
-        public RemoteBoundContextRegistration On(string publishEndpoint)
+        public RemoteBoundedContextRegistration On(string publishEndpoint)
         {
             m_Registration.AddCommandsRoute(m_Types, publishEndpoint);
             return m_Registration;
@@ -43,15 +43,15 @@ namespace Inceptum.Cqrs.Configuration
     public class RemotePublishingEventsDescriptor
     {
         private readonly Type[] m_Types;
-        private readonly RemoteBoundContextRegistration m_Registration;
+        private readonly RemoteBoundedContextRegistration m_Registration;
 
-        public RemotePublishingEventsDescriptor(Type[] types, RemoteBoundContextRegistration registration)
+        public RemotePublishingEventsDescriptor(Type[] types, RemoteBoundedContextRegistration registration)
         {
             m_Registration = registration;
             m_Types = types;
         }
 
-        public RemoteBoundContextRegistration To(string listenEndpoint)
+        public RemoteBoundedContextRegistration To(string listenEndpoint)
         {
             m_Registration.AddSubscribedEvents(m_Types, listenEndpoint);
             return m_Registration;

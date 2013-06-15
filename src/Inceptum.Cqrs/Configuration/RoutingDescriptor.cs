@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Inceptum.Cqrs.Configuration
 {
-    public class RoutingDescriptor : IBoundContextDescriptor
+    public class RoutingDescriptor : IBoundedContextDescriptor
     {
         private readonly Dictionary<Type, string> m_EventRoutes;
         private readonly Dictionary<Type, string> m_CommandRoutes;
@@ -14,10 +14,10 @@ namespace Inceptum.Cqrs.Configuration
             m_EventRoutes = eventRoutes;
         }
 
-        public void Create(BoundContext boundContext)
+        public void Create(BoundedContext boundedContext)
         {
-            boundContext.CommandRoutes = m_CommandRoutes;
-            boundContext.EventRoutes = m_EventRoutes;
+            boundedContext.CommandRoutes = m_CommandRoutes;
+            boundedContext.EventRoutes = m_EventRoutes;
         }
     }
 }

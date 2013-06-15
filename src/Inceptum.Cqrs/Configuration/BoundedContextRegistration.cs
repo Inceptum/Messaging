@@ -6,16 +6,16 @@ using Inceptum.Messaging.Contract;
 
 namespace Inceptum.Cqrs.Configuration
 {
-    public class BoundContextRegistration
+    public class BoundedContextRegistration
     {
         readonly Dictionary<Type, string> m_EventsSubscriptions = new Dictionary<Type, string>();
         readonly Dictionary<Type, string> m_CommandsSubscriptions = new Dictionary<Type, string>();
-        readonly List<IBoundContextDescriptor> m_Configurators = new List<IBoundContextDescriptor>();
+        readonly List<IBoundedContextDescriptor> m_Configurators = new List<IBoundedContextDescriptor>();
         readonly Dictionary<Type, string> m_CommandRoutes=new Dictionary<Type, string>();
         readonly Dictionary<Type, string> m_EventRoutes=new Dictionary<Type, string>();
         private readonly string m_Name;
 
-        public BoundContextRegistration(string name)
+        public BoundedContextRegistration(string name)
         {
             m_Name = name;
             m_Configurators.Add(new NameDescriptor(name));
@@ -23,13 +23,13 @@ namespace Inceptum.Cqrs.Configuration
             m_Configurators.Add(new RoutingDescriptor(m_EventRoutes, m_CommandRoutes));
         }
 
-        internal BoundContext Apply(BoundContext boundContext)
+        internal BoundedContext Apply(BoundedContext boundedContext)
         {
             foreach (var descriptor in m_Configurators)
             {
-                descriptor.Create(boundContext);
+                descriptor.Create(boundedContext);
             }
-            return boundContext;
+            return boundedContext;
         }
 
         internal void AddSubscribedEvents(IEnumerable<Type> types, string endpoint)
