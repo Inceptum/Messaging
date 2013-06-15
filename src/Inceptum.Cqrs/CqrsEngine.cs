@@ -111,9 +111,9 @@ namespace Inceptum.Cqrs
                 }
             }
 
-            var uselessCommandsWirings = m_CommandDispatcher.KnownBoundedContexts.Where(kc => m_BoundedContexts.All(bc => bc.Name != kc)).ToArray();
+            var uselessCommandsWirings = m_CommandDispatcher.KnownBoundedContexts.Where(kbc => m_BoundedContexts.All(bc => bc.Name != kbc)).ToArray();
             if(uselessCommandsWirings.Any())
-                throw new ConfigurationException(string.Format("Command handlers registered for unknown bound contexts: {0} ",string.Join(",",uselessCommandsWirings)));
+                throw new ConfigurationErrorsException(string.Format("Command handlers registered for unknown bound contexts: {0}",string.Join(",",uselessCommandsWirings)));
             IsInitialized = true;
 
             var onInitialized = Initialized;

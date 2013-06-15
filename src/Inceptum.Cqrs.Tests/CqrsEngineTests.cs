@@ -54,9 +54,21 @@ namespace Inceptum.Cqrs.Tests
         [ExpectedException(typeof(ConfigurationErrorsException),ExpectedMessage = "Can not register System.String as command in bound context test, it is already registered as event")]
         public void BoundedContextCanNotHaveEvetAndCommandOfSameType()
         {
-            new CqrsEngine(BoundedContext.Local("test")
+            new CqrsEngine(BoundedContext.Local("bc")
                                                      .PublishingEvents(typeof(string)).To("eventExchange").RoutedTo("eventQueue")
                                                      .ListeningCommands(typeof (string)).On("commandExchange").RoutedFrom("commandQueue"));
+        }
+
+
+        [Test]
+        [ExpectedException(typeof(ConfigurationErrorsException), ExpectedMessage = "Command handlers registered for unknown bound contexts: unknownBc1,unknownBc2")]
+
+        public void HandlerForUnknownCommandTest()
+        {
+            var cqrsEngine = new CqrsEngine(BoundedContext.Local("bc").ListeningCommands(typeof (int)).On("commandExchange").RoutedFrom("commandQueue"));
+            cqrsEngine.WireCommandsHandler(new CommandsHandler(), "unknownBc1");
+            cqrsEngine.WireCommandsHandler(new CommandsHandler(), "unknownBc2");
+            cqrsEngine.Init();
         }
 
         [Test]
