@@ -1,6 +1,6 @@
 ﻿namespace Inceptum.Cqrs.Configuration
 {
-    internal interface IEventPublisher
+    public interface IEventPublisher
     {
         void PublishEvent(object @event);
     }
