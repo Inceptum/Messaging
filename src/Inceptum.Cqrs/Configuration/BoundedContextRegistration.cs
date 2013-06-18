@@ -44,7 +44,7 @@ namespace Inceptum.Cqrs.Configuration
             AddDescriptor(new RoutingDescriptor(m_EventRoutes, m_CommandRoutes));
         }
 
-        protected void AddDescriptor(IBoundedContextDescriptor descriptor)
+        protected internal void AddDescriptor(IBoundedContextDescriptor descriptor)
         {
             m_Dependencies = m_Dependencies.Concat(descriptor.GetDependedncies()).Distinct().ToArray();
             m_Configurators.Add(descriptor);

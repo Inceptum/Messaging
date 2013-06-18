@@ -16,16 +16,13 @@ using Inceptum.Messaging.Transports;
 
 namespace Inceptum.Cqrs
 {
-
-/*    public class CommitDispatcher : IDispatchCommits
+    internal class CommitDispatcher : IDispatchCommits
     {
-        private readonly ICqrsEngine m_CqrsEngine;
-        private readonly string m_BoundedContext;
+        private readonly EventDispatcher m_EventDispatcher;
 
-        public CommitDispatcher(ICqrsEngine cqrsEngine,string boundedContext)
+        public CommitDispatcher(EventDispatcher eventDispatcher)
         {
-            m_BoundedContext = boundedContext;
-            m_CqrsEngine = cqrsEngine;
+            m_EventDispatcher = eventDispatcher;
         }
 
         public void Dispose()
@@ -34,12 +31,12 @@ namespace Inceptum.Cqrs
 
         public void Dispatch(Commit commit)
         {
-            foreach (EventMessage @event in commit.Events)
+            foreach (var @event in commit.Events)
             {
-                m_CqrsEngine.PublishEvent(@event.Body,m_BoundedContext);
+                m_EventDispatcher.Dispacth(@event.Body);
             }
         }
-    }*/
+    }
 
     class InMemoryEndpointResolver:IEndpointResolver
     {

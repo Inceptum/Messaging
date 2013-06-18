@@ -22,11 +22,6 @@ namespace Inceptum.Cqrs.Configuration
             }
         }
 
-        protected override void Create(BoundedContext boundedContext)
-        {
-
-        }
-
         public override void Process(BoundedContext boundedContext, CqrsEngine cqrsEngine)
         {
             foreach (var process in ResolvedDependencies)
