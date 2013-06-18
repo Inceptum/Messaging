@@ -5,6 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using Castle.Core.Logging;
+using CommonDomain.Persistence;
+using EventStore;
 using Inceptum.Cqrs.Configuration;
 using Inceptum.Messaging;
 using Inceptum.Messaging.Contract;
@@ -22,6 +24,12 @@ namespace Inceptum.Cqrs.Tests
 
         public CommandHandler()
         {
+        }
+
+        public void Handle(decimal command, IEventPublisher eventPublisher, IRepository repository)
+        {
+            Console.WriteLine("command recived:" + command);
+            eventPublisher.PublishEvent(++counter);
         }
 
         public void Handle(string command,IEventPublisher eventPublisher)
@@ -117,6 +125,13 @@ namespace Inceptum.Cqrs.Tests
                                    .ListeningCommands(typeof (DateTime)).On("commands2").RoutedFromSameEndpoint()
                                    .WithCommandsHandler<CommandHandler>()
                                    .WithProcess<TestProcess>()
+                                   .WithEventStore(dispatchCommits => Wireup.Init()
+                                                                            .LogToOutputWindow()
+                                                                            .UsingInMemoryPersistence()
+                                                                            .InitializeStorageEngine()
+                                                                            .UsingJsonSerialization()
+                                                                            .UsingSynchronousDispatchScheduler()
+                                                                            .DispatchTo(dispatchCommits))
                 ,
                 LocalBoundedContext.Named("projections")
                                    .WithProjection<EventsListener>("local"),

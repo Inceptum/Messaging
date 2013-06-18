@@ -1,4 +1,6 @@
 ﻿using System;
+using EventStore;
+using EventStore.Dispatcher;
 
 namespace Inceptum.Cqrs.Configuration
 {
@@ -79,6 +81,12 @@ namespace Inceptum.Cqrs.Configuration
             where TProcess : IProcess
         {
             return WithProcess(typeof(TProcess));
+        }
+
+        public LocalBoundedContextRegistration WithEventStore(Func<IDispatchCommits, Wireup> configureEventStore)
+        {
+            AddDescriptor(new EventStoreDescriptor(configureEventStore));
+            return this;
         }
     }
 

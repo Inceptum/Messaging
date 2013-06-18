@@ -17,10 +17,6 @@ namespace Inceptum.Cqrs.Configuration
             m_FromBoundContext = fromBoundContext;
         }
 
-        protected override void Create(BoundedContext boundedContext)
-        {
-        }
-
         public override void Process(BoundedContext boundedContext, CqrsEngine cqrsEngine)
         {
             var lestenedBoundContext = cqrsEngine.BoundedContexts.FirstOrDefault(bc => bc.Name == m_FromBoundContext);

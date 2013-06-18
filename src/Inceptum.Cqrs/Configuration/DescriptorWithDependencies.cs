@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace Inceptum.Cqrs.Configuration
 {
-    public abstract class DescriptorWithDependencies : IBoundedContextDescriptor
+    abstract class DescriptorWithDependencies : IBoundedContextDescriptor
     {
         private readonly Type[] m_Dependedncies = new Type[0];
         private readonly Func<Func<Type, object>, IEnumerable<object>> m_ResolveDependedncies;

@@ -1,8 +1,9 @@
 ﻿using System;
+using CommonDomain.Persistence;
 
 namespace Inceptum.Cqrs.Configuration
 {
-    public class CommandsHandlerDescriptor : DescriptorWithDependencies
+    class CommandsHandlerDescriptor : DescriptorWithDependencies
     {
         public CommandsHandlerDescriptor(params object[] handlers):base(handlers)
         {
@@ -12,13 +13,15 @@ namespace Inceptum.Cqrs.Configuration
         {
 
         }
-
-
-        protected override void Create(BoundedContext boundedContext)
+        
+        public override void Process(BoundedContext boundedContext, CqrsEngine cqrsEngine)
         {
             foreach (var handler in ResolvedDependencies)
             {
-                boundedContext.CommandDispatcher.Wire(handler,new OptionalParameter<IEventPublisher>(boundedContext.EventsPublisher));
+                boundedContext.CommandDispatcher.Wire(handler,
+                                                      new OptionalParameter<IEventPublisher>(boundedContext.EventsPublisher),
+                                                      new OptionalParameter<IRepository>(boundedContext.Repository)
+                    );
             }
         }
 

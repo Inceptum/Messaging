@@ -38,6 +38,9 @@
     <Reference Include="Castle.Windsor">
       <HintPath>..\packages\Castle.Windsor.3.2.0\lib\net45\Castle.Windsor.dll</HintPath>
     </Reference>
+    <Reference Include="CommonDomain">
+      <HintPath>..\packages\CommonDomain.1.4.0\lib\net40\CommonDomain.dll</HintPath>
+    </Reference>
     <Reference Include="EventStore">
       <HintPath>..\packages\EventStore.3.0.11326.44\lib\net40\EventStore.dll</HintPath>
     </Reference>
