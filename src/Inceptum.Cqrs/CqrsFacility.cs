@@ -107,7 +107,7 @@ namespace Inceptum.Cqrs
 
             if (isSaga)
             {
-                var listenedBoundContexts = (string)(handler.ComponentModel.ExtendedProperties["ListenedBoundContexts"]);
+                var listenedBoundContexts = (string[])(handler.ComponentModel.ExtendedProperties["ListenedBoundContexts"]);
                 m_Sagas.Add(Saga.OfType(handler.ComponentModel.Services.First()).Listening(listenedBoundContexts));
             }
 
