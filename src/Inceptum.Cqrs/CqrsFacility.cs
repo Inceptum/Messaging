@@ -70,6 +70,7 @@ namespace Inceptum.Cqrs
             var isCommandsHandler = (bool)(handler.ComponentModel.ExtendedProperties["IsCommandsHandler"] ?? false);
             var isProjection = (bool)(handler.ComponentModel.ExtendedProperties["IsProjection"] ?? false);
             var isSaga = (bool)(handler.ComponentModel.ExtendedProperties["isSaga"] ?? false);
+            var isProcess = (bool)(handler.ComponentModel.ExtendedProperties["isProcess"] ?? false);
 
             if (isCommandsHandler && isProjection)
                 throw new InvalidOperationException("Component can not be projection and commands handler simultaneousely");
@@ -109,6 +110,18 @@ namespace Inceptum.Cqrs
             {
                 var listenedBoundContexts = (string)(handler.ComponentModel.ExtendedProperties["ListenedBoundContexts"]);
                 m_Sagas.Add(Saga.OfType(handler.ComponentModel.Services.First()).Listening(listenedBoundContexts));
+            }
+
+            if (isProcess)
+            {
+                var processFor = (string)(handler.ComponentModel.ExtendedProperties["ProcessFor"]);
+                var registration = m_BoundedContexts.FirstOrDefault(bc => bc.Name == processFor);
+                if (registration == null)
+                    throw new ComponentRegistrationException(string.Format("Bounded context {0} was not registered", processFor));
+                if (registration is RemoteBoundedContextRegistration)
+                    throw new ComponentRegistrationException(string.Format("Process can be registered only for local bounded contexts. Bounded context {0} is remote", processFor));
+
+                (registration as LocalBoundedContextRegistration).WithProcess(handler.ComponentModel.Services.First());
             }
 
         }

@@ -55,7 +55,10 @@ namespace Inceptum.Cqrs
         private readonly IMessagingEngine m_MessagingEngine;
         private readonly CompositeDisposable m_Subscription=new CompositeDisposable();
         private readonly IEndpointResolver m_EndpointResolver;
-        internal List<BoundedContext> BoundedContexts { get; private set; }
+        private readonly List<BoundedContext> m_BoundedContexts;
+        internal List<BoundedContext> BoundedContexts {
+            get { return m_BoundedContexts; }
+        }
         private readonly IRegistration[] m_Registrations;
         private readonly Func<Type,object> m_DependencyResolver;
 
@@ -82,7 +85,7 @@ namespace Inceptum.Cqrs
             m_Registrations = registrations;
             m_EndpointResolver = endpointResolver;
             m_MessagingEngine = messagingEngine;
-            BoundedContexts=new List<BoundedContext>();
+            m_BoundedContexts=new List<BoundedContext>();
             init();
         }
 
@@ -116,6 +119,11 @@ namespace Inceptum.Cqrs
                     subscribe(endpoint, command =>context.CommandDispatcher.Dispacth(command), t=>{throw new InvalidOperationException("Unknown command received: "+t);}, commandsSubscription.Value.ToArray());
                 }
             }
+
+            foreach (var boundedContext in BoundedContexts)
+            {
+                boundedContext.Processes.ForEach(p => p.Start(this, boundedContext.EventsPublisher));
+            }
         }
 
         private void subscribe(Endpoint endpoint, Action<object> callback, Action<string> unknownTypeCallback, params Type[] knownTypes)
@@ -126,6 +134,17 @@ namespace Inceptum.Cqrs
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Dispose()
         {
+            foreach (var boundedContext in BoundedContexts)
+            {
+                if (boundedContext != null && boundedContext.Processes != null)
+                {
+                    foreach (var process in boundedContext.Processes)
+                    {
+                        process.Dispose();
+                    }
+                }
+            }
+
             if (m_Subscription != null)
                 m_Subscription.Dispose();
         }
@@ -142,13 +161,11 @@ namespace Inceptum.Cqrs
             }
             m_MessagingEngine.Send(command, m_EndpointResolver.Resolve(endpoint));
         }
- 
 
         internal void PublishEvent(object @event,string endpoint)
         {
             m_MessagingEngine.Send(@event, m_EndpointResolver.Resolve(endpoint));
         }
-
 
         internal object ResolveDependency(Type type)
         {

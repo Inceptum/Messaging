@@ -12,6 +12,7 @@ namespace Inceptum.Cqrs.Configuration
         internal EventsPublisher EventsPublisher { get; private set; }
         internal CommandDispatcher CommandDispatcher { get; private set; }
         internal EventDispatcher EventDispatcher { get; private set; }
+        internal List<IProcess> Processes { get; private set; }
         public string Name { get; set; }
 
         internal BoundedContext(CqrsEngine cqrsEngine,string name)
@@ -20,6 +21,7 @@ namespace Inceptum.Cqrs.Configuration
             EventsPublisher = new EventsPublisher(cqrsEngine, this);
             CommandDispatcher = new CommandDispatcher(Name);
             EventDispatcher = new EventDispatcher(Name);
+            Processes = new List<IProcess>();
         }
          
     }
