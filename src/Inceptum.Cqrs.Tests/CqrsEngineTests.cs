@@ -110,30 +110,49 @@ namespace Inceptum.Cqrs.Tests
         [Test]
         public void Method_Scenario_Expected()
         {
-            var engine = new CqrsEngine(
-                            LocalBoundedContext.Named("local")
-                                .PublishingEvents(typeof (int)).To("events").RoutedTo("events")
-                                .ListeningCommands(typeof(string)).On("commands1").RoutedFromSameEndpoint()
-                                .ListeningCommands(typeof(DateTime)).On("commands2").RoutedFromSameEndpoint()
-                                .WithCommandsHandler<CommandHandler>(),
-                            LocalBoundedContext.Named("projections")
-                                .WithProjection<EventsListener>("local"),
-                            RemoteBoundedContext.Named("remote")
-                                .ListeningCommands(typeof(object)).On("remoteCommands")
-                                .PublishingEvents(typeof(int)).To("remoteEvents"),
-                            Saga<TestSaga>.Listening("local","projections"),
-                            Saga.Instance(new TestSaga()).Listening("local","projections")
-                            );
-/*
-                                                                .WithEventSource()
-                                                                .WithAggregates()
-                                                                .WithDocumentStore());
-             * */
+            using (var engine = new CqrsEngine(
+                LocalBoundedContext.Named("local")
+                                   .PublishingEvents(typeof (int)).To("events").RoutedTo("events")
+                                   .ListeningCommands(typeof (string)).On("commands1").RoutedFromSameEndpoint()
+                                   .ListeningCommands(typeof (DateTime)).On("commands2").RoutedFromSameEndpoint()
+                                   .WithCommandsHandler<CommandHandler>()
+                                   .WithProcess<TestProcess>()
+                ,
+                LocalBoundedContext.Named("projections")
+                                   .WithProjection<EventsListener>("local"),
+                RemoteBoundedContext.Named("remote")
+                                    .ListeningCommands(typeof (object)).On("remoteCommands")
+                                    .PublishingEvents(typeof (int)).To("remoteEvents"),
+                Saga<TestSaga>.Listening("local", "projections"),
+                Saga.Instance(new TestSaga()).Listening("local", "projections")
+                ))
+            {
+                /*
+                                                                                .WithEventSource()
+                                                                                .WithAggregates()
+                                                                                .WithDocumentStore());
+                             * */
 
-            engine.SendCommand("test","local");
-            engine.SendCommand(DateTime.Now,"local");
+                engine.SendCommand("test", "local");
+                engine.SendCommand(DateTime.Now, "local");
 
-            Thread.Sleep(500);
+                Thread.Sleep(500);
+                Console.WriteLine("Disposing...");
+            }
+            Console.WriteLine("Dispose completed.");
+        }
+    }
+
+    public class TestProcess:IProcess
+    {
+        public void Start(ICqrsEngine cqrsEngine, IEventPublisher eventPublisher)
+        {
+            Console.WriteLine("Test process started");
+        }
+
+        public void Dispose()
+        {
+            Console.WriteLine("Test process disposed");
         }
     }
 

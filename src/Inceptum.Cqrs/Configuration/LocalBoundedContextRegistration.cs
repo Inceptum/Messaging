@@ -1,5 +1,4 @@
 ﻿using System;
-using Inceptum.Messaging.Contract;
 
 namespace Inceptum.Cqrs.Configuration
 {
@@ -64,12 +63,24 @@ namespace Inceptum.Cqrs.Configuration
             return new LocalPublishingEventsDescriptor(types, this);
         }
 
+        public LocalBoundedContextRegistration WithProcess(object process)
+        {
+            AddDescriptor(new LocalProcessDescriptor(process));
+            return this;
+        }
 
+        public LocalBoundedContextRegistration WithProcess(Type process)
+        {
+            AddDescriptor(new LocalProcessDescriptor(process));
+            return this;
+        }
 
+        public LocalBoundedContextRegistration WithProcess<TProcess>()
+            where TProcess : IProcess
+        {
+            return WithProcess(typeof(TProcess));
+        }
     }
-
-
-
 
     public class LocalListeningCommandsDescriptor
     {

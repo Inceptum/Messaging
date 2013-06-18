@@ -30,5 +30,14 @@ namespace Castle.MicroKernel.Registration
                     IsSaga = true
                 });
         }
+
+        public static ComponentRegistration<T> AsProcess<T>(this ComponentRegistration<T> registration, string localBoundedContext) where T : class
+        {
+            return registration.ExtendedProperties(new
+                {
+                    ProcessFor = localBoundedContext,
+                    IsProcess = true
+                });
+        }
     }
 }
