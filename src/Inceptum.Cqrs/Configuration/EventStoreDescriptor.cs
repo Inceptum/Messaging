@@ -41,7 +41,7 @@ namespace Inceptum.Cqrs.Configuration
         {
             public IAggregate Build(Type type, Guid id, IMemento snapshot)
             {
-                ConstructorInfo constructor = type.GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[] {typeof (Guid), typeof (IMemento)}, null);
+                ConstructorInfo constructor = type.GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, new Type[] { typeof(Guid), typeof(IMemento) }, null);
                 return constructor.Invoke(new object[] {id, snapshot}) as IAggregate;
             }
         }
