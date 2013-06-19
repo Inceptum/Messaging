@@ -27,7 +27,7 @@ namespace Inceptum.Cqrs.Configuration
 
         public void Create(BoundedContext boundedContext, Func<Type, object> resolve)
         {
-            var eventStore = m_ConfigureEventStore(new CommitDispatcher(boundedContext.EventDispatcher)).Build();
+            var eventStore = m_ConfigureEventStore(new CommitDispatcher(boundedContext.EventsPublisher)).Build();
 
             boundedContext.Repository = new EventStoreRepository(eventStore, new AggregateFactory(), new ConflictDetector());
         }
