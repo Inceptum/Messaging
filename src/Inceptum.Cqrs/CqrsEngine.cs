@@ -18,11 +18,11 @@ namespace Inceptum.Cqrs
 {
     internal class CommitDispatcher : IDispatchCommits
     {
-        private readonly EventDispatcher m_EventDispatcher;
+        private readonly IEventPublisher m_EventPublisher;
 
-        public CommitDispatcher(EventDispatcher eventDispatcher)
+        public CommitDispatcher(IEventPublisher eventPublisher)
         {
-            m_EventDispatcher = eventDispatcher;
+            m_EventPublisher = eventPublisher;
         }
 
         public void Dispose()
@@ -33,7 +33,7 @@ namespace Inceptum.Cqrs
         {
             foreach (var @event in commit.Events)
             {
-                m_EventDispatcher.Dispacth(@event.Body);
+                m_EventPublisher.PublishEvent(@event);
             }
         }
     }
