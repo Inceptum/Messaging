@@ -16,7 +16,7 @@ using Inceptum.Messaging.Transports;
 
 namespace Inceptum.Cqrs
 {
-    internal class CommitDispatcher : IDispatchCommits
+    class CommitDispatcher : IDispatchCommits
     {
         private readonly IEventPublisher m_EventPublisher;
 
@@ -33,7 +33,7 @@ namespace Inceptum.Cqrs
         {
             foreach (var @event in commit.Events)
             {
-                m_EventPublisher.PublishEvent(@event);
+                m_EventPublisher.PublishEvent(@event.Body);
             }
         }
     }
