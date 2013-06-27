@@ -55,7 +55,8 @@ namespace Inceptum.Messaging.RabbitMq
                 Action<IBasicProperties, byte[]> callback;
                 lock (m_Callbacks)
                 {
-                    m_CallBackAdded.Reset();
+                    if(waitForCallback)
+                        m_CallBackAdded.Reset();
                     m_Callbacks.TryGetValue(properties.Type, out callback);
                 }
                 if (callback != null)

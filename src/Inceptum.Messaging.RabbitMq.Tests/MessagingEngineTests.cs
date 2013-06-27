@@ -12,7 +12,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
     public class MessagingEngineTests
     {
         [Test]
-        [Timeout(5000)]
+        /*[Timeout(5000)]*/
         public void UnknownMessageTest()
         {
             ITransportResolver transportResolver = new TransportResolver(new Dictionary<string, TransportInfo>()

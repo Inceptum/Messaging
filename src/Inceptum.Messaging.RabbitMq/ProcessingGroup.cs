@@ -128,12 +128,13 @@ namespace Inceptum.Messaging.RabbitMq
             {
                 consumer = new SharedConsumer(m_Model);
                 m_Consumers[destination] = consumer;
+                lock (m_Model)
+                    m_Model.BasicConsume(destination, false, consumer);
             }
 
             consumer.AddCallback(callback, messageType);
 
-            lock (m_Model)
-                m_Model.BasicConsume(destination, false, consumer);
+          
             return Disposable.Create(() =>
                 {
                     lock (m_Consumers)
