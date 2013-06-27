@@ -17,7 +17,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
         {
             ITransportResolver transportResolver = new TransportResolver(new Dictionary<string, TransportInfo>()
                 {
-                    {"main",new TransportInfo("localhost", "guest", "guest", "None", "RabbitMq")}
+                    {"main",new TransportInfo("sr-tls01-s01.test-s02.uniservers.ru", "guest", "guest", "None", "RabbitMq")}
                 });
             var eq = new Endpoint("main", "_TEST_QUEUE", true, "json");
             var ee = new Endpoint("main", "_TEST_EXCHANGE", true, "json");
