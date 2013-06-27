@@ -179,7 +179,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
                 Assert.That(type1Received.WaitOne(500), Is.True, "Message of subscribed type was not delivered");
                 processingGroup.Send(TEST_EXCHANGE, new BinaryMessage {Bytes = new byte[] {0x0, 0x1, 0x2}, Type = "type2"}, 0);
                 //Give time for type2 message to be  pushed back by mq
-                Thread.Sleep(100);
+                Thread.Sleep(500);
                 processingGroup.Send(TEST_EXCHANGE, new BinaryMessage {Bytes = new byte[] {0x0, 0x1, 0x2}, Type = "type1"}, 0);
                 Assert.That(type1Received.WaitOne(500), Is.False, "Message of not subscribed type has not paused processing");
                 processingGroup.Subscribe(TEST_QUEUE, message => type2Received.Set(), "type2");
