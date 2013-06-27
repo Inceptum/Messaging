@@ -49,6 +49,7 @@ namespace Inceptum.Messaging.RabbitMq
                                                 string routingKey,
                                                 IBasicProperties properties, byte[] body)
         {
+            bool waitForCallback = true;
             while (true)
             {
                 Action<IBasicProperties, byte[]> callback;
@@ -60,7 +61,7 @@ namespace Inceptum.Messaging.RabbitMq
                 {
                     try
                     {
-                        callback(properties,body);
+                        callback(properties, body);
                         Model.BasicAck(deliveryTag, false);
                     }
                     catch (Exception e)
@@ -69,12 +70,16 @@ namespace Inceptum.Messaging.RabbitMq
                     }
                     return;
                 }
-                if (WaitHandle.WaitAny(new WaitHandle[] {m_CallBackAdded, m_Stop}) == 1)
+
+                if (!waitForCallback || WaitHandle.WaitAny(new WaitHandle[] { m_CallBackAdded, m_Stop }) == 1)
                 {
-                    //subscription is canceling, returning message of unknown type to queue
+                    //The registered callback is not the one we are waiting for. (Nack message for later redelivery and free processing thread for it to process other callback registration)
+                    //or subscription is canceling, returning message of unknown type to queue
                     Model.BasicNack(deliveryTag, false,true);
                     break;
                 }
+                    
+                waitForCallback = false;
             } 
         }
 
