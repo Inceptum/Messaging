@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using Inceptum.Messaging.Contract;
 using NUnit.Framework;
 
@@ -11,9 +12,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
     public class MessagingEngineTests
     {
         [Test]
-#if !DEBUG
-        [NUnit.Framework.Timeout(5000)]
-#endif
+        [Timeout(5000)]
         public void UnknownMessageTest()
         {
             ITransportResolver transportResolver = new TransportResolver(new Dictionary<string, TransportInfo>()
@@ -22,7 +21,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
                 });
             var eq = new Endpoint("main", "_TEST_QUEUE", true, "json");
             var ee = new Endpoint("main", "_TEST_EXCHANGE", true, "json");
-            
+           
             using (var me = new MessagingEngine(transportResolver, new RabbitMqTransportFactory()))
             {
                 me.Send("string value", ee);
@@ -34,6 +33,9 @@ namespace Inceptum.Messaging.RabbitMq.Tests
                 me.Subscribe<double>(eq, Console.WriteLine);
                 me.Subscribe<string>(eq, Console.WriteLine);
             }
-        }
+            Thread.Sleep(200);
+        } 
+        
+        
     }
 }
