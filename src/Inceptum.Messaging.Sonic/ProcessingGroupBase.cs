@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Runtime.CompilerServices;
+using Inceptum.Messaging.Contract;
 using Inceptum.Messaging.Transports;
 using Sonic.Jms;
 using QueueConnection = Sonic.Jms.QueueConnection;
@@ -76,11 +77,12 @@ namespace Inceptum.Messaging.Sonic
 
                 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public IDisposable Subscribe(string destination, Action<BinaryMessage> callback, string messageType)
+        public IDisposable Subscribe(string destination, CallbackDelegate<BinaryMessage> callback, string messageType)
         {
             ensureSessionIsCreated();
 
-            return subscribe(createDestination(destination), message => callback(toBinaryMessage(message)), messageType);
+            //NOTE: Sonic acknowledge management is not implemented
+            return subscribe(createDestination(destination), (message) => callback(toBinaryMessage(message), b => { }), messageType);
         }
 
         private BinaryMessage toBinaryMessage(Message sonicMessage)

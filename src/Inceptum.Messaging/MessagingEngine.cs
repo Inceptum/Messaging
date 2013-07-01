@@ -134,6 +134,14 @@ namespace Inceptum.Messaging
 
 
 		public IDisposable Subscribe<TMessage>(Endpoint endpoint, Action<TMessage> callback)
+		{
+            return Subscribe(endpoint, (TMessage message, Action<bool> acknowledge) =>
+		        {
+		            callback(message);
+		            acknowledge(true);
+		        });
+		}
+        public IDisposable Subscribe<TMessage>(Endpoint endpoint, CallbackDelegate<TMessage> callback)
         {
 			if (endpoint.Destination == null) throw new ArgumentException("Destination can not be null");
             if (m_Disposing.WaitOne(0))
@@ -143,7 +151,7 @@ namespace Inceptum.Messaging
             {
                 try
                 {
-                    return subscribe(endpoint, m => processMessage(m, typeof(TMessage), message => callback((TMessage)message), endpoint), endpoint.SharedDestination ? getMessageType(typeof(TMessage)) : null);
+                    return subscribe(endpoint, (m,ack) => processMessage(m,ack, typeof(TMessage), (message, acknowledge) => callback((TMessage)message,acknowledge), endpoint), endpoint.SharedDestination ? getMessageType(typeof(TMessage)) : null);
                 }
                 catch (Exception e)
                 {
@@ -155,6 +163,15 @@ namespace Inceptum.Messaging
 
         public IDisposable Subscribe(Endpoint endpoint, Action<object> callback, Action<string> unknownTypeCallback, params Type[] knownTypes)
         {
+            return Subscribe(endpoint, (message, acknowledge) =>
+                {
+                    callback(message);
+                    acknowledge(true);
+                }, unknownTypeCallback, knownTypes);
+
+        }
+        public IDisposable Subscribe(Endpoint endpoint, CallbackDelegate<object> callback, Action<string> unknownTypeCallback, params Type[] knownTypes)
+        {
             if (endpoint.Destination == null) throw new ArgumentException("Destination can not be null");
             if (m_Disposing.WaitOne(0))
                 throw new InvalidOperationException("Engine is disposing");
@@ -165,7 +182,7 @@ namespace Inceptum.Messaging
                 {
                     var dictionary = knownTypes.ToDictionary(getMessageType);
 
-                    return subscribe(endpoint, m =>
+                    return subscribe(endpoint, (m,ack) =>
                         {
                             Type messageType;
                             if (!dictionary.TryGetValue(m.Type, out messageType))
@@ -173,7 +190,7 @@ namespace Inceptum.Messaging
                                 unknownTypeCallback(m.Type);
                                 return;
                             }
-                            processMessage(m, messageType, callback, endpoint);
+                            processMessage(m,ack, messageType, callback, endpoint);
                         }, null);
                 }
                 catch (Exception e)
@@ -432,7 +449,7 @@ namespace Inceptum.Messaging
         }
          
 
-        private IDisposable subscribe(Endpoint endpoint,Action<BinaryMessage> callback, string messageType)
+        private IDisposable subscribe(Endpoint endpoint,CallbackDelegate<BinaryMessage> callback, string messageType)
         {
             var processingGroup = m_TransportManager.GetProcessingGroup(endpoint.TransportId , endpoint.Destination);
             IDisposable subscription = processingGroup.Subscribe(endpoint.Destination, callback, messageType);
@@ -463,7 +480,7 @@ namespace Inceptum.Messaging
 
 
 
-        private void processMessage(BinaryMessage binaryMessage, Type type, Action<object> callback, Endpoint endpoint)
+        private void processMessage(BinaryMessage binaryMessage,Action<bool> acknowledge, Type type, CallbackDelegate<object> callback, Endpoint endpoint)
         {
             object message = null;
             try
@@ -478,7 +495,7 @@ namespace Inceptum.Messaging
 
             try
             {
-                callback(message);
+                callback(message, acknowledge);
             }
             catch (Exception e)
             {

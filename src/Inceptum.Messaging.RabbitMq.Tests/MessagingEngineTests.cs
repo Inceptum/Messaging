@@ -31,7 +31,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
             {
                 me.Subscribe<int>(eq, Console.WriteLine);
                 me.Subscribe<double>(eq, Console.WriteLine);
-                me.Subscribe<string>(eq, Console.WriteLine);
+                me.Subscribe<string>(eq, s => Console.WriteLine(s));
             }
             Thread.Sleep(200);
         } 

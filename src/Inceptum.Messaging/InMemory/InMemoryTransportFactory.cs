@@ -5,6 +5,7 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading;
+using Inceptum.Messaging.Contract;
 using Inceptum.Messaging.Transports;
 
 namespace Inceptum.Messaging.InMemory
@@ -112,9 +113,11 @@ namespace Inceptum.Messaging.InMemory
             m_Transport[destination].OnNext(message);
         }
 
-        public IDisposable Subscribe(string destination, Action<BinaryMessage> callback, string messageType)
+        public IDisposable Subscribe(string destination, CallbackDelegate<BinaryMessage> callback, string messageType)
         {
-            var subscribe = m_Transport[destination].Where(m => m.Type == messageType || messageType == null).ObserveOn(m_Scheduler).Subscribe(callback);
+            var subscribe = m_Transport[destination].Where(m => m.Type == messageType || messageType == null).ObserveOn(m_Scheduler)
+                //NOTE:InMemory messaging desnot support acknowledge 
+                .Subscribe(message => callback(message, b => { }));
             m_Subscriptions.Add(subscribe);
             return subscribe;
         }
@@ -124,7 +127,7 @@ namespace Inceptum.Messaging.InMemory
             var replyTo = Guid.NewGuid().ToString();
             var responseTopic = m_Transport.CreateTemporary(replyTo);
 
-            var request = new RequestHandle(callback, responseTopic.Dispose, cb => Subscribe(replyTo, cb, null));
+            var request = new RequestHandle(callback, responseTopic.Dispose, cb => Subscribe(replyTo, (binaryMessage, acknowledge) => cb(binaryMessage), null));
             message.Headers["ReplyTo"] = replyTo;
             Send(destination,message,0);
             return request;
@@ -132,7 +135,7 @@ namespace Inceptum.Messaging.InMemory
 
         public IDisposable RegisterHandler(string destination, Func<BinaryMessage, BinaryMessage> handler, string messageType)
         {
-            var subscription = Subscribe(destination, request =>
+            var subscription = Subscribe(destination, (request,acknowledge) =>
                 {
                     string replyTo;
                     request.Headers.TryGetValue("ReplyTo",out replyTo);
