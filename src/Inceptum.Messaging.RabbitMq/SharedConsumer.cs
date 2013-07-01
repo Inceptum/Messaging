@@ -9,7 +9,7 @@ namespace Inceptum.Messaging.RabbitMq
 {
     public class SharedConsumer : DefaultBasicConsumer,IDisposable
     {
-        private readonly Dictionary<string, Action<IBasicProperties, byte[]>> m_Callbacks = new Dictionary<string, Action<IBasicProperties, byte[]>>();
+        private readonly Dictionary<string, Action<IBasicProperties, byte[], Action<bool>>> m_Callbacks= new Dictionary<string, Action<IBasicProperties, byte[], Action<bool>>>();
         private readonly AutoResetEvent m_CallBackAdded = new AutoResetEvent(false);
         private readonly ManualResetEvent m_Stop = new ManualResetEvent(false);
 
@@ -17,7 +17,7 @@ namespace Inceptum.Messaging.RabbitMq
         {
         }
 
-        public void AddCallback(Action<IBasicProperties, byte[]> callback, string messageType)
+        public void AddCallback(Action<IBasicProperties, byte[], Action<bool>> callback, string messageType)
         {
             if (callback == null) throw new ArgumentNullException("callback");
             if (string.IsNullOrEmpty(messageType)) throw new ArgumentNullException("messageType");
@@ -52,7 +52,7 @@ namespace Inceptum.Messaging.RabbitMq
             bool waitForCallback = true;
             while (true)
             {
-                Action<IBasicProperties, byte[]> callback;
+                Action<IBasicProperties, byte[], Action<bool>> callback;
                 lock (m_Callbacks)
                 {
                     if(waitForCallback)
@@ -63,8 +63,15 @@ namespace Inceptum.Messaging.RabbitMq
                 {
                     try
                     {
-                        callback(properties, body);
-                        Model.BasicAck(deliveryTag, false);
+                        callback(properties, body,ack =>
+                            {
+                                if(ack)
+                                    Model.BasicAck(deliveryTag, false);
+                                else
+                                    //TODO: allow callnack to decide whether to redeliver
+                                    Model.BasicNack(deliveryTag, false,true);
+                            });
+                        
                     }
                     catch (Exception e)
                     {

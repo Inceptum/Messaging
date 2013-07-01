@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using Inceptum.Messaging.Contract;
 using Inceptum.Messaging.Transports;
 using Sonic.Jms;
 
@@ -28,7 +29,7 @@ namespace Inceptum.Messaging.Sonic
                 m_Instance.Dispose();
         }
 
-        public IDisposable Subscribe(string destination, Action<BinaryMessage> callback, string messageType)
+        public IDisposable Subscribe(string destination, CallbackDelegate<BinaryMessage> callback, string messageType)
         {
             ensureProcessingGroupIsCreated(destination);
             return m_Instance.Subscribe(destination, callback, messageType);

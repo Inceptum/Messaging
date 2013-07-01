@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Reactive.Disposables;
+using Inceptum.Messaging.Contract;
 using Inceptum.Messaging.Transports;
 using RabbitMQ.Client;
 
@@ -61,7 +62,10 @@ namespace Inceptum.Messaging.RabbitMq
             string queue;
             lock(m_Model)
                 queue = m_Model.QueueDeclare().QueueName;
-            var request = new RequestHandle(callback, () => { }, cb => Subscribe(queue, cb, null));
+            var request = new RequestHandle(callback, () => { }, cb => Subscribe(queue, (binaryMessage, acknowledge) => { 
+                cb(binaryMessage);
+                acknowledge(true);
+            }, null));
             m_Subscriptions.Add(request);
 // ReSharper disable ImplicitlyCapturedClosure
             send(destination, message, p => p.ReplyTo = new PublicationAddress("direct", "", queue).ToString());
@@ -73,7 +77,7 @@ namespace Inceptum.Messaging.RabbitMq
         public IDisposable RegisterHandler(string destination, Func<BinaryMessage, BinaryMessage> handler, string messageType)
         {
            
-            var subscription = subscribe(destination, (properties, bytes) =>
+            var subscription = subscribe(destination, (properties, bytes,acknowledge) =>
             {
                 var correlationId = properties.CorrelationId;
                 var responseBytes = handler(toBinaryMessage(properties, bytes));
@@ -84,14 +88,15 @@ namespace Inceptum.Messaging.RabbitMq
                         if (correlationId != null)
                             p.CorrelationId = correlationId;
                     });
+                acknowledge(true);
             }, messageType);
 
             return subscription;
         }
 
-        public IDisposable Subscribe(string destination, Action<BinaryMessage> callback, string messageType)
+        public IDisposable Subscribe(string destination, CallbackDelegate<BinaryMessage> callback, string messageType)
         {
-            return subscribe(destination, (properties, bytes) => callback(toBinaryMessage(properties, bytes)),messageType);
+            return subscribe(destination, (properties, bytes, acknowledge) => callback(toBinaryMessage(properties, bytes), acknowledge), messageType);
         }
 
         private BinaryMessage toBinaryMessage(IBasicProperties properties, byte[] bytes)
@@ -99,7 +104,7 @@ namespace Inceptum.Messaging.RabbitMq
             return new BinaryMessage {Bytes = bytes, Type = properties.Type};
         }
 
-        private IDisposable subscribe(string destination, Action<IBasicProperties, byte[]> callback, string messageType)
+        private IDisposable subscribe(string destination, Action<IBasicProperties, byte[],Action<bool>> callback, string messageType)
         {
 
             lock (m_Consumers)
@@ -122,7 +127,7 @@ namespace Inceptum.Messaging.RabbitMq
             }
         }
         
-        private IDisposable subscribeShared(string destination, Action<IBasicProperties, byte[]> callback, string messageType, SharedConsumer consumer)
+        private IDisposable subscribeShared(string destination, Action<IBasicProperties, byte[], Action<bool>> callback, string messageType, SharedConsumer consumer)
         {
             if (consumer == null)
             {
@@ -145,7 +150,7 @@ namespace Inceptum.Messaging.RabbitMq
                 });
         }
 
-        private IDisposable subscribeNonShared(string destination, Action<IBasicProperties, byte[]> callback)
+        private IDisposable subscribeNonShared(string destination, Action<IBasicProperties, byte[], Action<bool>> callback)
         {
             var consumer = new Consumer(m_Model, callback);
             lock (m_Model)

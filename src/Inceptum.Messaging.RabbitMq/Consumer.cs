@@ -5,9 +5,9 @@ namespace Inceptum.Messaging.RabbitMq
 {
     class Consumer:DefaultBasicConsumer,IDisposable
     {
-        private readonly Action<IBasicProperties, byte[]> m_Callback;
+        private readonly Action<IBasicProperties, byte[], Action<bool>> m_Callback;
 
-        public Consumer(IModel model, Action<IBasicProperties, byte[]> callback)
+        public Consumer(IModel model, Action<IBasicProperties, byte[], Action<bool>> callback)
             : base(model)
         {
             if (callback == null) throw new ArgumentNullException("callback");
@@ -20,8 +20,14 @@ namespace Inceptum.Messaging.RabbitMq
         {
             try
             {
-                m_Callback(properties,body);
-                Model.BasicAck(deliveryTag, false);
+                m_Callback(properties, body, ack =>
+                {
+                    if (ack)
+                        Model.BasicAck(deliveryTag, false);
+                    else
+                        //TODO: allow callnack to decide whether to redeliver
+                        Model.BasicNack(deliveryTag, false, true);
+                });
             }
             catch (Exception e)
             {

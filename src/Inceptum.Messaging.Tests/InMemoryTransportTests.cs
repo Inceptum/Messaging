@@ -29,13 +29,13 @@ namespace Inceptum.Messaging.Tests
                 var delivered1=new ManualResetEvent(false);
                 var delivered2=new ManualResetEvent(false);
                 IProcessingGroup processingGroup = transport.CreateProcessingGroup(null);
-                processingGroup.Subscribe(TEST_TOPIC, message =>
+                processingGroup.Subscribe(TEST_TOPIC, (message,ack) =>
                     {
                         delivered1.Set();
                         Console.WriteLine("subscription1: message:" + message.Type);
                     }, typeof(byte[]).Name);
-                
-                processingGroup.Subscribe(TEST_TOPIC, message =>
+
+                processingGroup.Subscribe(TEST_TOPIC, (message, ack) =>
                     {
                         delivered2.Set();
                         Console.WriteLine("subscription2: message:" + message.Type);
@@ -83,7 +83,7 @@ namespace Inceptum.Messaging.Tests
             {
                 var ev = new AutoResetEvent(false);
                 IProcessingGroup processingGroup = transport.CreateProcessingGroup(null);
-                IDisposable subscription = processingGroup.Subscribe(TEST_TOPIC, message => ev.Set(), null);
+                IDisposable subscription = processingGroup.Subscribe(TEST_TOPIC, (message, ack) => ev.Set(), null);
                 processingGroup.Send(TEST_TOPIC, new BinaryMessage { Bytes = new byte[] { 0x0, 0x1, 0x2 }, Type = null }, 0);
                 Assert.That(ev.WaitOne(500), Is.True, "Message was not delivered");
                 subscription.Dispose();
@@ -98,7 +98,7 @@ namespace Inceptum.Messaging.Tests
             int deliveredMessagesCount = 0;
             var transport = new InMemoryTransport();
                 IProcessingGroup processingGroup = transport.CreateProcessingGroup(null);
-                processingGroup.Subscribe(TEST_TOPIC, message =>
+                processingGroup.Subscribe(TEST_TOPIC, (message, ack) =>
                     {
                         delivered.WaitOne();
                         Interlocked.Increment(ref deliveredMessagesCount);
