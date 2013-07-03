@@ -19,6 +19,8 @@ namespace Inceptum.Messaging.RabbitMq
         {
             m_Connection = connection;
             m_Model = m_Connection.CreateModel();
+            //No limit to prefetch size, but limit prefetch to 1 message (actually no prefetch since this one message is the message being processed). 
+            m_Model.BasicQos(0,1,false);
             connection.ConnectionShutdown += (connection1, reason) =>
                 {
                     lock (m_Consumers)
