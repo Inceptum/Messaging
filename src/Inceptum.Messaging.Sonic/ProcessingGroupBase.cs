@@ -77,7 +77,7 @@ namespace Inceptum.Messaging.Sonic
 
                 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public IDisposable Subscribe(string destination, CallbackDelegate<BinaryMessage> callback, string messageType)
+        public IDisposable Subscribe(string destination, Action<BinaryMessage, Action<bool>> callback, string messageType)
         {
             ensureSessionIsCreated();
 

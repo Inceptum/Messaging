@@ -96,7 +96,7 @@ namespace Inceptum.Messaging.RabbitMq
             return subscription;
         }
 
-        public IDisposable Subscribe(string destination, CallbackDelegate<BinaryMessage> callback, string messageType)
+        public IDisposable Subscribe(string destination, Action<BinaryMessage, Action<bool>> callback, string messageType)
         {
             return subscribe(destination, (properties, bytes, acknowledge) => callback(toBinaryMessage(properties, bytes), acknowledge), messageType);
         }
