@@ -113,7 +113,7 @@ namespace Inceptum.Messaging.InMemory
             m_Transport[destination].OnNext(message);
         }
 
-        public IDisposable Subscribe(string destination, CallbackDelegate<BinaryMessage> callback, string messageType)
+        public IDisposable Subscribe(string destination, Action<BinaryMessage, Action<bool>> callback, string messageType)
         {
             var subscribe = m_Transport[destination].Where(m => m.Type == messageType || messageType == null).ObserveOn(m_Scheduler)
                 //NOTE:InMemory messaging desnot support acknowledge 

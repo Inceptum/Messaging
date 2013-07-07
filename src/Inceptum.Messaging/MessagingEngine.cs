@@ -27,7 +27,9 @@ namespace Inceptum.Messaging
         private ILogger m_Logger = NullLogger.Instance;
         readonly ConcurrentDictionary<Type, string> m_MessageTypeMapping = new ConcurrentDictionary<Type, string>();
         private readonly SchedulingBackgroundWorker m_RequestTimeoutManager;
+        private readonly SchedulingBackgroundWorker m_DeferredAcknowledgementManager;
         readonly Dictionary<RequestHandle, Action<Exception>> m_ActualRequests = new Dictionary<RequestHandle, Action<Exception>>();
+        readonly List<Tuple<DateTime, Action>> m_DeferredAcknowledgements = new List<Tuple<DateTime, Action>>();
 
         /// <summary>
         /// ctor for tests
@@ -39,6 +41,7 @@ namespace Inceptum.Messaging
             m_TransportManager = transportManager;
             m_SerializationManager = new SerializationManager();
             m_RequestTimeoutManager = new SchedulingBackgroundWorker("RequestTimeoutManager", () => stopTimeoutedRequests());
+            m_DeferredAcknowledgementManager = new SchedulingBackgroundWorker("DeferredAcknowledgementManager", () => processDefferredAcknowledgements());
             createMessagingHandle(() => stopTimeoutedRequests(true));
 
         }
@@ -135,10 +138,10 @@ namespace Inceptum.Messaging
 
 		public IDisposable Subscribe<TMessage>(Endpoint endpoint, Action<TMessage> callback)
 		{
-            return Subscribe(endpoint, (TMessage message, Action<bool> acknowledge) =>
+            return Subscribe(endpoint, (TMessage message, Action<long,bool> acknowledge) =>
 		        {
 		            callback(message);
-		            acknowledge(true);
+		            acknowledge(0,true);
 		        });
 		}
         public IDisposable Subscribe<TMessage>(Endpoint endpoint, CallbackDelegate<TMessage> callback)
@@ -151,7 +154,7 @@ namespace Inceptum.Messaging
             {
                 try
                 {
-                    return subscribe(endpoint, (m,ack) => processMessage(m,ack, typeof(TMessage), (message, acknowledge) => callback((TMessage)message,acknowledge), endpoint), endpoint.SharedDestination ? getMessageType(typeof(TMessage)) : null);
+                    return subscribe(endpoint, (m, ack) => processMessage(m, typeof(TMessage),  message  => callback((TMessage)message, ack), endpoint), endpoint.SharedDestination ? getMessageType(typeof(TMessage)) : null);
                 }
                 catch (Exception e)
                 {
@@ -166,7 +169,7 @@ namespace Inceptum.Messaging
             return Subscribe(endpoint, (message, acknowledge) =>
                 {
                     callback(message);
-                    acknowledge(true);
+                    acknowledge(0,true);
                 }, unknownTypeCallback, knownTypes);
 
         }
@@ -190,7 +193,7 @@ namespace Inceptum.Messaging
                                 unknownTypeCallback(m.Type);
                                 return;
                             }
-                            processMessage(m,ack, messageType, callback, endpoint);
+                            processMessage(m, messageType, message => callback(message, ack), endpoint);
                         }, null);
                 }
                 catch (Exception e)
@@ -268,7 +271,26 @@ namespace Inceptum.Messaging
             }
         }
 
- 
+
+        private void processDefferredAcknowledgements(bool all = false)
+        {
+            Tuple<DateTime, Action>[] ready;
+            lock (m_DeferredAcknowledgements)
+            {
+                ready = all
+                                ? m_DeferredAcknowledgements.ToArray()
+                                : m_DeferredAcknowledgements.Where(r => r.Item1 <= DateTime.Now).ToArray();
+            }
+
+                Array.ForEach(ready, r => r.Item2());
+
+            lock (m_DeferredAcknowledgements)
+            {
+                Array.ForEach(ready, r => m_DeferredAcknowledgements.Remove(r));
+            }
+        }
+
+
 
 
         public IDisposable SendRequestAsync<TRequest, TResponse>(TRequest request, Endpoint endpoint, Action<TResponse> callback, Action<Exception> onFailure, long timeout)
@@ -339,6 +361,7 @@ namespace Inceptum.Messaging
         {
             m_Disposing.Set();
             m_RequestTimeoutManager.Dispose();
+            processDefferredAcknowledgements(true);
             m_RequestsTracker.WaitAll();
             lock (m_MessagingHandles)
             {
@@ -452,8 +475,26 @@ namespace Inceptum.Messaging
         private IDisposable subscribe(Endpoint endpoint,CallbackDelegate<BinaryMessage> callback, string messageType)
         {
             var processingGroup = m_TransportManager.GetProcessingGroup(endpoint.TransportId , endpoint.Destination);
-            IDisposable subscription = processingGroup.Subscribe(endpoint.Destination, callback, messageType);
+            IDisposable subscription = processingGroup.Subscribe(endpoint.Destination, (message, ack) => callback(message,createDeferredAcknowledge(ack)), messageType);
             return createMessagingHandle(subscription.Dispose);
+        }
+
+        private Action<long, bool> createDeferredAcknowledge(Action<bool> ack)
+        {
+            return (l, b) =>
+                {
+                    if (l == 0)
+                    {
+                        ack(b);
+                        return;
+                    }
+
+                    lock (m_DeferredAcknowledgements)
+                    {
+                        m_DeferredAcknowledgements.Add(Tuple.Create<DateTime,Action>(DateTime.Now.AddMilliseconds(l),() => ack(b)));
+                        m_DeferredAcknowledgementManager.Schedule(l);
+                    }
+                };
         }
 
 
@@ -480,7 +521,7 @@ namespace Inceptum.Messaging
 
 
 
-        private void processMessage(BinaryMessage binaryMessage,Action<bool> acknowledge, Type type, CallbackDelegate<object> callback, Endpoint endpoint)
+        private void processMessage(BinaryMessage binaryMessage,Type type, Action<object> callback, Endpoint endpoint)
         {
             object message = null;
             try
@@ -495,7 +536,7 @@ namespace Inceptum.Messaging
 
             try
             {
-                callback(message, acknowledge);
+                callback(message);
             }
             catch (Exception e)
             {
