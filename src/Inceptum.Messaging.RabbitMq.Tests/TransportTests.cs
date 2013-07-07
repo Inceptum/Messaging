@@ -230,16 +230,23 @@ namespace Inceptum.Messaging.RabbitMq.Tests
                 var type1Received = new AutoResetEvent(false);
                 var type2Received = new AutoResetEvent(false);
 
-                processingGroup.Subscribe(TEST_QUEUE, (message, acknowledge) => type1Received.Set(), "type1");
+                processingGroup.Subscribe(TEST_QUEUE, (message, acknowledge) =>
+                    {
+                        type1Received.Set();
+                        acknowledge(true);
+                    }, "type1");
 
                 processingGroup.Send(TEST_EXCHANGE, new BinaryMessage {Bytes = new byte[] {0x0, 0x1, 0x2}, Type = "type1"}, 0);
-                Assert.That(type1Received.WaitOne(5002), Is.True, "Message of subscribed type was not delivered");
+                Assert.That(type1Received.WaitOne(500), Is.True, "Message of subscribed type was not delivered");
                 processingGroup.Send(TEST_EXCHANGE, new BinaryMessage {Bytes = new byte[] {0x0, 0x1, 0x2}, Type = "type2"}, 0);
                 //Give time for type2 message to be  pushed back by mq
                 //Thread.Sleep(500);
                 processingGroup.Send(TEST_EXCHANGE, new BinaryMessage {Bytes = new byte[] {0x0, 0x1, 0x2}, Type = "type1"}, 0);
                 Assert.That(type1Received.WaitOne(500), Is.False, "Message of not subscribed type has not paused processing");
-                processingGroup.Subscribe(TEST_QUEUE, (message, acknowledge) => type2Received.Set(), "type2");
+                Assert.That(type2Received.WaitOne(500), Is.False, "Message of not subscribed type has not paused processing");
+                processingGroup.Subscribe(TEST_QUEUE, (message, acknowledge) => { type2Received.Set();
+                                                                                    acknowledge(true);
+                }, "type2");
                 Assert.That(type1Received.WaitOne(500), Is.True, "Processing was not resumed after handler for unknown message type was registered");
                 Assert.That(type2Received.WaitOne(500), Is.True, "Processing was not resumed after handler for unknown message type was registered");
             }
