@@ -10,7 +10,9 @@ namespace Inceptum.Messaging.Contract
     }
 
     public delegate void TrasnportEventHandler(string transportId, TransportEvents @event);
-    public delegate void CallbackDelegate<in TMessage>(TMessage message, Action<long, bool> acknowledge );
+
+    public delegate void AcknowledgeDelegate(long delay,bool acknowledge);
+    public delegate void CallbackDelegate<in TMessage>(TMessage message, AcknowledgeDelegate acknowledge);
     
     //TODO: CallbackDelegate overloads for SendRequest RegisterHandler
     public interface IMessagingEngine:IDisposable

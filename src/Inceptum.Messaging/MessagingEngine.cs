@@ -138,7 +138,7 @@ namespace Inceptum.Messaging
 
 		public IDisposable Subscribe<TMessage>(Endpoint endpoint, Action<TMessage> callback)
 		{
-            return Subscribe(endpoint, (TMessage message, Action<long,bool> acknowledge) =>
+            return Subscribe(endpoint, (TMessage message, AcknowledgeDelegate acknowledge) =>
 		        {
 		            callback(message);
 		            acknowledge(0,true);
@@ -479,7 +479,7 @@ namespace Inceptum.Messaging
             return createMessagingHandle(subscription.Dispose);
         }
 
-        private Action<long, bool> createDeferredAcknowledge(Action<bool> ack)
+        private AcknowledgeDelegate createDeferredAcknowledge(Action<bool> ack)
         {
             return (l, b) =>
                 {
