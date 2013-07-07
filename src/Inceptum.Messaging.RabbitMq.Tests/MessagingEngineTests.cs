@@ -84,7 +84,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
         public void DeferredAcknowledgementPerformanceTest()
         {
             Random rnd = new Random();
-            const int messageCount = 1000;
+            const int messageCount = 100;
             Console.WriteLine(messageCount+" messages");
             var delays = new Dictionary<long, string> { { 0, "immediate acknowledge" }, { 1, "deferred acknowledge" }, { 100, "deferred acknowledge" }, { 1000, "deferred acknowledge" } };
             foreach (var delay in delays)
@@ -98,8 +98,8 @@ namespace Inceptum.Messaging.RabbitMq.Tests
                 Stopwatch sw = Stopwatch.StartNew();
                 messagingEngine.Subscribe<string>(new Endpoint("test", "test", false, "fake"), (message, acknowledge) =>
                     {
-                        acknowledge(delay.Key, true);
                         Thread.Sleep(rnd.Next(1,10));
+                        acknowledge(delay.Key, true);
                     });
                 for (int i = 0; i < messageCount; i++)
                     callback(new BinaryMessage {Bytes = new byte[0], Type = typeof (string).Name}, b =>
@@ -108,7 +108,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
                                 complete.Set();
                         });
                 complete.WaitOne();
-                Console.WriteLine("{0} ({1}ms delay): {2}ms ",delay.Value,delay.Key, sw.ElapsedMilliseconds);
+                Console.WriteLine("{0} ({1}ms delay extracted to narrow results): {2}ms ",delay.Value,delay.Key, sw.ElapsedMilliseconds-delay.Key);
             }
         }
 
