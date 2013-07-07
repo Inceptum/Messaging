@@ -11,7 +11,18 @@ namespace Inceptum.Messaging.Contract
 
     public delegate void TrasnportEventHandler(string transportId, TransportEvents @event);
 
+    /// <summary>
+    /// Ack/nack message
+    /// </summary>
+    /// <param name="delay">number of ms to wait before reporting ack/nack to broker</param>
+    /// <param name="acknowledge">if set to <c>true</c> ack , if set to <c>false</c> nack.</param>
     public delegate void AcknowledgeDelegate(long delay,bool acknowledge);
+    /// <summary>
+    /// Message processing callback
+    /// </summary>
+    /// <typeparam name="TMessage">The type of the message.</typeparam>
+    /// <param name="message">The message.</param>
+    /// <param name="acknowledge">The acknowledge delegate (implementation should call it to report ack/nack to broker).</param>
     public delegate void CallbackDelegate<in TMessage>(TMessage message, AcknowledgeDelegate acknowledge);
     
     //TODO: CallbackDelegate overloads for SendRequest RegisterHandler
