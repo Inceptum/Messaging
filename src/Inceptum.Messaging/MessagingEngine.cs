@@ -362,6 +362,7 @@ namespace Inceptum.Messaging
             m_Disposing.Set();
             m_RequestTimeoutManager.Dispose();
             processDefferredAcknowledgements(true);
+            m_DeferredAcknowledgementManager.Dispose();
             m_RequestsTracker.WaitAll();
             lock (m_MessagingHandles)
             {
