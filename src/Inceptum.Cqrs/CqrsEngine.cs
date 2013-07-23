@@ -84,6 +84,7 @@ namespace Inceptum.Cqrs
             m_MessagingEngine = messagingEngine;
             m_BoundedContexts=new List<BoundedContext>();
             init();
+            
         }
 
         private void init()

@@ -112,7 +112,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Inceptum.Messaging\Inceptum.Messaging.csproj">
-      <Project>{87CC7D22-A809-40D3-80FB-E9D58109DC82}</Project>
+      <Project>{87cc7d22-a809-40d3-80fb-e9d58109dc82}</Project>
       <Name>Inceptum.Messaging</Name>
     </ProjectReference>
   </ItemGroup>

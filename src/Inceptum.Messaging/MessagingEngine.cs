@@ -168,12 +168,32 @@ namespace Inceptum.Messaging
         {
             return Subscribe(endpoint, (message, acknowledge) =>
                 {
-                    callback(message);
-                    acknowledge(0,true);
-                }, unknownTypeCallback, knownTypes);
+                    try
+                    {
+                        callback(message);
+                        acknowledge(0, true);
+                    }
+                    catch (Exception e)
+                    {
+                        //TODO: log
+                        acknowledge(0, false);
+                    }
+                }, (type, acknowledge) =>
+                {
+                    try
+                    {
+                        unknownTypeCallback(type);
+                        acknowledge(0, true);
+                    }
+                    catch (Exception e)
+                    {
+                        //TODO: log
+                        acknowledge(0, false);
+                    }
+                }, knownTypes);
 
         }
-        public IDisposable Subscribe(Endpoint endpoint, CallbackDelegate<object> callback, Action<string> unknownTypeCallback, params Type[] knownTypes)
+        public IDisposable Subscribe(Endpoint endpoint, CallbackDelegate<object> callback, Action<string, AcknowledgeDelegate> unknownTypeCallback, params Type[] knownTypes)
         {
             if (endpoint.Destination == null) throw new ArgumentException("Destination can not be null");
             if (m_Disposing.WaitOne(0))
@@ -190,7 +210,7 @@ namespace Inceptum.Messaging
                             Type messageType;
                             if (!dictionary.TryGetValue(m.Type, out messageType))
                             {
-                                unknownTypeCallback(m.Type);
+                                unknownTypeCallback(m.Type,ack);
                                 return;
                             }
                             processMessage(m, messageType, message => callback(message, ack), endpoint);
