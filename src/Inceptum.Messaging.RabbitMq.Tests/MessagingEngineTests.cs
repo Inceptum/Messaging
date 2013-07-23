@@ -46,21 +46,27 @@ namespace Inceptum.Messaging.RabbitMq.Tests
           public void DeferredAcknowledgementTest()
           {
               Action<BinaryMessage, Action<bool>> callback=null;
-              var messagingEngine = createMessagingEngineWithMockedDependencies(action => callback = action);
-              
-              DateTime processed=default(DateTime);
-              DateTime acked = default(DateTime);
-              messagingEngine.Subscribe<string>(new Endpoint("test", "test",false,"fake"), (message, acknowledge) =>
+              using (var messagingEngine = createMessagingEngineWithMockedDependencies(action => callback = action))
+              {
+
+                  DateTime processed = default(DateTime);
+                  DateTime acked = default(DateTime);
+                  messagingEngine.Subscribe<string>(new Endpoint("test", "test", false, "fake"), (message, acknowledge) =>
                   {
                       processed = DateTime.Now;
                       acknowledge(1000, true);
                       Console.WriteLine(processed.ToString("HH:mm:ss.ffff") + " recieved");
                   });
-              var acknowledged=new ManualResetEvent(false);
-              callback(new BinaryMessage { Bytes = new byte[0], Type = typeof(string).Name }, b => {  acked = DateTime.Now; acknowledged.Set();Console.WriteLine(acked.ToString("HH:mm:ss.ffff") + " acknowledged"); });
-              Assert.That(acknowledged.WaitOne(1300),Is.True,"Message was not acknowledged");
-              Assert.That((acked-processed).TotalMilliseconds,Is.GreaterThan(1000),"Message was acknowledged earlier than scheduled time ");
-
+                  var acknowledged = new ManualResetEvent(false);
+                  callback(new BinaryMessage {Bytes = new byte[0], Type = typeof (string).Name}, b =>
+                  {
+                      acked = DateTime.Now;
+                      acknowledged.Set();
+                      Console.WriteLine(acked.ToString("HH:mm:ss.ffff") + " acknowledged");
+                  });
+                  Assert.That(acknowledged.WaitOne(1300), Is.True, "Message was not acknowledged");
+                  Assert.That((acked - processed).TotalMilliseconds, Is.GreaterThan(1000), "Message was acknowledged earlier than scheduled time ");
+              }
           }
           [Test]
           public void DeferredAcknowledgementShouldBePerfomedOnDisposeTest()
