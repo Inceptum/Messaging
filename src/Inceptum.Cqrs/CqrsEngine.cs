@@ -59,13 +59,14 @@ namespace Inceptum.Cqrs
         private readonly IRegistration[] m_Registrations;
         private readonly Func<Type,object> m_DependencyResolver;
 
-
+        private readonly bool m_HandleMessagingEngineLifeCycle = false;
         public CqrsEngine(params IRegistration[] registrations) :
             this(Activator.CreateInstance, new MessagingEngine(new TransportResolver(new Dictionary<string, TransportInfo> { { "InMemory", new TransportInfo("none", "none", "none", null, "InMemory") } })),
             new InMemoryEndpointResolver(),
             registrations
             )
         {
+            m_HandleMessagingEngineLifeCycle = true;
         }
         public CqrsEngine(Func<Type,object> dependencyResolver, params IRegistration[] registrations) :
             this(dependencyResolver,new MessagingEngine(new TransportResolver(new Dictionary<string, TransportInfo> { { "InMemory", new TransportInfo("none", "none", "none", null, "InMemory") } })),
@@ -73,6 +74,7 @@ namespace Inceptum.Cqrs
             registrations
             )
         {
+            m_HandleMessagingEngineLifeCycle = true;
         }
 
 
@@ -145,6 +147,10 @@ namespace Inceptum.Cqrs
 
             if (m_Subscription != null)
                 m_Subscription.Dispose();
+            
+            //TODO: investigate why this code crashes in tests 
+       /*     if(m_HandleMessagingEngineLifeCycle)
+                m_MessagingEngine.Dispose();*/
         }
 
         public void SendCommand<T>(T command,string boundedContext )

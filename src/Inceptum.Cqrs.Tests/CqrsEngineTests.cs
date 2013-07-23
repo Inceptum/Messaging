@@ -79,18 +79,20 @@ namespace Inceptum.Cqrs.Tests
             {
                 Logger = new ConsoleLogger(LoggerLevel.Debug)
             };
+            using (messagingEngine)
+            {
 
 
-            var cqrsEngine = new CqrsEngine(Activator.CreateInstance,messagingEngine, new FakeEndpointResolver(), LocalBoundedContext.Named("integration")
-                                                   .PublishingEvents(typeof(int)).To("eventExchange").RoutedTo("eventQueue")
-                                                   .ListeningCommands(typeof(string)).On("commandExchange").RoutedFrom("commandQueue")
-                                                   .WithCommandsHandler<CommandsHandler>(),
-                                                   LocalBoundedContext.Named("bc").WithProjection<EventListener>("integration")
+                var cqrsEngine = new CqrsEngine(Activator.CreateInstance, messagingEngine, new FakeEndpointResolver(), LocalBoundedContext.Named("integration")
+                    .PublishingEvents(typeof (int)).To("eventExchange").RoutedTo("eventQueue")
+                    .ListeningCommands(typeof (string)).On("commandExchange").RoutedFrom("commandQueue")
+                    .WithCommandsHandler<CommandsHandler>(),
+                    LocalBoundedContext.Named("bc").WithProjection<EventListener>("integration")
 
                                                    
-                //.ListeningCommands(typeof(string)).locally()
-                                                   );
-            /* var c=new CqrsEngine(messagingEngine, RemoteBoundedContext.Named("integration")
+                    //.ListeningCommands(typeof(string)).locally()
+                    );
+                /* var c=new CqrsEngine(messagingEngine, RemoteBoundedContext.Named("integration")
                                                     .ListeningCommands(typeof(TestCommand)).On(new Endpoint())
                                                     .PublishingEvents(typeof(TransferCreatedEvent)).To(new Endpoint()),
                                                     LocalBoundedContext.Named("testBC")
@@ -108,10 +110,11 @@ namespace Inceptum.Cqrs.Tests
                                                 ); */
 
 
-         
-            //  messagingEngine.Send("test", new Endpoint("test", "unistream.u1.commands", true,"json"));
-            cqrsEngine.SendCommand("test", "integration");
-            Thread.Sleep(3000);
+
+                //  messagingEngine.Send("test", new Endpoint("test", "unistream.u1.commands", true,"json"));
+                cqrsEngine.SendCommand("test", "integration");
+                Thread.Sleep(3000);
+            }
         }
 
       
