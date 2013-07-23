@@ -18,12 +18,14 @@ namespace Inceptum.Messaging.RabbitMq.Tests
         /*[Timeout(5000)]*/
         public void UnknownMessageTest()
         {
+               const string TEST_QUEUE = "test.queue";
+          const string TEST_EXCHANGE = "test.exchange";
             ITransportResolver transportResolver = new TransportResolver(new Dictionary<string, TransportInfo>()
                 {
                     {"main",new TransportInfo("sr-tls01-s01.test-s02.uniservers.ru", "guest", "guest", "None", "RabbitMq")}
                 });
-            var eq = new Endpoint("main", "_TEST_QUEUE", true, "json");
-            var ee = new Endpoint("main", "_TEST_EXCHANGE", true, "json");
+            var eq = new Endpoint("main", TEST_QUEUE, true, "json");
+            var ee = new Endpoint("main", TEST_EXCHANGE, true, "json");
            
             using (var me = new MessagingEngine(transportResolver, new RabbitMqTransportFactory()))
             {
