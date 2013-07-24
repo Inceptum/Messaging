@@ -164,35 +164,23 @@ namespace Inceptum.Messaging
             }
         }
 
-        public IDisposable Subscribe(Endpoint endpoint, Action<object> callback, Action<string> unknownTypeCallback, params Type[] knownTypes)
+        public IDisposable Subscribe(Endpoint endpoint, Action<object> callback, Action<string> unknownTypeCallback,
+                                     params Type[] knownTypes)
         {
-            return Subscribe(endpoint, (message, acknowledge) =>
-                {
-                    try
-                    {
-                        callback(message);
-                        acknowledge(0, true);
-                    }
-                    catch (Exception e)
-                    {
-                        //TODO: log
-                        acknowledge(0, false);
-                    }
-                }, (type, acknowledge) =>
-                {
-                    try
-                    {
-                        unknownTypeCallback(type);
-                        acknowledge(0, true);
-                    }
-                    catch (Exception e)
-                    {
-                        //TODO: log
-                        acknowledge(0, false);
-                    }
-                }, knownTypes);
-
+            return Subscribe(endpoint,
+                             (message, acknowledge) =>
+                                 {
+                                     callback(message);
+                                     acknowledge(0, true);
+                                 },
+                             (type, acknowledge) =>
+                                 {
+                                     unknownTypeCallback(type);
+                                     acknowledge(0, true);
+                                 },
+                             knownTypes);
         }
+
         public IDisposable Subscribe(Endpoint endpoint, CallbackDelegate<object> callback, Action<string, AcknowledgeDelegate> unknownTypeCallback, params Type[] knownTypes)
         {
             if (endpoint.Destination == null) throw new ArgumentException("Destination can not be null");
@@ -210,7 +198,15 @@ namespace Inceptum.Messaging
                             Type messageType;
                             if (!dictionary.TryGetValue(m.Type, out messageType))
                             {
-                                unknownTypeCallback(m.Type,ack);
+                                try
+                                {
+                                    unknownTypeCallback(m.Type, ack);
+                                }
+                                catch (Exception e)
+                                {
+                                    Logger.ErrorFormat(e, "Failed to handle message of unknown type. Transport: {0}, Queue {1}, Message Type: {2}",
+                                   endpoint.TransportId, endpoint.Destination, m.Type);
+                                }
                                 return;
                             }
                             processMessage(m, messageType, message => callback(message, ack), endpoint);
@@ -433,7 +429,7 @@ namespace Inceptum.Messaging
             {
                 try
                 {
-                    var processingGroup = m_TransportManager.GetProcessingGroup( endpoint.TransportId,endpoint.Destination);
+                    var processingGroup = m_TransportManager.GetProcessingGroup( endpoint.TransportId, endpoint.Destination);
                 	var subscription = processingGroup.RegisterHandler(endpoint.Destination,
                 	                                                     requestMessage =>
                 	                                                     	{
@@ -551,7 +547,7 @@ namespace Inceptum.Messaging
             }
             catch (Exception e)
             {
-                Logger.ErrorFormat(e, "Failed to deserialize message. Transport: {0} Destination {1}. Message Type {2}.",
+                Logger.ErrorFormat(e, "Failed to deserialize message. Transport: {0}, Destination: {1}, Message Type: {2}",
                                    endpoint.TransportId, endpoint.Destination, type.Name);
             }
 
@@ -561,7 +557,7 @@ namespace Inceptum.Messaging
             }
             catch (Exception e)
             {
-                Logger.ErrorFormat(e, "Failed to handle message. Transport: {0} Destination {1}. Message Type {2}.",
+                Logger.ErrorFormat(e, "Failed to handle message. Transport: {0}, Destination: {1}, Message Type: {2}",
                                    endpoint.TransportId, endpoint.Destination, type.Name);
             }
         }
