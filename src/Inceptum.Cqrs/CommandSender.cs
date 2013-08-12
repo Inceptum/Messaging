@@ -47,7 +47,7 @@ namespace Inceptum.Cqrs
     }
 
      
-    public class CqrsEngine : ICqrsEngine
+    public class CommandSender : ICommandSender
     {
         private readonly IMessagingEngine m_MessagingEngine;
         private readonly CompositeDisposable m_Subscription=new CompositeDisposable();
@@ -60,7 +60,7 @@ namespace Inceptum.Cqrs
         private readonly Func<Type,object> m_DependencyResolver;
 
         private readonly bool m_HandleMessagingEngineLifeCycle = false;
-        public CqrsEngine(params IRegistration[] registrations) :
+        public CommandSender(params IRegistration[] registrations) :
             this(Activator.CreateInstance, new MessagingEngine(new TransportResolver(new Dictionary<string, TransportInfo> { { "InMemory", new TransportInfo("none", "none", "none", null, "InMemory") } })),
             new InMemoryEndpointResolver(),
             registrations
@@ -68,7 +68,7 @@ namespace Inceptum.Cqrs
         {
             m_HandleMessagingEngineLifeCycle = true;
         }
-        public CqrsEngine(Func<Type,object> dependencyResolver, params IRegistration[] registrations) :
+        public CommandSender(Func<Type,object> dependencyResolver, params IRegistration[] registrations) :
             this(dependencyResolver,new MessagingEngine(new TransportResolver(new Dictionary<string, TransportInfo> { { "InMemory", new TransportInfo("none", "none", "none", null, "InMemory") } })),
             new InMemoryEndpointResolver(),
             registrations
@@ -78,7 +78,7 @@ namespace Inceptum.Cqrs
         }
 
 
-        public CqrsEngine(Func<Type, object> dependencyResolver, IMessagingEngine messagingEngine, IEndpointResolver endpointResolver, params IRegistration[] registrations)
+        public CommandSender(Func<Type, object> dependencyResolver, IMessagingEngine messagingEngine, IEndpointResolver endpointResolver, params IRegistration[] registrations)
         {
             m_DependencyResolver = dependencyResolver;
             m_Registrations = registrations;

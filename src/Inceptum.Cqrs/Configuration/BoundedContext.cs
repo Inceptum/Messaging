@@ -18,10 +18,10 @@ namespace Inceptum.Cqrs.Configuration
         internal IRepository Repository { get; set; }
         public string Name { get; set; }
 
-        internal BoundedContext(CqrsEngine cqrsEngine,string name)
+        internal BoundedContext(CommandSender commandSender,string name)
         {
             Name = name;
-            EventsPublisher = new EventsPublisher(cqrsEngine, this);
+            EventsPublisher = new EventsPublisher(commandSender, this);
             CommandDispatcher = new CommandDispatcher(Name);
             EventDispatcher = new EventDispatcher(Name);
             Processes = new List<IProcess>();

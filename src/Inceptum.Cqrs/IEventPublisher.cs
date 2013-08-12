@@ -1,4 +1,4 @@
-﻿namespace Inceptum.Cqrs.Configuration
+﻿namespace Inceptum.Cqrs
 {
     public interface IEventPublisher
     {

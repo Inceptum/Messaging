@@ -2,7 +2,7 @@
 
 namespace Inceptum.Cqrs
 {
-    public interface ICqrsEngine : IDisposable
+    public interface ICommandSender : IDisposable
     {
         void SendCommand<T>(T command, string boundedContext);
     }

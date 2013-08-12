@@ -129,12 +129,12 @@ namespace Inceptum.Cqrs
         public void Start()
         {
             Func<Type, object> dependencyResolver = Kernel.Resolve;
-            Kernel.Register(Component.For<ICqrsEngine>().ImplementedBy<CqrsEngine>().Named(m_EngineComponetName).DependsOn(new
+            Kernel.Register(Component.For<ICommandSender>().ImplementedBy<CommandSender>().Named(m_EngineComponetName).DependsOn(new
                 {
                     registrations = m_BoundedContexts.Cast<IRegistration>().Concat(m_Sagas).ToArray(),
                     dependencyResolver
                 }));
-            Kernel.Resolve<ICqrsEngine>();
+            Kernel.Resolve<ICommandSender>();
         }
     }
 

@@ -85,7 +85,7 @@
     <Compile Include="Configuration\EventStoreDescriptor.cs" />
     <Compile Include="Configuration\IBoundedContextDescriptor.cs" />
     <Compile Include="Configuration\IEndpointResolver.cs" />
-    <Compile Include="Configuration\IEventPublisher.cs" />
+    <Compile Include="IEventPublisher.cs" />
     <Compile Include="Configuration\IProcess.cs" />
     <Compile Include="Configuration\LocalBoundedContext.cs" />
     <Compile Include="Configuration\LocalBoundedContextRegistration.cs" />
@@ -96,10 +96,10 @@
     <Compile Include="Configuration\RoutingDescriptor.cs" />
     <Compile Include="Configuration\SagaRegistration.cs" />
     <Compile Include="Configuration\SubscriptionDescriptor.cs" />
-    <Compile Include="CqrsEngine.cs" />
+    <Compile Include="CommandSender.cs" />
     <Compile Include="CqrsFacility.cs" />
     <Compile Include="EventDispatcher.cs" />
-    <Compile Include="ICqrsEngine.cs" />
+    <Compile Include="ICommandSender.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

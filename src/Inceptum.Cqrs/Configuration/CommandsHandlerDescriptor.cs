@@ -14,7 +14,7 @@ namespace Inceptum.Cqrs.Configuration
 
         }
         
-        public override void Process(BoundedContext boundedContext, CqrsEngine cqrsEngine)
+        public override void Process(BoundedContext boundedContext, CommandSender commandSender)
         {
             foreach (var handler in ResolvedDependencies)
             {
