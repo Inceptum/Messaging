@@ -32,7 +32,7 @@ namespace Inceptum.Cqrs.Configuration
             boundedContext.Repository = new EventStoreRepository(eventStore, new AggregateFactory(), new ConflictDetector());
         }
 
-        public void Process(BoundedContext boundedContext, CqrsEngine cqrsEngine)
+        public void Process(BoundedContext boundedContext, CommandSender commandSender)
         {
 
         }

@@ -37,7 +37,7 @@ namespace Inceptum.Cqrs.Configuration
             boundedContext.CommandsSubscriptions = commandsSubscriptions.ToDictionary(o => o.endpoint, o => o.types);
         }
 
-        public void Process(BoundedContext boundedContext, CqrsEngine cqrsEngine)
+        public void Process(BoundedContext boundedContext, CommandSender commandSender)
         {
 
         }

@@ -51,7 +51,7 @@ namespace Inceptum.Cqrs.Tests
     class CqrEngineDependentComponent
     {
         public  static bool Started { get; set; }
-        public CqrEngineDependentComponent(ICqrsEngine engine)
+        public CqrEngineDependentComponent(ICommandSender engine)
         {
         }
         public void Start()
@@ -94,7 +94,7 @@ namespace Inceptum.Cqrs.Tests
             container.Resolve<ICqrsEngineBootstrapper>().Start();
 
             container.Resolve<CqrEngineDependentComponent>();
-            Assert.That(reslovedCqrsDependentComponentBeforeInit,Is.False,"ICqrsEngine was resolved as dependency before it was initialized");
+            Assert.That(reslovedCqrsDependentComponentBeforeInit,Is.False,"ICommandSender was resolved as dependency before it was initialized");
         }
 
         [Test]
@@ -105,9 +105,9 @@ namespace Inceptum.Cqrs.Tests
                      .AddFacility<StartableFacility>();// (f => f.DeferredTryStart());
             container.Register(Component.For<IMessagingEngine>().Instance(MockRepository.GenerateMock<IMessagingEngine>()));
             container.Register(Component.For<CqrEngineDependentComponent>().StartUsingMethod("Start"));
-            Assert.That(CqrEngineDependentComponent.Started,Is.False,"Component was started before CqrsEngine initialization");
+            Assert.That(CqrEngineDependentComponent.Started,Is.False,"Component was started before commandSender initialization");
             container.Resolve<ICqrsEngineBootstrapper>().Start();
-            Assert.That(CqrEngineDependentComponent.Started, Is.True, "Component was not started after CqrsEngine initialization");
+            Assert.That(CqrEngineDependentComponent.Started, Is.True, "Component was not started after commandSender initialization");
         }
 
 
@@ -120,7 +120,7 @@ namespace Inceptum.Cqrs.Tests
                 .Register(Component.For<EventListener>().AsProjection("local", "remote"))
                 .Resolve<ICqrsEngineBootstrapper>().Start(); 
 
-            var cqrsEngine = (CqrsEngine) container.Resolve<ICqrsEngine>();
+            var cqrsEngine = (CommandSender) container.Resolve<ICommandSender>();
             var eventListener = container.Resolve<EventListener>();
             cqrsEngine.BoundedContexts.First(c => c.Name == "remote").EventDispatcher.Dispacth("test");
             Assert.That(eventListener.EventsWithBoundedContext, Is.EquivalentTo(new[] { Tuple.Create("test", "remote") }),"Event was not dispatched");
@@ -136,7 +136,7 @@ namespace Inceptum.Cqrs.Tests
                 .AddFacility<CqrsFacility>(f => f.BoundedContexts(LocalBoundedContext.Named("bc")))
                 .Register(Component.For<CommandsHandler>().AsCommandsHandler("bc"))
                 .Resolve<ICqrsEngineBootstrapper>().Start();
-            var cqrsEngine = (CqrsEngine)container.Resolve<ICqrsEngine>();
+            var cqrsEngine = (CommandSender)container.Resolve<ICommandSender>();
             var commandsHandler = container.Resolve<CommandsHandler>();
             cqrsEngine.BoundedContexts.First(c=>c.Name=="bc").CommandDispatcher.Dispacth("test");
             Assert.That(commandsHandler.HandledCommands, Is.EqualTo(new[] { "test" }), "Command was not dispatched");
