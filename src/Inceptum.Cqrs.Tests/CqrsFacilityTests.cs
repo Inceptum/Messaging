@@ -8,6 +8,7 @@ using Castle.Facilities.Startable;
 using Castle.MicroKernel.Registration;
 using Castle.Windsor;
 using EventStore;
+using Inceptum.Cqrs.Castle;
 using Inceptum.Cqrs.Configuration;
 using Inceptum.Messaging;
 using Inceptum.Messaging.Contract;
@@ -120,7 +121,7 @@ namespace Inceptum.Cqrs.Tests
                 .Register(Component.For<EventListener>().AsProjection("local", "remote"))
                 .Resolve<ICqrsEngineBootstrapper>().Start(); 
 
-            var cqrsEngine = (CommandSender) container.Resolve<ICommandSender>();
+            var cqrsEngine = (CqrsEngine) container.Resolve<ICommandSender>();
             var eventListener = container.Resolve<EventListener>();
             cqrsEngine.BoundedContexts.First(c => c.Name == "remote").EventDispatcher.Dispacth("test");
             Assert.That(eventListener.EventsWithBoundedContext, Is.EquivalentTo(new[] { Tuple.Create("test", "remote") }),"Event was not dispatched");
@@ -136,7 +137,7 @@ namespace Inceptum.Cqrs.Tests
                 .AddFacility<CqrsFacility>(f => f.BoundedContexts(LocalBoundedContext.Named("bc")))
                 .Register(Component.For<CommandsHandler>().AsCommandsHandler("bc"))
                 .Resolve<ICqrsEngineBootstrapper>().Start();
-            var cqrsEngine = (CommandSender)container.Resolve<ICommandSender>();
+            var cqrsEngine = (CqrsEngine)container.Resolve<ICommandSender>();
             var commandsHandler = container.Resolve<CommandsHandler>();
             cqrsEngine.BoundedContexts.First(c=>c.Name=="bc").CommandDispatcher.Dispacth("test");
             Assert.That(commandsHandler.HandledCommands, Is.EqualTo(new[] { "test" }), "Command was not dispatched");

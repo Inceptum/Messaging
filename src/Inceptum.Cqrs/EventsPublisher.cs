@@ -1,16 +1,17 @@
 ﻿using System;
+using Inceptum.Cqrs.Configuration;
 
-namespace Inceptum.Cqrs.Configuration
+namespace Inceptum.Cqrs
 {
     class EventsPublisher : IEventPublisher
     {
-        private readonly CommandSender m_CommandSender;
+        private readonly CqrsEngine m_CqrsEngine;
         private readonly BoundedContext m_BoundedContext;
 
-        public EventsPublisher(CommandSender commandSender,BoundedContext boundedContext)
+        public EventsPublisher(CqrsEngine cqrsEngine,BoundedContext boundedContext)
         {
             m_BoundedContext = boundedContext;
-            m_CommandSender = commandSender;
+            m_CqrsEngine = cqrsEngine;
         }
 
         public void PublishEvent(object @event)
@@ -21,7 +22,7 @@ namespace Inceptum.Cqrs.Configuration
             {
                 throw new InvalidOperationException(string.Format("bound context '{0}' does not support event '{1}'", m_BoundedContext.Name, @event.GetType()));
             }
-            m_CommandSender.PublishEvent(@event,endpoint);
+            m_CqrsEngine.PublishEvent(@event,endpoint);
         }
  
     }

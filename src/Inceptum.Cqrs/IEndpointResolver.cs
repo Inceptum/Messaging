@@ -1,6 +1,6 @@
 ﻿using Inceptum.Messaging.Contract;
 
-namespace Inceptum.Cqrs.Configuration
+namespace Inceptum.Cqrs
 {
     public interface IEndpointResolver
     {

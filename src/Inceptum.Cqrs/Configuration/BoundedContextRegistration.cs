@@ -2,16 +2,13 @@
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
-using Inceptum.Messaging.Contract;
 
 namespace Inceptum.Cqrs.Configuration
 {
- 
-
     public interface IRegistration
     {
-        void Create(CommandSender commandSender);
-        void Process(CommandSender commandSender);
+        void Create(CqrsEngine cqrsEngine);
+        void Process(CqrsEngine cqrsEngine);
         IEnumerable<Type> Dependencies { get; }
     }
 
@@ -50,22 +47,22 @@ namespace Inceptum.Cqrs.Configuration
             m_Configurators.Add(descriptor);
         }
 
-        void IRegistration.Create(CommandSender commandSender)
+        void IRegistration.Create(CqrsEngine cqrsEngine)
         {
-            var boundedContext=new BoundedContext(commandSender,Name);
+            var boundedContext=new BoundedContext(cqrsEngine,Name);
             foreach (var descriptor in m_Configurators)
             {
-                descriptor.Create(boundedContext, commandSender.ResolveDependency);
+                descriptor.Create(boundedContext, cqrsEngine.ResolveDependency);
             }
-            commandSender.BoundedContexts.Add(boundedContext);
+            cqrsEngine.BoundedContexts.Add(boundedContext);
         }
 
-        void IRegistration.Process(CommandSender commandSender)
+        void IRegistration.Process(CqrsEngine cqrsEngine)
         {
-            var boundedContext = commandSender.BoundedContexts.FirstOrDefault(bc => bc.Name == Name);
+            var boundedContext = cqrsEngine.BoundedContexts.FirstOrDefault(bc => bc.Name == Name);
             foreach (var descriptor in m_Configurators)
             {
-                descriptor.Process(boundedContext, commandSender);
+                descriptor.Process(boundedContext, cqrsEngine);
             }
         }
 

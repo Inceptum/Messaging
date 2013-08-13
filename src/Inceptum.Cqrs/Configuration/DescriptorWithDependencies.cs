@@ -40,7 +40,7 @@ namespace Inceptum.Cqrs.Configuration
             
         }
 
-        public virtual void Process(BoundedContext boundedContext, CommandSender commandSender)
+        public virtual void Process(BoundedContext boundedContext, CqrsEngine cqrsEngine)
         {
             
         }

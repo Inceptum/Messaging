@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using CommonDomain.Persistence;
-using EventStore;
 
 namespace Inceptum.Cqrs.Configuration
 {
@@ -18,10 +17,10 @@ namespace Inceptum.Cqrs.Configuration
         internal IRepository Repository { get; set; }
         public string Name { get; set; }
 
-        internal BoundedContext(CommandSender commandSender,string name)
+        internal BoundedContext(CqrsEngine cqrsEngine,string name)
         {
             Name = name;
-            EventsPublisher = new EventsPublisher(commandSender, this);
+            EventsPublisher = new EventsPublisher(cqrsEngine, this);
             CommandDispatcher = new CommandDispatcher(Name);
             EventDispatcher = new EventDispatcher(Name);
             Processes = new List<IProcess>();
