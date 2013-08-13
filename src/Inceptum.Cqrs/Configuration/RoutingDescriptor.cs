@@ -25,7 +25,7 @@ namespace Inceptum.Cqrs.Configuration
             boundedContext.EventRoutes = m_EventRoutes;
         }
 
-        public void Process(BoundedContext boundedContext, CommandSender commandSender)
+        public void Process(BoundedContext boundedContext, CqrsEngine cqrsEngine)
         {
         }
     }

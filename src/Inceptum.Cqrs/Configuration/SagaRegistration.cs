@@ -26,27 +26,27 @@ namespace Inceptum.Cqrs.Configuration
     public class SagaRegistration : IRegistration
     {
         private object m_Saga;
-        private readonly Func<CommandSender, object> m_SagaResolver;
+        private readonly Func<CqrsEngine, object> m_SagaResolver;
         private readonly string[] m_BoundContexts;
 
-        public SagaRegistration(Func<CommandSender, object> sagaResolver, string[] boundContexts,params Type[] dependencies)
+        public SagaRegistration(Func<CqrsEngine, object> sagaResolver, string[] boundContexts,params Type[] dependencies)
         {
             m_BoundContexts = boundContexts;
             m_SagaResolver = sagaResolver;
             Dependencies = dependencies;
         }
 
-        public void Create(CommandSender commandSender)
+        public void Create(CqrsEngine cqrsEngine)
         {
-            m_Saga = m_SagaResolver(commandSender);
+            m_Saga = m_SagaResolver(cqrsEngine);
         }
 
-        public void Process(CommandSender commandSender)
+        public void Process(CqrsEngine cqrsEngine)
         {
             foreach (var boundContext in m_BoundContexts)
             {
-                var context = commandSender.BoundedContexts.FirstOrDefault(bc => bc.Name == boundContext);
-                context.EventDispatcher.Wire(m_Saga,new OptionalParameter<ICommandSender>(commandSender));
+                var context = cqrsEngine.BoundedContexts.FirstOrDefault(bc => bc.Name == boundContext);
+                context.EventDispatcher.Wire(m_Saga,new OptionalParameter<ICommandSender>(cqrsEngine));
             }
         }
 
@@ -55,7 +55,7 @@ namespace Inceptum.Cqrs.Configuration
 
     public class SagaListeningDescriptor
     {
-        private readonly Func<CommandSender,object> m_SagaResolver;
+        private readonly Func<CqrsEngine,object> m_SagaResolver;
         private readonly Type[] m_SagaType=new Type[0];
 
         public SagaListeningDescriptor(object saga)

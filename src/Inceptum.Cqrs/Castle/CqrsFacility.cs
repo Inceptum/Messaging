@@ -10,8 +10,7 @@ using Castle.MicroKernel.Registration;
 using Inceptum.Cqrs.Configuration;
 using IRegistration = Inceptum.Cqrs.Configuration.IRegistration;
 
-
-namespace Inceptum.Cqrs
+namespace Inceptum.Cqrs.Castle
 {
     public interface ICqrsEngineBootstrapper
     {
@@ -23,7 +22,7 @@ namespace Inceptum.Cqrs
         private readonly string m_EngineComponetName = Guid.NewGuid().ToString();
         private readonly Dictionary<IHandler, Action<IHandler>> m_WaitList = new Dictionary<IHandler, Action<IHandler>>();
         private BoundedContextRegistration[] m_BoundedContexts = new BoundedContextRegistration[0];
-        private List<SagaRegistration> m_Sagas = new List<SagaRegistration>();
+        private readonly List<SagaRegistration> m_Sagas = new List<SagaRegistration>();
 
 
         public CqrsFacility BoundedContexts(params BoundedContextRegistration[] boundedContexts)
@@ -129,7 +128,7 @@ namespace Inceptum.Cqrs
         public void Start()
         {
             Func<Type, object> dependencyResolver = Kernel.Resolve;
-            Kernel.Register(Component.For<ICommandSender>().ImplementedBy<CommandSender>().Named(m_EngineComponetName).DependsOn(new
+            Kernel.Register(Component.For<ICommandSender>().ImplementedBy<CqrsEngine>().Named(m_EngineComponetName).DependsOn(new
                 {
                     registrations = m_BoundedContexts.Cast<IRegistration>().Concat(m_Sagas).ToArray(),
                     dependencyResolver

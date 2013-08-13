@@ -61,7 +61,7 @@ namespace Inceptum.Cqrs.Tests
         [ExpectedException(typeof(ConfigurationErrorsException),ExpectedMessage = "Can not register System.String as command in bound context bc, it is already registered as event")]
         public void BoundedContextCanNotHaveEventAndCommandOfSameType()
         {
-            new CommandSender(LocalBoundedContext.Named("bc")
+            new CqrsEngine(LocalBoundedContext.Named("bc")
                                                      .PublishingEvents(typeof(string)).To("eventExchange").RoutedTo("eventQueue")
                                                      .ListeningCommands(typeof (string)).On("commandExchange").RoutedFrom("commandQueue"));
         }
@@ -83,7 +83,7 @@ namespace Inceptum.Cqrs.Tests
             {
 
 
-                var cqrsEngine = new CommandSender(Activator.CreateInstance, messagingEngine, new FakeEndpointResolver(), LocalBoundedContext.Named("integration")
+                var cqrsEngine = new CqrsEngine(Activator.CreateInstance, messagingEngine, new FakeEndpointResolver(), LocalBoundedContext.Named("integration")
                     .PublishingEvents(typeof (int)).To("eventExchange").RoutedTo("eventQueue")
                     .ListeningCommands(typeof (string)).On("commandExchange").RoutedFrom("commandQueue")
                     .WithCommandsHandler<CommandsHandler>(),
@@ -121,7 +121,7 @@ namespace Inceptum.Cqrs.Tests
         [Test]
         public void Method_Scenario_Expected()
         {
-            using (var engine = new CommandSender(
+            using (var engine = new CqrsEngine(
                 LocalBoundedContext.Named("local")
                                    .PublishingEvents(typeof (int)).To("events").RoutedTo("events")
                                    .ListeningCommands(typeof (string)).On("commands1").RoutedFromSameEndpoint()

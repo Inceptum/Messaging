@@ -75,18 +75,19 @@
     <Compile Include="..\SolutionInfo.cs">
       <Link>Properties\SolutionInfo.cs</Link>
     </Compile>
-    <Compile Include="ComponentRegistrationExtensions.cs" />
+    <Compile Include="CommitDispatcher.cs" />
+    <Compile Include="Castle\ComponentRegistrationExtensions.cs" />
     <Compile Include="Configuration\BoundedContext.cs" />
     <Compile Include="Configuration\BoundedContextRegistration.cs" />
     <Compile Include="Configuration\CommandDispatcher.cs" />
     <Compile Include="Configuration\CommandsHandlerDescriptor.cs" />
     <Compile Include="Configuration\DescriptorWithDependencies.cs" />
-    <Compile Include="Configuration\EventsPublisher.cs" />
+    <Compile Include="EventsPublisher.cs" />
     <Compile Include="Configuration\EventStoreDescriptor.cs" />
     <Compile Include="Configuration\IBoundedContextDescriptor.cs" />
-    <Compile Include="Configuration\IEndpointResolver.cs" />
+    <Compile Include="IEndpointResolver.cs" />
+    <Compile Include="IProcess.cs" />
     <Compile Include="IEventPublisher.cs" />
-    <Compile Include="Configuration\IProcess.cs" />
     <Compile Include="Configuration\LocalBoundedContext.cs" />
     <Compile Include="Configuration\LocalBoundedContextRegistration.cs" />
     <Compile Include="Configuration\LocalProcessDescriptor.cs" />
@@ -96,10 +97,12 @@
     <Compile Include="Configuration\RoutingDescriptor.cs" />
     <Compile Include="Configuration\SagaRegistration.cs" />
     <Compile Include="Configuration\SubscriptionDescriptor.cs" />
-    <Compile Include="CommandSender.cs" />
-    <Compile Include="CqrsFacility.cs" />
-    <Compile Include="EventDispatcher.cs" />
+    <Compile Include="CqrsEngine.cs" />
+    <Compile Include="Castle\CqrsFacility.cs" />
+    <Compile Include="Configuration\EventDispatcher.cs" />
     <Compile Include="ICommandSender.cs" />
+    <Compile Include="InMemoryEndpointResolver.cs" />
+    <Compile Include="Configuration\OptionalParameter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -116,6 +119,7 @@
       <Name>Inceptum.Messaging</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\nuget.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

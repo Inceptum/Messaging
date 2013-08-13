@@ -7,6 +7,6 @@ namespace Inceptum.Cqrs.Configuration
     {
         IEnumerable<Type> GetDependedncies();
         void Create(BoundedContext boundedContext, Func<Type, object> resolve);
-        void Process(BoundedContext boundedContext, CommandSender commandSender);
+        void Process(BoundedContext boundedContext, CqrsEngine cqrsEngine);
     }
 }

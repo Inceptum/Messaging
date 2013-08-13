@@ -1,52 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Reactive.Disposables;
-using System.Reflection;
 using System.Runtime.CompilerServices;
-using EventStore;
-using EventStore.Dispatcher;
 using Inceptum.Cqrs.Configuration;
 using Inceptum.Messaging;
 using Inceptum.Messaging.Contract;
-using Inceptum.Messaging.Serialization;
-using Inceptum.Messaging.Transports;
 
 namespace Inceptum.Cqrs
 {
-    class CommitDispatcher : IDispatchCommits
-    {
-        private readonly IEventPublisher m_EventPublisher;
-
-        public CommitDispatcher(IEventPublisher eventPublisher)
-        {
-            m_EventPublisher = eventPublisher;
-        }
-
-        public void Dispose()
-        {
-        }
-
-        public void Dispatch(Commit commit)
-        {
-            foreach (var @event in commit.Events)
-            {
-                m_EventPublisher.PublishEvent(@event.Body);
-            }
-        }
-    }
-
-    class InMemoryEndpointResolver:IEndpointResolver
-    {
-        public Endpoint Resolve(string endpoint)
-        {
-            return new Endpoint("InMemory", endpoint, true, "json");
-        }
-    }
-
-     
     public class CqrsEngine : ICommandSender
     {
         private readonly IMessagingEngine m_MessagingEngine;
@@ -68,7 +30,7 @@ namespace Inceptum.Cqrs
         {
             m_HandleMessagingEngineLifeCycle = true;
         }
-        public CqrsEngine(Func<Type,object> dependencyResolver, params IRegistration[] registrations) :
+        public CqrsEngine(Func<Type, object> dependencyResolver, params IRegistration[] registrations) :
             this(dependencyResolver,new MessagingEngine(new TransportResolver(new Dictionary<string, TransportInfo> { { "InMemory", new TransportInfo("none", "none", "none", null, "InMemory") } })),
             new InMemoryEndpointResolver(),
             registrations
