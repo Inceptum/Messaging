@@ -16,6 +16,7 @@ namespace Inceptum.Messaging
 {
     public class MessagingEngine : IMessagingEngine
     {
+        private const int DEFAULT_UNACK_DELAY = 60000;
         internal const int MESSAGE_DEFAULT_LIFESPAN = 0; // forever // 1800000; // milliseconds (30 minutes)
         private readonly ManualResetEvent m_Disposing = new ManualResetEvent(false);
         private readonly CountingTracker m_RequestsTracker = new CountingTracker();
@@ -154,7 +155,7 @@ namespace Inceptum.Messaging
             {
                 try
                 {
-                    return subscribe(endpoint, (m, ack) => processMessage(m, typeof(TMessage),  message  => callback((TMessage)message, ack), endpoint), endpoint.SharedDestination ? getMessageType(typeof(TMessage)) : null);
+                    return subscribe(endpoint, (m, ack) => processMessage(m, typeof(TMessage),  message  => callback((TMessage)message, ack), ack, endpoint), endpoint.SharedDestination ? getMessageType(typeof(TMessage)) : null);
                 }
                 catch (Exception e)
                 {
@@ -209,7 +210,7 @@ namespace Inceptum.Messaging
                                 }
                                 return;
                             }
-                            processMessage(m, messageType, message => callback(message, ack), endpoint);
+                            processMessage(m, messageType, message => callback(message, ack), ack, endpoint);
                         }, null);
                 }
                 catch (Exception e)
@@ -538,7 +539,7 @@ namespace Inceptum.Messaging
 
 
 
-        private void processMessage(BinaryMessage binaryMessage,Type type, Action<object> callback, Endpoint endpoint)
+        private void processMessage(BinaryMessage binaryMessage,Type type, Action<object> callback, AcknowledgeDelegate ack, Endpoint endpoint)
         {
             object message = null;
             try
@@ -549,6 +550,8 @@ namespace Inceptum.Messaging
             {
                 Logger.ErrorFormat(e, "Failed to deserialize message. Transport: {0}, Destination: {1}, Message Type: {2}",
                                    endpoint.TransportId, endpoint.Destination, type.Name);
+                //TODO: need to unack without requeue
+                ack(DEFAULT_UNACK_DELAY, false);
             }
 
             try
@@ -559,6 +562,7 @@ namespace Inceptum.Messaging
             {
                 Logger.ErrorFormat(e, "Failed to handle message. Transport: {0}, Destination: {1}, Message Type: {2}",
                                    endpoint.TransportId, endpoint.Destination, type.Name);
+                ack(DEFAULT_UNACK_DELAY, false);
             }
         }
     }
