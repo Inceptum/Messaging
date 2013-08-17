@@ -53,8 +53,11 @@ namespace Inceptum.Messaging
 
                 public void Dispose()
                 {
-                    if(ProcessingGroup!=null)
+                    if (ProcessingGroup != null)
+                    {
                         ProcessingGroup.Dispose();
+                        ProcessingGroup = null;
+                    }
                 }
             }
             private readonly List<string> m_KnownIds = new List<string>();
@@ -130,7 +133,6 @@ namespace Inceptum.Messaging
                 {
                     processinGroupWrapper.Dispose();
                 }
-                //TODO: dispose processing groups
                 Transport.Dispose();
                 Transport = null;
             }

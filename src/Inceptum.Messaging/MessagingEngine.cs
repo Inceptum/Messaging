@@ -28,9 +28,11 @@ namespace Inceptum.Messaging
         private ILogger m_Logger = NullLogger.Instance;
         readonly ConcurrentDictionary<Type, string> m_MessageTypeMapping = new ConcurrentDictionary<Type, string>();
         private readonly SchedulingBackgroundWorker m_RequestTimeoutManager;
-        private readonly SchedulingBackgroundWorker m_DeferredAcknowledgementManager;
         readonly Dictionary<RequestHandle, Action<Exception>> m_ActualRequests = new Dictionary<RequestHandle, Action<Exception>>();
-        readonly List<Tuple<DateTime, Action>> m_DeferredAcknowledgements = new List<Tuple<DateTime, Action>>();
+        
+
+        private SubscriptionManager m_SubscriptionManager;
+
 
         /// <summary>
         /// ctor for tests
@@ -40,9 +42,9 @@ namespace Inceptum.Messaging
         {
             if (transportManager == null) throw new ArgumentNullException("transportManager");
             m_TransportManager = transportManager;
+            m_SubscriptionManager = new SubscriptionManager(m_TransportManager);
             m_SerializationManager = new SerializationManager();
             m_RequestTimeoutManager = new SchedulingBackgroundWorker("RequestTimeoutManager", () => stopTimeoutedRequests());
-            m_DeferredAcknowledgementManager = new SchedulingBackgroundWorker("DeferredAcknowledgementManager", () => processDefferredAcknowledgements());
             createMessagingHandle(() => stopTimeoutedRequests(true));
 
         }
@@ -124,8 +126,6 @@ namespace Inceptum.Messaging
                 try
                 {
                     var processingGroup = m_TransportManager.GetProcessingGroup(endpoint.TransportId,endpoint.Destination);
-                    //m_SerializationManager.SerializeObject(endpoint.SerializationFormat, message)
-                //    var serializedMessage = serialize(endpoint.SerializationFormat, message);
                     processingGroup.Send(endpoint.Destination, message, ttl);
                 }
                 catch (Exception e)
@@ -273,7 +273,7 @@ namespace Inceptum.Messaging
             lock (m_ActualRequests)
             {
                 var timeouted = stopAll
-                            ?m_ActualRequests .ToArray()
+                            ?m_ActualRequests.ToArray()
                             :m_ActualRequests.Where(r => r.Key.DueDate <= DateTime.Now || r.Key.IsComplete).ToArray();
 
                 Array.ForEach(timeouted, r =>
@@ -288,24 +288,6 @@ namespace Inceptum.Messaging
             }
         }
 
-
-        private void processDefferredAcknowledgements(bool all = false)
-        {
-            Tuple<DateTime, Action>[] ready;
-            lock (m_DeferredAcknowledgements)
-            {
-                ready = all
-                                ? m_DeferredAcknowledgements.ToArray()
-                                : m_DeferredAcknowledgements.Where(r => r.Item1 <= DateTime.Now).ToArray();
-            }
-
-                Array.ForEach(ready, r => r.Item2());
-
-            lock (m_DeferredAcknowledgements)
-            {
-                Array.ForEach(ready, r => m_DeferredAcknowledgements.Remove(r));
-            }
-        }
 
 
 
@@ -378,8 +360,7 @@ namespace Inceptum.Messaging
         {
             m_Disposing.Set();
             m_RequestTimeoutManager.Dispose();
-            processDefferredAcknowledgements(true);
-            m_DeferredAcknowledgementManager.Dispose();
+            m_SubscriptionManager.Dispose();
             m_RequestsTracker.WaitAll();
             lock (m_MessagingHandles)
             {
@@ -423,6 +404,7 @@ namespace Inceptum.Messaging
 		public IDisposable registerHandler<TRequest, TResponse>(Func<TRequest, TResponse> handler, Endpoint endpoint)
             where TResponse : class
         {
+            //BUG: registering handler while disposing causes endless loop
             if (m_Disposing.WaitOne(0))
                 throw new InvalidOperationException("Engine is disposing");
 
@@ -492,27 +474,23 @@ namespace Inceptum.Messaging
 
         private IDisposable subscribe(Endpoint endpoint,CallbackDelegate<BinaryMessage> callback, string messageType)
         {
+            return createMessagingHandle(m_SubscriptionManager.Subscribe(endpoint, callback, messageType).Dispose);
+    /*        var subscriptionHandler=new MultipleAssignmentDisposable();
+            Action doSubscribe = null;
+            doSubscribe = () =>
+            {
+                var processingGroup = m_TransportManager.GetProcessingGroup(endpoint.TransportId, endpoint.Destination,doSubscribe);
+                var subscription = processingGroup.Subscribe(endpoint.Destination, (message, ack) => callback(message, createDeferredAcknowledge(ack)), messageType);
+                subscriptionHandler.Disposable=subscription;
+            };
+
+            return createMessagingHandle(subscriptionHandler.Dispose);*/
+
+/*
             var processingGroup = m_TransportManager.GetProcessingGroup(endpoint.TransportId , endpoint.Destination);
             IDisposable subscription = processingGroup.Subscribe(endpoint.Destination, (message, ack) => callback(message,createDeferredAcknowledge(ack)), messageType);
             return createMessagingHandle(subscription.Dispose);
-        }
-
-        private AcknowledgeDelegate createDeferredAcknowledge(Action<bool> ack)
-        {
-            return (l, b) =>
-                {
-                    if (l == 0)
-                    {
-                        ack(b);
-                        return;
-                    }
-
-                    lock (m_DeferredAcknowledgements)
-                    {
-                        m_DeferredAcknowledgements.Add(Tuple.Create<DateTime,Action>(DateTime.Now.AddMilliseconds(l),() => ack(b)));
-                        m_DeferredAcknowledgementManager.Schedule(l);
-                    }
-                };
+*/
         }
 
 
