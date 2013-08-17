@@ -305,6 +305,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
 
 
         [Test]
+        [Ignore]
         public void EndToEndRabbitResubscriptionTest()
         {
             
