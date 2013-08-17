@@ -72,7 +72,11 @@ namespace Inceptum.Messaging
         public ILogger Logger
         {
             get { return m_Logger; }
-            set { m_Logger = value; }
+            set
+            {
+                m_Logger = value;
+                m_SubscriptionManager.Logger = value;
+            }
         }
 
         #region IMessagingEngine Members

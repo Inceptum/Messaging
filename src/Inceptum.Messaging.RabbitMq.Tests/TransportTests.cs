@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Threading;
+using Inceptum.Messaging.Contract;
 using Inceptum.Messaging.Transports;
 using NUnit.Framework;
 using RabbitMQ.Client;
@@ -300,6 +302,39 @@ namespace Inceptum.Messaging.RabbitMq.Tests
                 Console.WriteLine("Receive: {0} per second. {1:0.00}  Mbit/s", receiveCounter / 2, 1.0 * receiveCounter * messageSize / 2 / 1024 / 1024 * 8);
             }
         }
+
+
+        [Test]
+        public void EndToEndRabbitResubscriptionTest()
+        {
+            
+            var messagingEngine = new MessagingEngine(
+                new TransportResolver(new Dictionary<string, TransportInfo> {{"test", new TransportInfo(HOST, "guest", "guest", null, "RabbitMq")}}),
+                new RabbitMqTransportFactory())
+            {
+                Logger = new ConsoleLoggerWithTime()
+            };
+
+            using (messagingEngine)
+            {
+                for (int i = 0; i < 1000; i++)
+                {
+                    //messagingEngine.Send(TEST_EXCHANGE, new BinaryMessage { Bytes = BitConverter.GetBytes(i), Type = typeof(byte[]).Name }, 0);
+                    messagingEngine.Send(i, new Endpoint("test", TEST_EXCHANGE,serializationFormat:"json"));
+                }
+                Console.WriteLine("!!!");
+                Thread.Sleep(20000);
+                messagingEngine.Subscribe<int>(new Endpoint("test", TEST_QUEUE, serializationFormat: "json"), message =>
+                {
+                    Console.WriteLine(message);
+                    Console.WriteLine("!");
+                    Thread.Sleep(1000);
+                });
+
+                Thread.Sleep(1200000);
+            }
+        }
+
 
         [Test]
         [ExpectedException(typeof (InvalidOperationException))]
