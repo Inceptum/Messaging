@@ -149,8 +149,8 @@ namespace Inceptum.Cqrs
                 m_Subscription.Dispose();
             
             //TODO: investigate why this code crashes in tests 
-       /*     if(m_HandleMessagingEngineLifeCycle)
-                m_MessagingEngine.Dispose();*/
+            if(m_HandleMessagingEngineLifeCycle)
+                m_MessagingEngine.Dispose();
         }
 
         public void SendCommand<T>(T command,string boundedContext )

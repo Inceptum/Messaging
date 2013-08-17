@@ -11,7 +11,7 @@ namespace Inceptum.Messaging.RabbitMq
     {
         private readonly ConnectionFactory m_Factory;
         private readonly List<ProcessingGroup> m_ProcessingGroups = new List<ProcessingGroup>();
-        ManualResetEvent m_IsDisposed=new ManualResetEvent(false);
+        readonly ManualResetEvent m_IsDisposed=new ManualResetEvent(false);
         public Transport(string host, string username, string password)
         {
             if (host == null) throw new ArgumentNullException("host");
