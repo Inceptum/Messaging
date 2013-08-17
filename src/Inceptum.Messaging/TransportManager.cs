@@ -10,8 +10,13 @@ using Inceptum.Messaging.Transports;
 
 namespace Inceptum.Messaging
 {
+    internal interface ITransportManager : IDisposable
+    {
+        event TrasnportEventHandler TransportEvents;
+        IProcessingGroup GetProcessingGroup(string transportId, string name, Action onFailure=null);
+    }
 
-    internal class TransportManager : IDisposable
+    internal class TransportManager : ITransportManager
     {
         private class ResolvedTransport : IDisposable
         {
