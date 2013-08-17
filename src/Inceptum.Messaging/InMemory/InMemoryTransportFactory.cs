@@ -80,6 +80,7 @@ namespace Inceptum.Messaging.InMemory
                 {
                     processingGroup.Dispose();
                 }
+                m_ProcessingGroups.Clear();
             }
             
         }
@@ -102,6 +103,7 @@ namespace Inceptum.Messaging.InMemory
         private readonly InMemoryTransport m_Transport;
         readonly EventLoopScheduler m_Scheduler=new EventLoopScheduler(ts => new Thread(ts));
         readonly CompositeDisposable m_Subscriptions=new CompositeDisposable();
+        private bool m_IsDisposed=false;
 
         public InMemoryProcessingGroup(InMemoryTransport queues)
         {
@@ -155,11 +157,14 @@ namespace Inceptum.Messaging.InMemory
 
         public void Dispose()
         {
+            if (m_IsDisposed)
+                return;
             var finishedProcessing=new ManualResetEvent(false);
             m_Subscriptions.Dispose();
             m_Scheduler.Schedule(() => finishedProcessing.Set());
             finishedProcessing.WaitOne();
             m_Scheduler.Dispose();
+            m_IsDisposed = true;
         }
       
     }
