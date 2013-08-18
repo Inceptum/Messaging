@@ -26,8 +26,15 @@ namespace Inceptum.Messaging.RabbitMq.Tests
         [TearDown]
         public void TearDown()
         {
-            m_Channel.Dispose();
-            m_Connection.Dispose();
+            try
+            {
+                m_Channel.Dispose();
+                m_Connection.Dispose();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Exception in teardown: {0}",e);
+            }
         }
 
         private const string TEST_QUEUE = "test.queue";
@@ -318,22 +325,20 @@ namespace Inceptum.Messaging.RabbitMq.Tests
 
             using (messagingEngine)
             {
-                for (int i = 0; i < 1000; i++)
+                for (int i = 0; i < 100; i++)
                 {
-                    //messagingEngine.Send(TEST_EXCHANGE, new BinaryMessage { Bytes = BitConverter.GetBytes(i), Type = typeof(byte[]).Name }, 0);
                     messagingEngine.Send(i, new Endpoint("test", TEST_EXCHANGE,serializationFormat:"json"));
                 }
-                Console.WriteLine("!!!");
-                Thread.Sleep(20000);
+               
                 messagingEngine.Subscribe<int>(new Endpoint("test", TEST_QUEUE, serializationFormat: "json"), message =>
                 {
                     Console.WriteLine(message);
-                    Console.WriteLine("!");
                     Thread.Sleep(1000);
                 });
 
-                Thread.Sleep(1200000);
+                Thread.Sleep(5000);
             }
+            Console.WriteLine("Done");
         }
 
 

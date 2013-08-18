@@ -104,7 +104,16 @@ namespace Inceptum.Messaging.RabbitMq
             lock (Model)
             {
                 if (Model.IsOpen)
-                    Model.BasicCancel(ConsumerTag);
+                {
+                    try
+                    {
+                        Model.BasicCancel(ConsumerTag);
+                    }
+                    catch (Exception e)
+                    {
+                        //TODO: log
+                    }
+                }
             }
         }
     }
