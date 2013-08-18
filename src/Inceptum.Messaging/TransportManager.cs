@@ -102,9 +102,13 @@ namespace Inceptum.Messaging
                
                 if (processingGroup==null)
                 {
+
                     processingGroup = new ProcessingGroupWrapper(transportId,name);
                     processingGroup.SetProcessingGroup(transport.CreateProcessingGroup(() => processProcessingGroupFailure(processingGroup)));
-                    m_ProcessingGroups.Add(processingGroup);
+                    lock (m_ProcessingGroups)
+                    {
+                        m_ProcessingGroups.Add(processingGroup);
+                    }
                 }
                 if(onFailure!=null)
                     processingGroup.OnFailure += onFailure;
@@ -114,17 +118,22 @@ namespace Inceptum.Messaging
             [MethodImpl(MethodImplOptions.Synchronized)]
             private void processTransportFailure()
             {
-                foreach (var processinGroup in m_ProcessingGroups)
+                lock (m_ProcessingGroups)
                 {
-                    processProcessingGroupFailure(processinGroup);
+                    foreach (var processinGroup in m_ProcessingGroups)
+                    {
+                        processProcessingGroupFailure(processinGroup);
+                    }
                 }
                 m_ProcessTransportFailure();
             }
 
-            [MethodImpl(MethodImplOptions.Synchronized)]
             private void processProcessingGroupFailure(ProcessingGroupWrapper processingGroup)
             {
-                m_ProcessingGroups.Remove(processingGroup);
+                lock (m_ProcessingGroups)
+                {
+                    m_ProcessingGroups.Remove(processingGroup);
+                }
                 processingGroup.ReportFailure();
             }
  
@@ -134,10 +143,18 @@ namespace Inceptum.Messaging
             {
                 if (Transport == null) 
                     return;
-                foreach (var processinGroupWrapper in m_ProcessingGroups)
+                    
+                ProcessingGroupWrapper[] processingGroupWrappers;
+                lock (m_ProcessingGroups)
+                {
+                    processingGroupWrappers = m_ProcessingGroups.ToArray();
+                }
+
+                foreach (var processinGroupWrapper in processingGroupWrappers)
                 {
                     processinGroupWrapper.Dispose();
                 }
+
                 Transport.Dispose();
                 Transport = null;
             }

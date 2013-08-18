@@ -181,8 +181,26 @@ namespace Inceptum.Messaging.RabbitMq
                 }
             }
             lock (m_Model)
-                m_Model.Dispose();
-            m_Connection.Dispose();
+            {
+                try
+                {
+                    m_Model.Dispose();
+                }
+                catch (Exception e)
+                {
+                    //TODO: log
+                }
+            }
+
+            try
+            {
+                m_Connection.Dispose();
+            }
+            catch (Exception e)
+            {
+                //TODO: log
+            }
+            
         }
     }
 }

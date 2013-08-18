@@ -37,7 +37,18 @@ namespace Inceptum.Messaging.RabbitMq
         public void Dispose()
         {
             lock (Model)
-                Model.BasicCancel(ConsumerTag);
+            {
+                if (!Model.IsOpen)
+                    return;
+                try
+                {
+                    Model.BasicCancel(ConsumerTag);
+                }
+                catch (Exception e)
+                {
+                    //TODO: log
+                }
+            }
         }
     }
 }
