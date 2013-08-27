@@ -15,7 +15,7 @@ namespace Inceptum.Cqrs.Configuration
     public class BoundedContextRegistration : IRegistration
     {
         readonly Dictionary<Type, string> m_EventsSubscriptions = new Dictionary<Type, string>();
-        readonly Dictionary<Type, string> m_CommandsSubscriptions = new Dictionary<Type, string>();
+        readonly List<Tuple<Type, string>> m_CommandsSubscriptions = new List<Tuple<Type, string>>();
         readonly List<IBoundedContextDescriptor> m_Configurators = new List<IBoundedContextDescriptor>();
         readonly Dictionary<Type, string> m_CommandRoutes=new Dictionary<Type, string>();
         readonly Dictionary<Type, string> m_EventRoutes=new Dictionary<Type, string>();
@@ -70,10 +70,10 @@ namespace Inceptum.Cqrs.Configuration
         {
             foreach (var type in types)
             {
-                if (m_CommandsSubscriptions.ContainsKey(type))
+                if (m_CommandsSubscriptions.Any(t=>t.Item1==type))
                     throw new ConfigurationErrorsException(string.Format("Can not register {0} as event in bound context {1}, it is already registered as command",type, m_Name));
-                if (m_CommandsSubscriptions.ContainsValue(endpoint))
-                    throw new ConfigurationErrorsException(string.Format("Can not register endpoint '{0}' as command string in bound context {1}, it is already registered as events endpoint", endpoint, m_Name));
+                if (m_CommandsSubscriptions.Any(t=>t.Item2==endpoint))
+                    throw new ConfigurationErrorsException(string.Format("Can not register endpoint '{0}' as event endpoint in bound context {1}, it is already registered as commands endpoint", endpoint, m_Name));
                 m_EventsSubscriptions.Add(type,endpoint);
             }
         }
@@ -85,8 +85,9 @@ namespace Inceptum.Cqrs.Configuration
                 if (m_EventsSubscriptions.ContainsKey(type))
                     throw new ConfigurationErrorsException(string.Format("Can not register {0} as command in bound context {1}, it is already registered as event",type, m_Name));
                 if (m_EventsSubscriptions.ContainsValue(endpoint))
-                    throw new ConfigurationErrorsException(string.Format("Can not register endpoint '{0}' as events string in bound context {1}, it is already registered as commands endpoint", endpoint, m_Name));
-                m_CommandsSubscriptions.Add(type, endpoint);
+                    throw new ConfigurationErrorsException(string.Format("Can not register endpoint '{0}' as events endpoint in bound context {1}, it is already registered as commands endpoint", endpoint, m_Name));
+                if (!m_CommandsSubscriptions.Any(t=>t.Item2==endpoint && t.Item1==type))
+                    m_CommandsSubscriptions.Add(Tuple.Create(type, endpoint));
             }
         }
 

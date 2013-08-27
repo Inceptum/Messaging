@@ -19,6 +19,7 @@ namespace Inceptum.Cqrs.Tests
 {
     class CommandHandler
     {
+        public static List<object> AcceptedCommands=new List<object>(); 
         private readonly ICommandSender m_Engine;
         private int counter = 0;
 
@@ -30,18 +31,21 @@ namespace Inceptum.Cqrs.Tests
         {
             Console.WriteLine("command recived:" + command);
             eventPublisher.PublishEvent(++counter);
+            AcceptedCommands.Add(command);
         }
 
         public void Handle(string command,IEventPublisher eventPublisher)
         {
             Console.WriteLine("command recived:" +command);
             eventPublisher.PublishEvent(++counter);
+            AcceptedCommands.Add(command);
         }
 
         public void Handle(DateTime command, IEventPublisher eventPublisher)
         {
             Console.WriteLine("command recived:" +command);
             eventPublisher.PublishEvent(++counter);
+            AcceptedCommands.Add(command);
         }
     }
 
@@ -63,11 +67,40 @@ namespace Inceptum.Cqrs.Tests
         {
             new CqrsEngine(LocalBoundedContext.Named("bc")
                                                      .PublishingEvents(typeof(string)).To("eventExchange").RoutedTo("eventQueue")
-                                                     .ListeningCommands(typeof (string)).On("commandExchange").RoutedFrom("commandQueue"));
+                                                     .ListeningCommands(typeof(string)).On("commandQueue").RoutedFrom("commandExchange"));
         }
 
 
-       
+        [Test]
+        public void ListenSameCommandOnDifferentEndpointsTest()
+        {
+            using (
+                var messagingEngine =
+                    new MessagingEngine(
+                        new TransportResolver(new Dictionary<string, TransportInfo>
+                            {
+                                {"InMemory", new TransportInfo("none", "none", "none", null, "InMemory")}
+                            })))
+            {
+                using (var engine = new CqrsEngine(Activator.CreateInstance, messagingEngine,
+                                                   new InMemoryEndpointResolver(),
+                                                   LocalBoundedContext.Named("bc")
+                                                                       .PublishingEvents(typeof(int)).To("eventExchange").RoutedTo("eventQueue")
+                                                                       .ListeningCommands(typeof(string)).On("exchange1", "exchange2").RoutedFrom("commandQueue")
+                                                                       .WithCommandsHandler<CommandHandler>())
+                    )
+                {
+                    messagingEngine.Send("test1", new Endpoint("InMemory", "exchange1", serializationFormat: "json"));
+                    messagingEngine.Send("test2", new Endpoint("InMemory", "exchange2", serializationFormat: "json"));
+                    messagingEngine.Send("test3", new Endpoint("InMemory", "exchange3", serializationFormat: "json"));
+                    Thread.Sleep(2000);
+                    Assert.That(CommandHandler.AcceptedCommands,Is.EquivalentTo(new []{"test1","test2"}));
+                }
+            }
+        }
+
+
+
         [Test]
         [Ignore("investigation test")]
         public void CqrsEngineTest()

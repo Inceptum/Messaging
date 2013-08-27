@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using EventStore;
 using EventStore.Dispatcher;
 
@@ -101,8 +102,10 @@ namespace Inceptum.Cqrs.Configuration
             m_Registration = registration;
         }
 
-        public RoutedFromDescriptor On(string listenEndpoint)
+        public RoutedFromDescriptor On(params string[] listenEndpoint)
         {
+            if(listenEndpoint.Length==0)
+                throw new ArgumentException("Endpoint list is empty","listenEndpoint");
             return new RoutedFromDescriptor(m_Registration, m_Types, listenEndpoint);
         }
 
@@ -113,9 +116,9 @@ namespace Inceptum.Cqrs.Configuration
     {
         private readonly LocalBoundedContextRegistration m_Registration;
         private readonly Type[] m_Types;
-        private readonly string m_ListenEndpoint;
+        private readonly string[] m_ListenEndpoint;
 
-        public RoutedFromDescriptor(LocalBoundedContextRegistration registration, Type[] types, string listenEndpoint)
+        public RoutedFromDescriptor(LocalBoundedContextRegistration registration, Type[] types, string[] listenEndpoint)
         {
             m_ListenEndpoint = listenEndpoint;
             m_Types = types;
@@ -125,18 +128,24 @@ namespace Inceptum.Cqrs.Configuration
         public LocalBoundedContextRegistration RoutedFrom(string publishEndpoint)
         {
             m_Registration.AddCommandsRoute(m_Types, publishEndpoint);
-            m_Registration.AddSubscribedCommands(m_Types, m_ListenEndpoint);
+            foreach (var endpoint in m_ListenEndpoint)
+            {
+                m_Registration.AddSubscribedCommands(m_Types, endpoint);
+            }
             return m_Registration;
         }
 
         public LocalBoundedContextRegistration RoutedFromSameEndpoint( )
         {
-            return RoutedFrom(m_ListenEndpoint);
+            return RoutedFrom(m_ListenEndpoint.First());
         }
 
         public LocalBoundedContextRegistration NotRouted()
         {
-            m_Registration.AddSubscribedCommands(m_Types, m_ListenEndpoint);
+            foreach (var endpoint in m_ListenEndpoint)
+            {
+                m_Registration.AddSubscribedCommands(m_Types, endpoint);
+            }
             return m_Registration;
         }
     }
