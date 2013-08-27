@@ -50,7 +50,7 @@ namespace Inceptum.Cqrs.Configuration
             var command = Expression.Parameter(typeof(object), "command");
 
             Expression[] parameters =
-                new Expression[] { Expression.Convert(command, commandType) }.Concat(optionalParameters.Select(p => Expression.Constant(p.Value))).ToArray();
+                new Expression[] { Expression.Convert(command, commandType) }.Concat(optionalParameters.Select(p => Expression.Constant(p.Value,p.Key.ParameterType))).ToArray();
             var call = Expression.Call(Expression.Constant(o), "Handle", null, parameters);
             var lambda = (Expression<Action<object>>)Expression.Lambda(call, command);
 
