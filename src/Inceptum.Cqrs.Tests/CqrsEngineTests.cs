@@ -119,15 +119,13 @@ namespace Inceptum.Cqrs.Tests
             {
                 using (var engine = new CqrsEngine(Activator.CreateInstance, messagingEngine,
                                                    new InMemoryEndpointResolver(),
-                                                   LocalBoundedContext.Named("bc")
+                                                   LocalBoundedContext.Named("bc").ConcurrencyLevel(1)
                                                                        .PublishingEvents(typeof(int)).To("eventExchange").RoutedTo("eventQueue")
                                                                        .ListeningCommands(typeof(string))
-                                                                            .On("exchange1", CommandPriority.Normal)
+                                                                            .On("exchange1", CommandPriority.Low)
                                                                             .On("exchange2", CommandPriority.High)
                                                                             .RoutedFrom("commandQueue")
-                                                                       .ListeningCommands(typeof(decimal))
-                                                                            .On("exchange2", CommandPriority.Low)
-                                                                            .RoutedFrom("commandQueue")
+                                                                  
                                                                        .WithCommandsHandler(new CommandHandler(100)))
                     )
                 {
@@ -136,11 +134,11 @@ namespace Inceptum.Cqrs.Tests
                     messagingEngine.Send("low3", new Endpoint("InMemory", "exchange1", serializationFormat: "json"));
                     messagingEngine.Send("low4", new Endpoint("InMemory", "exchange1", serializationFormat: "json"));
                     messagingEngine.Send("low5", new Endpoint("InMemory", "exchange1", serializationFormat: "json"));
-                    messagingEngine.Send((decimal)1, new Endpoint("InMemory", "exchange2", serializationFormat: "json"));
-                    messagingEngine.Send((decimal)2, new Endpoint("InMemory", "exchange2", serializationFormat: "json"));
-                    messagingEngine.Send((decimal)3, new Endpoint("InMemory", "exchange2", serializationFormat: "json"));
-                    messagingEngine.Send((decimal)4, new Endpoint("InMemory", "exchange2", serializationFormat: "json"));
-                    messagingEngine.Send((decimal)5, new Endpoint("InMemory", "exchange2", serializationFormat: "json"));
+                    messagingEngine.Send("low6", new Endpoint("InMemory", "exchange1", serializationFormat: "json"));
+                    messagingEngine.Send("low7", new Endpoint("InMemory", "exchange1", serializationFormat: "json"));
+                    messagingEngine.Send("low8", new Endpoint("InMemory", "exchange1", serializationFormat: "json"));
+                    messagingEngine.Send("low9", new Endpoint("InMemory", "exchange1", serializationFormat: "json"));
+                    messagingEngine.Send("low10", new Endpoint("InMemory", "exchange1", serializationFormat: "json"));
                     messagingEngine.Send("high", new Endpoint("InMemory", "exchange2", serializationFormat: "json"));
                     Thread.Sleep(2000);
                     Assert.That(CommandHandler.AcceptedCommands.Take(2).Any(c=>(string) c=="high"),Is.True);

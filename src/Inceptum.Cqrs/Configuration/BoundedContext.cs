@@ -16,12 +16,14 @@ namespace Inceptum.Cqrs.Configuration
         internal List<IProcess> Processes { get; private set; }
         internal IRepository Repository { get; set; }
         public string Name { get; set; }
+        public int ThreadCount { get; set; }
 
-        internal BoundedContext(CqrsEngine cqrsEngine,string name)
+        internal BoundedContext(CqrsEngine cqrsEngine,string name, int threadCount)
         {
+            ThreadCount = threadCount;
             Name = name;
             EventsPublisher = new EventsPublisher(cqrsEngine, this);
-            CommandDispatcher = new CommandDispatcher(Name);
+            CommandDispatcher = new CommandDispatcher(Name, threadCount);
             EventDispatcher = new EventDispatcher(Name);
             Processes = new List<IProcess>();
         }

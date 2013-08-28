@@ -9,8 +9,8 @@ namespace Inceptum.Cqrs.Configuration
     public enum CommandPriority
     {
         Normal=0,
-        Low=1,
-        High=2
+        Low=2,
+        High=1
     }
 
     public class LocalBoundedContextRegistration : BoundedContextRegistration 
@@ -18,6 +18,12 @@ namespace Inceptum.Cqrs.Configuration
         public LocalBoundedContextRegistration(string name)
             : base(name)
         {
+        }
+        public LocalBoundedContextRegistration ConcurrencyLevel(int threadCount)
+        {
+            if (threadCount < 1) throw new ArgumentException("threadCount should be greater then 0", "threadCount");
+            ThreadCount = threadCount;
+            return this;
         }
         public LocalBoundedContextRegistration WithCommandsHandler(object handler)
         {

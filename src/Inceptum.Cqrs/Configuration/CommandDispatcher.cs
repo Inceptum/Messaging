@@ -20,11 +20,12 @@ namespace Inceptum.Cqrs.Configuration
     {
         readonly Dictionary<Type, Func<object, CommandHandlingResult>> m_Handlers = new Dictionary<Type, Func<object, CommandHandlingResult>>();
         private readonly string m_BoundedContext;
-        private readonly QueuedTaskScheduler m_QueuedTaskScheduler=new QueuedTaskScheduler(10);
+        private readonly QueuedTaskScheduler m_QueuedTaskScheduler;
         private readonly Dictionary<CommandPriority,TaskFactory> m_TaskFactories=new Dictionary<CommandPriority, TaskFactory>();
 
-        public CommandDispatcher(string boundedContext)
+        public CommandDispatcher(string boundedContext, int threadCount=1)
         {
+            m_QueuedTaskScheduler = new QueuedTaskScheduler(threadCount);
             foreach (var value in Enum.GetValues(typeof(CommandPriority)))
             {
                 m_TaskFactories[(CommandPriority) value] = new TaskFactory(
