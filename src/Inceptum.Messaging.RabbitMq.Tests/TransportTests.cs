@@ -332,11 +332,11 @@ namespace Inceptum.Messaging.RabbitMq.Tests
                
                 messagingEngine.Subscribe<int>(new Endpoint("test", TEST_QUEUE, serializationFormat: "json"), message =>
                 {
-                    Console.WriteLine(message);
+                    Console.WriteLine(message+"\n");
                     Thread.Sleep(1000);
                 });
 
-                Thread.Sleep(5000);
+                Thread.Sleep(30*60*1000);
             }
             Console.WriteLine("Done");
         }

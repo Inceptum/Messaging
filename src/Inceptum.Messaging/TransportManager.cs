@@ -12,7 +12,7 @@ namespace Inceptum.Messaging
 {
     internal interface ITransportManager : IDisposable
     {
-        event TrasnportEventHandler TransportEvents;
+        event TransportEventHandler TransportEvents;
         IProcessingGroup GetProcessingGroup(string transportId, string name, Action onFailure=null);
     }
 
@@ -97,19 +97,21 @@ namespace Inceptum.Messaging
             {
                 addId(transportId);
                 var transport = Transport ?? (Transport = m_Factory.Create(m_TransportInfo, processTransportFailure));
+                ProcessingGroupWrapper processingGroup;
 
-                var processingGroup = m_ProcessingGroups.FirstOrDefault(g => g.TransportId == transportId && g.Name  == name);
-               
-                if (processingGroup==null)
+                lock (m_ProcessingGroups)
                 {
+                    processingGroup = m_ProcessingGroups.FirstOrDefault(g => g.TransportId == transportId && g.Name == name);
 
-                    processingGroup = new ProcessingGroupWrapper(transportId,name);
-                    processingGroup.SetProcessingGroup(transport.CreateProcessingGroup(() => processProcessingGroupFailure(processingGroup)));
-                    lock (m_ProcessingGroups)
+                    if (processingGroup == null)
                     {
+
+                        processingGroup = new ProcessingGroupWrapper(transportId, name);
+                        processingGroup.SetProcessingGroup(transport.CreateProcessingGroup(() => processProcessingGroupFailure(processingGroup)));
                         m_ProcessingGroups.Add(processingGroup);
                     }
                 }
+
                 if(onFailure!=null)
                     processingGroup.OnFailure += onFailure;
                 return processingGroup.ProcessingGroup;
@@ -191,7 +193,7 @@ namespace Inceptum.Messaging
 
         #endregion
 
-        public event TrasnportEventHandler TransportEvents;
+        public event TransportEventHandler TransportEvents;
 
         public IProcessingGroup GetProcessingGroup(string transportId, string name, Action onFailure=null)
         {

@@ -81,9 +81,9 @@ namespace Inceptum.Messaging
 
         #region IMessagingEngine Members
 
-        public IDisposable SubscribeOnTransportEvents(TrasnportEventHandler handler)
+        public IDisposable SubscribeOnTransportEvents(TransportEventHandler handler)
         {
-            TrasnportEventHandler safeHandler = (transportId, @event) =>
+            TransportEventHandler safeHandler = (transportId, @event) =>
                                                     {
                                                         try
                                                         {

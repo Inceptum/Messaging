@@ -27,6 +27,19 @@ namespace Inceptum.Cqrs.Tests
         {
             Console.WriteLine("Command received:" + m);
             HandledCommands.Add(m);
+        } 
+        
+        private CommandHandlingResult Handle(int m)
+        {
+            Console.WriteLine("Command received:" + m);
+            HandledCommands.Add(m.ToString());
+            return new CommandHandlingResult{NeedRetry = true,RetryDelay = 100};
+        }    
+
+        private void Handle(long m)
+        {
+            Console.WriteLine("Command received:" + m);
+            throw new Exception();
         }
     }
 
@@ -64,14 +77,17 @@ namespace Inceptum.Cqrs.Tests
     [TestFixture]
     public class CqrsFacilityTests
     {
+      
 
         [Test]
         [ExpectedException(ExpectedMessage = "Component can not be projection and commands handler simultaneousely")]
         public void ComponentCanNotBeProjectionAndCommandsHandlerSimultaneousely()
         {
-            var container = new WindsorContainer();
-            container.AddFacility<CqrsFacility>(f=>f.BoundedContexts(LocalBoundedContext.Named("bc")));
-            container.Register(Component.For<CommandsHandler>().AsCommandsHandler("bc").AsProjection("bc","remote"));
+            using (var container = new WindsorContainer())
+            {
+                container.AddFacility<CqrsFacility>(f => f.RunInMemory().BoundedContexts(LocalBoundedContext.Named("bc")));
+                container.Register(Component.For<CommandsHandler>().AsCommandsHandler("bc").AsProjection("bc", "remote"));
+            }
         }
 
 
@@ -79,88 +95,149 @@ namespace Inceptum.Cqrs.Tests
         public void CqrsEngineIsResolvableAsDependencyOnlyAfterBootstrapTest()
         {
             bool reslovedCqrsDependentComponentBeforeInit = false;
-            var container = new WindsorContainer();
-            container.Register(Component.For<IMessagingEngine>().Instance(MockRepository.GenerateMock<IMessagingEngine>()));
-            container.Register(Component.For<CqrEngineDependentComponent>());
-            container.AddFacility<CqrsFacility>();
-            try
+            using (var container = new WindsorContainer())
             {
-                container.Resolve<CqrEngineDependentComponent>();
-                reslovedCqrsDependentComponentBeforeInit = true;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-            }
-            container.Resolve<ICqrsEngineBootstrapper>().Start();
+                container.Register(Component.For<CqrEngineDependentComponent>());
+                container.AddFacility<CqrsFacility>(f => f.RunInMemory());
+                try
+                {
+                    container.Resolve<CqrEngineDependentComponent>();
+                    reslovedCqrsDependentComponentBeforeInit = true;
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
+                container.Resolve<ICqrsEngineBootstrapper>().Start();
 
-            container.Resolve<CqrEngineDependentComponent>();
-            Assert.That(reslovedCqrsDependentComponentBeforeInit,Is.False,"ICommandSender was resolved as dependency before it was initialized");
+                container.Resolve<CqrEngineDependentComponent>();
+                Assert.That(reslovedCqrsDependentComponentBeforeInit, Is.False, "ICommandSender was resolved as dependency before it was initialized");
+            }
         }
 
         [Test]
         public void CqrsEngineIsResolvableAsDependencyOnlyAfterBootstrapStartableFacilityTest()
         {
-            var container = new WindsorContainer();
-            container.AddFacility<CqrsFacility>()
-                     .AddFacility<StartableFacility>();// (f => f.DeferredTryStart());
-            container.Register(Component.For<IMessagingEngine>().Instance(MockRepository.GenerateMock<IMessagingEngine>()));
-            container.Register(Component.For<CqrEngineDependentComponent>().StartUsingMethod("Start"));
-            Assert.That(CqrEngineDependentComponent.Started,Is.False,"Component was started before commandSender initialization");
-            container.Resolve<ICqrsEngineBootstrapper>().Start();
-            Assert.That(CqrEngineDependentComponent.Started, Is.True, "Component was not started after commandSender initialization");
+            using (var container = new WindsorContainer())
+            {
+                container.AddFacility<CqrsFacility>(f => f.RunInMemory())
+                    .AddFacility<StartableFacility>(); // (f => f.DeferredTryStart());
+                container.Register(Component.For<IMessagingEngine>().Instance(MockRepository.GenerateMock<IMessagingEngine>()));
+                container.Register(Component.For<CqrEngineDependentComponent>().StartUsingMethod("Start"));
+                Assert.That(CqrEngineDependentComponent.Started, Is.False, "Component was started before commandSender initialization");
+                container.Resolve<ICqrsEngineBootstrapper>().Start();
+                Assert.That(CqrEngineDependentComponent.Started, Is.True, "Component was not started after commandSender initialization");
+            }
         }
-
 
         [Test]
         public void ProjectionWiringTest()
         {
-            var container=new WindsorContainer();
-            container.Register(Component.For<IMessagingEngine>().Instance(MockRepository.GenerateMock<IMessagingEngine>()))
-                .AddFacility<CqrsFacility>(f => f.BoundedContexts(LocalBoundedContext.Named("local"), RemoteBoundedContext.Named("remote")))
-                .Register(Component.For<EventListener>().AsProjection("local", "remote"))
-                .Resolve<ICqrsEngineBootstrapper>().Start(); 
+            using (var container = new WindsorContainer())
+            {
+                container.Register(Component.For<IMessagingEngine>().Instance(MockRepository.GenerateMock<IMessagingEngine>()))
+                    .AddFacility<CqrsFacility>(f => f.RunInMemory().BoundedContexts(LocalBoundedContext.Named("local"), RemoteBoundedContext.Named("remote")))
+                    .Register(Component.For<EventListener>().AsProjection("local", "remote"))
+                    .Resolve<ICqrsEngineBootstrapper>().Start();
 
-            var cqrsEngine = (CqrsEngine) container.Resolve<ICommandSender>();
-            var eventListener = container.Resolve<EventListener>();
-            cqrsEngine.BoundedContexts.First(c => c.Name == "remote").EventDispatcher.Dispacth("test");
-            Assert.That(eventListener.EventsWithBoundedContext, Is.EquivalentTo(new[] { Tuple.Create("test", "remote") }),"Event was not dispatched");
-            Assert.That(eventListener.Events, Is.EquivalentTo(new[] { "test" }), "Event was not dispatched");
+                var cqrsEngine = (CqrsEngine) container.Resolve<ICommandSender>();
+                var eventListener = container.Resolve<EventListener>();
+                cqrsEngine.BoundedContexts.First(c => c.Name == "remote").EventDispatcher.Dispacth("test");
+                Assert.That(eventListener.EventsWithBoundedContext, Is.EquivalentTo(new[] {Tuple.Create("test", "remote")}), "Event was not dispatched");
+                Assert.That(eventListener.Events, Is.EquivalentTo(new[] {"test"}), "Event was not dispatched");
+            }
         }
 
         [Test]
         public void CommandsHandlerWiringTest()
         {
-            var container=new WindsorContainer();
-            container
-                .Register(Component.For<IMessagingEngine>().Instance(MockRepository.GenerateMock<IMessagingEngine>()))
-                .AddFacility<CqrsFacility>(f => f.BoundedContexts(LocalBoundedContext.Named("bc")))
-                .Register(Component.For<CommandsHandler>().AsCommandsHandler("bc"))
-                .Resolve<ICqrsEngineBootstrapper>().Start();
-            var cqrsEngine = (CqrsEngine)container.Resolve<ICommandSender>();
-            var commandsHandler = container.Resolve<CommandsHandler>();
-            cqrsEngine.BoundedContexts.First(c=>c.Name=="bc").CommandDispatcher.Dispacth("test");
-            Assert.That(commandsHandler.HandledCommands, Is.EqualTo(new[] { "test" }), "Command was not dispatched");
+            using (var container = new WindsorContainer())
+            {
+                container
+                    .Register(Component.For<IMessagingEngine>().Instance(MockRepository.GenerateMock<IMessagingEngine>()))
+                    .AddFacility<CqrsFacility>(f => f.RunInMemory().BoundedContexts(LocalBoundedContext.Named("bc")))
+                    .Register(Component.For<CommandsHandler>().AsCommandsHandler("bc"))
+                    .Resolve<ICqrsEngineBootstrapper>().Start();
+                var cqrsEngine = (CqrsEngine) container.Resolve<ICommandSender>();
+                var commandsHandler = container.Resolve<CommandsHandler>();
+                cqrsEngine.BoundedContexts.First(c => c.Name == "bc").CommandDispatcher.Dispacth("test",CommandPriority.Low, (delay, acknowledge) => { });
+                Thread.Sleep(200);
+                Assert.That(commandsHandler.HandledCommands, Is.EqualTo(new[] {"test"}), "Command was not dispatched");
+            }
+        }
+        
+        [Test]
+        public void CommandsHandlerWithResultWiringTest()
+        {
+            using (var container = new WindsorContainer())
+            {
+                container
+                    .Register(Component.For<IMessagingEngine>().Instance(MockRepository.GenerateMock<IMessagingEngine>()))
+                    .AddFacility<CqrsFacility>(f => f.RunInMemory().BoundedContexts(LocalBoundedContext.Named("bc")))
+                    .Register(Component.For<CommandsHandler>().AsCommandsHandler("bc"))
+                    .Resolve<ICqrsEngineBootstrapper>().Start();
+                var cqrsEngine = (CqrsEngine) container.Resolve<ICommandSender>();
+                var commandsHandler = container.Resolve<CommandsHandler>();
+
+                bool acknowledged = false;
+                long retrydelay = 0;
+                cqrsEngine.BoundedContexts.First(c => c.Name == "bc").CommandDispatcher.Dispacth(1,CommandPriority.Low, (delay, acknowledge) =>
+                {
+                    retrydelay = delay;
+                    acknowledged = acknowledge;
+                });
+                Thread.Sleep(200);
+                Assert.That(commandsHandler.HandledCommands, Is.EqualTo(new[] {"1"}), "Command was not dispatched");
+                Assert.That(retrydelay,Is.EqualTo(100));
+                Assert.That(acknowledged,Is.EqualTo(false));
+            }
+        }        
+        [Test]
+        public void FailedCommandHandlerCausesImmediateRetryTest()
+        {
+            using (var container = new WindsorContainer())
+            {
+                container
+                    .Register(Component.For<IMessagingEngine>().Instance(MockRepository.GenerateMock<IMessagingEngine>()))
+                    .AddFacility<CqrsFacility>(f => f.RunInMemory().BoundedContexts(LocalBoundedContext.Named("bc")))
+                    .Register(Component.For<CommandsHandler>().AsCommandsHandler("bc"))
+                    .Resolve<ICqrsEngineBootstrapper>().Start();
+                var cqrsEngine = (CqrsEngine) container.Resolve<ICommandSender>();
+                var commandsHandler = container.Resolve<CommandsHandler>();
+
+                bool acknowledged = false;
+                long retrydelay = 0;
+                cqrsEngine.BoundedContexts.First(c => c.Name == "bc").CommandDispatcher.Dispacth((long)1,CommandPriority.Low, (delay, acknowledge) =>
+                {
+                    retrydelay = delay;
+                    acknowledged = acknowledge;
+                });
+                Thread.Sleep(200);
+                Assert.That(retrydelay,Is.EqualTo(0));
+                Assert.That(acknowledged,Is.EqualTo(false));
+            }
         }
 
 
         public void SyntaxTest()
         {
-            var container = new WindsorContainer();
-            container.Register(Component.For<IMessagingEngine>().Instance(MockRepository.GenerateMock<IMessagingEngine>()));
-            container.AddFacility<CqrsFacility>(f => f.BoundedContexts(
-                LocalBoundedContext.Named("local")
-                                   .PublishingEvents(typeof (int)).To("events").RoutedTo("events")
-                                   .ListeningCommands(typeof (string)).On("commands1").RoutedFromSameEndpoint()
-                                   .ListeningCommands(typeof (DateTime)).On("commands2").RoutedFromSameEndpoint()
-                                   .WithCommandsHandler<CommandHandler>(),
-                LocalBoundedContext.Named("projections")));
+            using (var container = new WindsorContainer())
+            {
+                container.Register(Component.For<IMessagingEngine>().Instance(MockRepository.GenerateMock<IMessagingEngine>()));
+                container.AddFacility<CqrsFacility>(f => f.RunInMemory().BoundedContexts(
+                    LocalBoundedContext.Named("local")
+                        .PublishingEvents(typeof (int)).To("events").RoutedTo("events")
+                        .ListeningCommands(typeof (string)).On("commands1").RoutedFromSameEndpoint()
+                        .ListeningCommands(typeof (DateTime)).On("commands2").RoutedFromSameEndpoint()
+                        .WithCommandsHandler<CommandHandler>(),
+                    LocalBoundedContext.Named("projections")));
 
-            container.Register(
-                Component.For<TestSaga>().AsSaga("local", "projections"),
-                Component.For<CommandHandler>().AsCommandsHandler("local"),
-                Component.For<EventsListener>().AsProjection("projections", "local")
-                );
+                container.Register(
+                    Component.For<TestSaga>().AsSaga("local", "projections"),
+                    Component.For<CommandHandler>().AsCommandsHandler("local"),
+                    Component.For<EventsListener>().AsProjection("projections", "local")
+                    );
+            }
         }
 
 
