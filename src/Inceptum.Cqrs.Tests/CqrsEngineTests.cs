@@ -22,13 +22,16 @@ namespace Inceptum.Cqrs.Tests
         public static List<object> AcceptedCommands=new List<object>(); 
         private readonly ICommandSender m_Engine;
         private int counter = 0;
+        private int m_ProcessingTimeout;
 
-        public CommandHandler()
+        public CommandHandler(int processingTimeout=0)
         {
+            m_ProcessingTimeout = processingTimeout;
         }
 
         public void Handle(decimal command, IEventPublisher eventPublisher, IRepository repository)
         {
+            Thread.Sleep(m_ProcessingTimeout);
             Console.WriteLine("command recived:" + command);
             eventPublisher.PublishEvent(++counter);
             AcceptedCommands.Add(command);
@@ -36,14 +39,16 @@ namespace Inceptum.Cqrs.Tests
 
         public void Handle(string command,IEventPublisher eventPublisher)
         {
-            Console.WriteLine("command recived:" +command);
+            Thread.Sleep(m_ProcessingTimeout);
+            Console.WriteLine("command recived:" + command);
             eventPublisher.PublishEvent(++counter);
             AcceptedCommands.Add(command);
         }
 
         public void Handle(DateTime command, IEventPublisher eventPublisher)
         {
-            Console.WriteLine("command recived:" +command);
+            Thread.Sleep(m_ProcessingTimeout);
+            Console.WriteLine("command recived:" + command);
             eventPublisher.PublishEvent(++counter);
             AcceptedCommands.Add(command);
         }
@@ -65,7 +70,7 @@ namespace Inceptum.Cqrs.Tests
         [ExpectedException(typeof(ConfigurationErrorsException),ExpectedMessage = "Can not register System.String as command in bound context bc, it is already registered as event")]
         public void BoundedContextCanNotHaveEventAndCommandOfSameType()
         {
-            new CqrsEngine(LocalBoundedContext.Named("bc")
+            new InMemoryCqrsEngine(LocalBoundedContext.Named("bc")
                                                      .PublishingEvents(typeof(string)).To("eventExchange").RoutedTo("eventQueue")
                                                      .ListeningCommands(typeof(string)).On("commandQueue").RoutedFrom("commandExchange"));
         }
@@ -86,7 +91,7 @@ namespace Inceptum.Cqrs.Tests
                                                    new InMemoryEndpointResolver(),
                                                    LocalBoundedContext.Named("bc")
                                                                        .PublishingEvents(typeof(int)).To("eventExchange").RoutedTo("eventQueue")
-                                                                       .ListeningCommands(typeof(string)).On("exchange1", "exchange2").RoutedFrom("commandQueue")
+                                                                       .ListeningCommands(typeof(string)).On("exchange1").On("exchange2").RoutedFrom("commandQueue")
                                                                        .WithCommandsHandler<CommandHandler>())
                     )
                 {
@@ -101,6 +106,50 @@ namespace Inceptum.Cqrs.Tests
 
 
 
+        [Test]
+        public void PrioritizedCommandsProcessingTest()
+        {
+            using (
+                var messagingEngine =
+                    new MessagingEngine(
+                        new TransportResolver(new Dictionary<string, TransportInfo>
+                            {
+                                {"InMemory", new TransportInfo("none", "none", "none", null, "InMemory")}
+                            })))
+            {
+                using (var engine = new CqrsEngine(Activator.CreateInstance, messagingEngine,
+                                                   new InMemoryEndpointResolver(),
+                                                   LocalBoundedContext.Named("bc")
+                                                                       .PublishingEvents(typeof(int)).To("eventExchange").RoutedTo("eventQueue")
+                                                                       .ListeningCommands(typeof(string))
+                                                                            .On("exchange1", CommandPriority.Normal)
+                                                                            .On("exchange2", CommandPriority.High)
+                                                                            .RoutedFrom("commandQueue")
+                                                                       .ListeningCommands(typeof(decimal))
+                                                                            .On("exchange2", CommandPriority.Low)
+                                                                            .RoutedFrom("commandQueue")
+                                                                       .WithCommandsHandler(new CommandHandler(100)))
+                    )
+                {
+                    messagingEngine.Send("low1", new Endpoint("InMemory", "exchange1", serializationFormat: "json"));
+                    messagingEngine.Send("low2", new Endpoint("InMemory", "exchange1", serializationFormat: "json"));
+                    messagingEngine.Send("low3", new Endpoint("InMemory", "exchange1", serializationFormat: "json"));
+                    messagingEngine.Send("low4", new Endpoint("InMemory", "exchange1", serializationFormat: "json"));
+                    messagingEngine.Send("low5", new Endpoint("InMemory", "exchange1", serializationFormat: "json"));
+                    messagingEngine.Send((decimal)1, new Endpoint("InMemory", "exchange2", serializationFormat: "json"));
+                    messagingEngine.Send((decimal)2, new Endpoint("InMemory", "exchange2", serializationFormat: "json"));
+                    messagingEngine.Send((decimal)3, new Endpoint("InMemory", "exchange2", serializationFormat: "json"));
+                    messagingEngine.Send((decimal)4, new Endpoint("InMemory", "exchange2", serializationFormat: "json"));
+                    messagingEngine.Send((decimal)5, new Endpoint("InMemory", "exchange2", serializationFormat: "json"));
+                    messagingEngine.Send("high", new Endpoint("InMemory", "exchange2", serializationFormat: "json"));
+                    Thread.Sleep(2000);
+                    Assert.That(CommandHandler.AcceptedCommands.Take(2).Any(c=>(string) c=="high"),Is.True);
+                }
+            }
+        }
+
+
+       
         [Test]
         [Ignore("investigation test")]
         public void CqrsEngineTest()
@@ -154,7 +203,7 @@ namespace Inceptum.Cqrs.Tests
         [Test]
         public void Method_Scenario_Expected()
         {
-            using (var engine = new CqrsEngine(
+            using (var engine = new InMemoryCqrsEngine(
                 LocalBoundedContext.Named("local")
                                    .PublishingEvents(typeof (int)).To("events").RoutedTo("events")
                                    .ListeningCommands(typeof (string)).On("commands1").RoutedFromSameEndpoint()

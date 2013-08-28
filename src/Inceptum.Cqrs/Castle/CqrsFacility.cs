@@ -23,7 +23,13 @@ namespace Inceptum.Cqrs.Castle
         private readonly Dictionary<IHandler, Action<IHandler>> m_WaitList = new Dictionary<IHandler, Action<IHandler>>();
         private BoundedContextRegistration[] m_BoundedContexts = new BoundedContextRegistration[0];
         private readonly List<SagaRegistration> m_Sagas = new List<SagaRegistration>();
+        private bool m_InMemory=false;
 
+        public CqrsFacility RunInMemory()
+        {
+            m_InMemory = true;
+            return this;
+        }
 
         public CqrsFacility BoundedContexts(params BoundedContextRegistration[] boundedContexts)
         {
@@ -128,7 +134,10 @@ namespace Inceptum.Cqrs.Castle
         public void Start()
         {
             Func<Type, object> dependencyResolver = Kernel.Resolve;
-            Kernel.Register(Component.For<ICommandSender>().ImplementedBy<CqrsEngine>().Named(m_EngineComponetName).DependsOn(new
+            var engineReg = m_InMemory
+                ? Component.For<ICommandSender>().ImplementedBy<InMemoryCqrsEngine>()
+                : Component.For<ICommandSender>().ImplementedBy<CqrsEngine>();
+            Kernel.Register(engineReg.Named(m_EngineComponetName).DependsOn(new
                 {
                     registrations = m_BoundedContexts.Cast<IRegistration>().Concat(m_Sagas).ToArray(),
                     dependencyResolver

@@ -1,10 +1,18 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using EventStore;
 using EventStore.Dispatcher;
 
 namespace Inceptum.Cqrs.Configuration
 {
+    public enum CommandPriority
+    {
+        Normal=0,
+        Low=1,
+        High=2
+    }
+
     public class LocalBoundedContextRegistration : BoundedContextRegistration 
     {
         public LocalBoundedContextRegistration(string name)
@@ -102,11 +110,11 @@ namespace Inceptum.Cqrs.Configuration
             m_Registration = registration;
         }
 
-        public RoutedFromDescriptor On(params string[] listenEndpoint)
+        public RoutedFromDescriptor On(string listenEndpoint,CommandPriority priority=CommandPriority.Normal)
         {
             if(listenEndpoint.Length==0)
                 throw new ArgumentException("Endpoint list is empty","listenEndpoint");
-            return new RoutedFromDescriptor(m_Registration, m_Types, listenEndpoint);
+            return new RoutedFromDescriptor(m_Registration, m_Types, listenEndpoint, priority);
         }
 
         
@@ -116,38 +124,47 @@ namespace Inceptum.Cqrs.Configuration
     {
         private readonly LocalBoundedContextRegistration m_Registration;
         private readonly Type[] m_Types;
-        private readonly string[] m_ListenEndpoint;
+        private readonly Dictionary<string,CommandPriority> m_ListenEndpoints=new Dictionary<string, CommandPriority>();
 
-        public RoutedFromDescriptor(LocalBoundedContextRegistration registration, Type[] types, string[] listenEndpoint)
+        public RoutedFromDescriptor(LocalBoundedContextRegistration registration, Type[] types, string listenEndpoint, CommandPriority priority)
         {
-            m_ListenEndpoint = listenEndpoint;
+            m_ListenEndpoints[listenEndpoint]=priority;
             m_Types = types;
             m_Registration = registration;
         }
-
+ 
         public LocalBoundedContextRegistration RoutedFrom(string publishEndpoint)
         {
             m_Registration.AddCommandsRoute(m_Types, publishEndpoint);
-            foreach (var endpoint in m_ListenEndpoint)
+            foreach (var endpoint in m_ListenEndpoints)
             {
-                m_Registration.AddSubscribedCommands(m_Types, endpoint);
+                m_Registration.AddSubscribedCommands(m_Types, endpoint.Key,endpoint.Value);
             }
             return m_Registration;
         }
 
         public LocalBoundedContextRegistration RoutedFromSameEndpoint( )
         {
-            return RoutedFrom(m_ListenEndpoint.First());
+            return RoutedFrom(m_ListenEndpoints.First().Key);
         }
 
         public LocalBoundedContextRegistration NotRouted()
         {
-            foreach (var endpoint in m_ListenEndpoint)
+            foreach (var endpoint in m_ListenEndpoints)
             {
-                m_Registration.AddSubscribedCommands(m_Types, endpoint);
+                m_Registration.AddSubscribedCommands(m_Types, endpoint.Key,endpoint.Value);
             }
             return m_Registration;
         }
+
+        public RoutedFromDescriptor On(string listenEndpoint, CommandPriority priority=CommandPriority.Normal)
+        {
+            if (string.IsNullOrEmpty(listenEndpoint))
+                throw new ArgumentException("Endpoint is empty", "listenEndpoint");
+            m_ListenEndpoints[listenEndpoint] = priority;
+            return this;
+        }
+
     }
 
     public class LocalPublishingEventsDescriptor

@@ -9,7 +9,7 @@ namespace Inceptum.Messaging.Contract
         Failure
     }
 
-    public delegate void TrasnportEventHandler(string transportId, TransportEvents @event);
+    public delegate void TransportEventHandler(string transportId, TransportEvents @event);
 
     /// <summary>
     /// Ack/nack message
@@ -29,7 +29,7 @@ namespace Inceptum.Messaging.Contract
     public interface IMessagingEngine:IDisposable
     {
         ISerializationManager SerializationManager { get; }
-        IDisposable SubscribeOnTransportEvents(TrasnportEventHandler handler);
+        IDisposable SubscribeOnTransportEvents(TransportEventHandler handler);
         void Send<TMessage>(TMessage message, Endpoint endpoint);
         void Send<TMessage>(TMessage message, Endpoint endpoint, int ttl);
         void Send(object message, Endpoint endpoint);

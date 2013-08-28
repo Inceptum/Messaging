@@ -12,10 +12,20 @@ namespace Inceptum.Cqrs.Configuration
         IEnumerable<Type> Dependencies { get; }
     }
 
+    class CommandSubscription
+    {
+        private readonly Dictionary<Type,CommandPriority> m_Types=new Dictionary<Type, CommandPriority>();
+        public Dictionary<Type, CommandPriority> Types
+        {
+            get { return m_Types; }
+        }
+        public string Endpoint { get; set; } 
+    }
+
     public class BoundedContextRegistration : IRegistration
     {
         readonly Dictionary<Type, string> m_EventsSubscriptions = new Dictionary<Type, string>();
-        readonly List<Tuple<Type, string>> m_CommandsSubscriptions = new List<Tuple<Type, string>>();
+        readonly List<CommandSubscription> m_CommandsSubscriptions = new List<CommandSubscription>();
         readonly List<IBoundedContextDescriptor> m_Configurators = new List<IBoundedContextDescriptor>();
         readonly Dictionary<Type, string> m_CommandRoutes=new Dictionary<Type, string>();
         readonly Dictionary<Type, string> m_EventRoutes=new Dictionary<Type, string>();
@@ -70,15 +80,15 @@ namespace Inceptum.Cqrs.Configuration
         {
             foreach (var type in types)
             {
-                if (m_CommandsSubscriptions.Any(t=>t.Item1==type))
+                if (m_CommandsSubscriptions.Any(t=>t.Types.ContainsKey(type)))
                     throw new ConfigurationErrorsException(string.Format("Can not register {0} as event in bound context {1}, it is already registered as command",type, m_Name));
-                if (m_CommandsSubscriptions.Any(t=>t.Item2==endpoint))
+                if (m_CommandsSubscriptions.Any(t=>t.Endpoint==endpoint))
                     throw new ConfigurationErrorsException(string.Format("Can not register endpoint '{0}' as event endpoint in bound context {1}, it is already registered as commands endpoint", endpoint, m_Name));
                 m_EventsSubscriptions.Add(type,endpoint);
             }
         }
 
-        public void AddSubscribedCommands(IEnumerable<Type> types, string endpoint)
+        public void AddSubscribedCommands(IEnumerable<Type> types, string endpoint, CommandPriority priority)
         {
             foreach (var type in types)
             {
@@ -86,8 +96,13 @@ namespace Inceptum.Cqrs.Configuration
                     throw new ConfigurationErrorsException(string.Format("Can not register {0} as command in bound context {1}, it is already registered as event",type, m_Name));
                 if (m_EventsSubscriptions.ContainsValue(endpoint))
                     throw new ConfigurationErrorsException(string.Format("Can not register endpoint '{0}' as events endpoint in bound context {1}, it is already registered as commands endpoint", endpoint, m_Name));
-                if (!m_CommandsSubscriptions.Any(t=>t.Item2==endpoint && t.Item1==type))
-                    m_CommandsSubscriptions.Add(Tuple.Create(type, endpoint));
+                CommandSubscription commandSubscription = m_CommandsSubscriptions.FirstOrDefault(t => t.Endpoint == endpoint);
+                if (commandSubscription==null)
+                {
+                    commandSubscription = new CommandSubscription { Endpoint = endpoint };
+                    m_CommandsSubscriptions.Add(commandSubscription);
+                }
+                commandSubscription.Types[type] = priority;
             }
         }
 

@@ -9,6 +9,35 @@ using Inceptum.Messaging.Contract;
 
 namespace Inceptum.Cqrs
 {
+    public class InMemoryCqrsEngine : CqrsEngine
+    {
+         public InMemoryCqrsEngine(params IRegistration[] registrations) :
+            base(Activator.CreateInstance, new MessagingEngine(new TransportResolver(new Dictionary<string, TransportInfo> { { "InMemory", new TransportInfo("none", "none", "none", null, "InMemory") } })),
+            new InMemoryEndpointResolver(),
+            registrations
+            )
+        {
+             
+        }
+         public InMemoryCqrsEngine(Func<Type, object> dependencyResolver, params IRegistration[] registrations) :
+            base(dependencyResolver,new MessagingEngine(new TransportResolver(new Dictionary<string, TransportInfo> { { "InMemory", new TransportInfo("none", "none", "none", null, "InMemory") } })),
+            new InMemoryEndpointResolver(),
+            registrations
+            )
+        {
+             
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            if (disposing)
+            {
+                MessagingEngine.Dispose();
+            }
+        }
+    }
+
     public class CqrsEngine : ICommandSender
     {
         private readonly IMessagingEngine m_MessagingEngine;
@@ -21,22 +50,9 @@ namespace Inceptum.Cqrs
         private readonly IRegistration[] m_Registrations;
         private readonly Func<Type,object> m_DependencyResolver;
 
-        private readonly bool m_HandleMessagingEngineLifeCycle = false;
-        public CqrsEngine(params IRegistration[] registrations) :
-            this(Activator.CreateInstance, new MessagingEngine(new TransportResolver(new Dictionary<string, TransportInfo> { { "InMemory", new TransportInfo("none", "none", "none", null, "InMemory") } })),
-            new InMemoryEndpointResolver(),
-            registrations
-            )
+        protected IMessagingEngine MessagingEngine
         {
-            m_HandleMessagingEngineLifeCycle = true;
-        }
-        public CqrsEngine(Func<Type, object> dependencyResolver, params IRegistration[] registrations) :
-            this(dependencyResolver,new MessagingEngine(new TransportResolver(new Dictionary<string, TransportInfo> { { "InMemory", new TransportInfo("none", "none", "none", null, "InMemory") } })),
-            new InMemoryEndpointResolver(),
-            registrations
-            )
-        {
-            m_HandleMessagingEngineLifeCycle = true;
+            get { return m_MessagingEngine; }
         }
 
 
@@ -68,7 +84,8 @@ namespace Inceptum.Cqrs
                 {
                     var endpoint = m_EndpointResolver.Resolve(eventsSubscription.Key);
                     BoundedContext context = boundedContext;
-                    subscribe(endpoint, @event => context.EventDispatcher.Dispacth(@event), t => { }, eventsSubscription.Value.ToArray());
+                    m_Subscription.Add(m_MessagingEngine.Subscribe(endpoint, @event => context.EventDispatcher.Dispacth(@event), t => { }, eventsSubscription.Value.ToArray()));
+
                 }
             }
 
@@ -76,9 +93,18 @@ namespace Inceptum.Cqrs
             {
                 foreach (var commandsSubscription in boundedContext.CommandsSubscriptions)
                 {
-                    var endpoint = m_EndpointResolver.Resolve(commandsSubscription.Key);
+                    var endpoint = m_EndpointResolver.Resolve(commandsSubscription.Endpoint);
                     BoundedContext context = boundedContext;
-                    subscribe(endpoint, command =>context.CommandDispatcher.Dispacth(command), t=>{throw new InvalidOperationException("Unknown command received: "+t);}, commandsSubscription.Value.ToArray());
+                    CommandSubscription commandSubscription = commandsSubscription;
+                    m_Subscription.Add(m_MessagingEngine.Subscribe(
+                        endpoint,
+                        (command, acknowledge) => context.CommandDispatcher.Dispacth(command, commandSubscription.Types[command.GetType()], acknowledge),
+                        (type, acknowledge) =>
+                                 {
+                                     throw new InvalidOperationException("Unknown command received: " + type); 
+                                     acknowledge(0, true);
+                                 }, 
+                        commandSubscription.Types.Keys.ToArray()));
                 }
             }
 
@@ -96,23 +122,28 @@ namespace Inceptum.Cqrs
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Dispose()
         {
-            foreach (var boundedContext in BoundedContexts)
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
             {
-                if (boundedContext != null && boundedContext.Processes != null)
+                foreach (var boundedContext in BoundedContexts)
                 {
-                    foreach (var process in boundedContext.Processes)
+                    if (boundedContext != null && boundedContext.Processes != null)
                     {
-                        process.Dispose();
+                        foreach (var process in boundedContext.Processes)
+                        {
+                            process.Dispose();
+                        }
                     }
                 }
-            }
 
-            if (m_Subscription != null)
-                m_Subscription.Dispose();
-            
-            //TODO: investigate why this code crashes in tests 
-            if(m_HandleMessagingEngineLifeCycle)
-                m_MessagingEngine.Dispose();
+                if (m_Subscription != null)
+                    m_Subscription.Dispose();
+            }
         }
 
         public void SendCommand<T>(T command,string boundedContext )

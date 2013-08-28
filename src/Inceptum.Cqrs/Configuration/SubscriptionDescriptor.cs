@@ -7,9 +7,9 @@ namespace Inceptum.Cqrs.Configuration
     class SubscriptionDescriptor : IBoundedContextDescriptor
     {
         private readonly Dictionary<Type, string> m_EventsSubscriptions;
-        private readonly List<Tuple<Type, string>> m_CommandsSubscriptions;
+        private readonly List<CommandSubscription> m_CommandsSubscriptions;
 
-        public SubscriptionDescriptor(Dictionary<Type, string> eventsSubscriptions, List<Tuple<Type, string>> commandsSubscriptions)
+        public SubscriptionDescriptor(Dictionary<Type, string> eventsSubscriptions, List<CommandSubscription> commandsSubscriptions)
         {
             m_CommandsSubscriptions = commandsSubscriptions;
             m_EventsSubscriptions = eventsSubscriptions;
@@ -27,13 +27,7 @@ namespace Inceptum.Cqrs.Configuration
                                          into grouping
                                          select new { endpoint = grouping.Key, types = grouping.Select(g => g.Key) };
             boundedContext.EventsSubscriptions = eventSubscriptions.ToDictionary(o => o.endpoint, o => o.types);
-
-
-            var commandsSubscriptions = from pair in m_CommandsSubscriptions
-                                        group pair by pair.Item2
-                                        into grouping
-                                        select new { endpoint = grouping.Key, types = grouping.Select(g => g.Item1) };
-            boundedContext.CommandsSubscriptions = commandsSubscriptions.ToDictionary(o => o.endpoint, o => o.types);
+            boundedContext.CommandsSubscriptions = m_CommandsSubscriptions;
         }
 
         public void Process(BoundedContext boundedContext, CqrsEngine cqrsEngine)

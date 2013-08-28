@@ -54,7 +54,12 @@ namespace Inceptum.Messaging
                         });
                     var subscription = processingGroup.Subscribe(endpoint.Destination, (message, ack) => callback(message, createDeferredAcknowledge(ack)),
                         messageType);
+                    var brokenSubscription = subscriptionHandler.Disposable;
                     subscriptionHandler.Disposable = subscription;
+                    try
+                    {
+                        brokenSubscription.Dispose();
+                    }catch{}
                     m_Logger.InfoFormat("Subscribed for endpoint {0}", endpoint);
                 }
                 catch (Exception e)
