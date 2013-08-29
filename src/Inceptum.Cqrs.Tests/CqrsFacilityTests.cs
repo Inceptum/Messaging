@@ -193,13 +193,13 @@ namespace Inceptum.Cqrs.Tests
             }
         }        
         [Test]
-        public void FailedCommandHandlerCausesImmediateRetryTest()
+        public void FailedCommandHandlerCausesRetryTest()
         {
             using (var container = new WindsorContainer())
             {
                 container
                     .Register(Component.For<IMessagingEngine>().Instance(MockRepository.GenerateMock<IMessagingEngine>()))
-                    .AddFacility<CqrsFacility>(f => f.RunInMemory().BoundedContexts(LocalBoundedContext.Named("bc")))
+                    .AddFacility<CqrsFacility>(f => f.RunInMemory().BoundedContexts(LocalBoundedContext.Named("bc").FailedCommandRetryDelay(100)))
                     .Register(Component.For<CommandsHandler>().AsCommandsHandler("bc"))
                     .Resolve<ICqrsEngineBootstrapper>().Start();
                 var cqrsEngine = (CqrsEngine) container.Resolve<ICommandSender>();
@@ -213,7 +213,7 @@ namespace Inceptum.Cqrs.Tests
                     acknowledged = acknowledge;
                 });
                 Thread.Sleep(200);
-                Assert.That(retrydelay,Is.EqualTo(0));
+                Assert.That(retrydelay,Is.EqualTo(100));
                 Assert.That(acknowledged,Is.EqualTo(false));
             }
         }

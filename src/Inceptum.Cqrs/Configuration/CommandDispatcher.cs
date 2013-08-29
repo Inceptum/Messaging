@@ -22,9 +22,11 @@ namespace Inceptum.Cqrs.Configuration
         private readonly string m_BoundedContext;
         private readonly QueuedTaskScheduler m_QueuedTaskScheduler;
         private readonly Dictionary<CommandPriority,TaskFactory> m_TaskFactories=new Dictionary<CommandPriority, TaskFactory>();
+        private static long m_FailedCommandRetryDelay = 60000;
 
-        public CommandDispatcher(string boundedContext, int threadCount=1)
+        public CommandDispatcher(string boundedContext, int threadCount=1,long failedCommandRetryDelay = 60000)
         {
+            m_FailedCommandRetryDelay = failedCommandRetryDelay;
             m_QueuedTaskScheduler = new QueuedTaskScheduler(threadCount);
             foreach (var value in Enum.GetValues(typeof(CommandPriority)))
             {
@@ -118,7 +120,7 @@ namespace Inceptum.Cqrs.Configuration
             }
             catch (Exception e)
             {
-                acknowledge(60000, false);
+                acknowledge(m_FailedCommandRetryDelay, false);
             }
         }
     }

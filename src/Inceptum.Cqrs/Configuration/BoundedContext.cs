@@ -17,13 +17,15 @@ namespace Inceptum.Cqrs.Configuration
         internal IRepository Repository { get; set; }
         public string Name { get; set; }
         public int ThreadCount { get; set; }
+        public long FailedCommandRetryDelay { get; set; }
 
-        internal BoundedContext(CqrsEngine cqrsEngine,string name, int threadCount)
+        internal BoundedContext(CqrsEngine cqrsEngine, string name, int threadCount, long failedCommandRetryDelay)
         {
             ThreadCount = threadCount;
+            FailedCommandRetryDelay = failedCommandRetryDelay;
             Name = name;
             EventsPublisher = new EventsPublisher(cqrsEngine, this);
-            CommandDispatcher = new CommandDispatcher(Name, threadCount);
+            CommandDispatcher = new CommandDispatcher(Name, threadCount, failedCommandRetryDelay);
             EventDispatcher = new EventDispatcher(Name);
             Processes = new List<IProcess>();
         }
