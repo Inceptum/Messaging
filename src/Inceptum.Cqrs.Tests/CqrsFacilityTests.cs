@@ -33,7 +33,7 @@ namespace Inceptum.Cqrs.Tests
         {
             Console.WriteLine("Command received:" + m);
             HandledCommands.Add(m.ToString());
-            return new CommandHandlingResult{NeedRetry = true,RetryDelay = 100};
+            return new CommandHandlingResult{Retry = true,RetryDelay = 100};
         }    
 
         private void Handle(long m)
