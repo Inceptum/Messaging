@@ -24,9 +24,12 @@ namespace Inceptum.Cqrs.Tests
         private int counter = 0;
         private int m_ProcessingTimeout;
 
-        public CommandHandler(int processingTimeout=0)
+        public CommandHandler(int processingTimeout)
         {
             m_ProcessingTimeout = processingTimeout;
+        }
+        public CommandHandler():this(0)
+        {
         }
 
         public void Handle(decimal command, IEventPublisher eventPublisher, IRepository repository)
@@ -141,6 +144,7 @@ namespace Inceptum.Cqrs.Tests
                     messagingEngine.Send("low10", new Endpoint("InMemory", "exchange1", serializationFormat: "json"));
                     messagingEngine.Send("high", new Endpoint("InMemory", "exchange2", serializationFormat: "json"));
                     Thread.Sleep(2000);
+                    Console.WriteLine(string.Join("\n",CommandHandler.AcceptedCommands));
                     Assert.That(CommandHandler.AcceptedCommands.Take(2).Any(c=>(string) c=="high"),Is.True);
                 }
             }
