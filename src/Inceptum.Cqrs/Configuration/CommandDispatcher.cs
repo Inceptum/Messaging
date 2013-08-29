@@ -12,7 +12,7 @@ namespace Inceptum.Cqrs.Configuration
     public class CommandHandlingResult
     {
         public long  RetryDelay { get; set; } 
-        public bool  NeedRetry { get; set; } 
+        public bool  Retry { get; set; } 
     }
 
 
@@ -79,7 +79,7 @@ namespace Inceptum.Cqrs.Configuration
             else
             {
                 LabelTarget returnTarget = Expression.Label(typeof(CommandHandlingResult));
-                var returnLabel = Expression.Label(returnTarget,Expression.Constant(new CommandHandlingResult { NeedRetry = true, RetryDelay = 0 })); 
+                var returnLabel = Expression.Label(returnTarget,Expression.Constant(new CommandHandlingResult { Retry = false, RetryDelay = 0 })); 
                 var block = Expression.Block(
                     call,
                     returnLabel);
@@ -114,7 +114,7 @@ namespace Inceptum.Cqrs.Configuration
             try
             {
                 var result = handler(command);
-                acknowledge(result.RetryDelay, !result.NeedRetry);
+                acknowledge(result.RetryDelay, !result.Retry);
             }
             catch (Exception e)
             {
