@@ -118,7 +118,7 @@ namespace Inceptum.Cqrs.Configuration
             }
             catch (Exception e)
             {
-                acknowledge(0, false);
+                acknowledge(60000, false);
             }
         }
     }
