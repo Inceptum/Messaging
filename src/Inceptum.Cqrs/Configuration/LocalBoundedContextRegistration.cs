@@ -25,6 +25,12 @@ namespace Inceptum.Cqrs.Configuration
             ThreadCount = threadCount;
             return this;
         }
+        public LocalBoundedContextRegistration FailedCommandRetryDelay(long delay)
+        {
+            if (delay < 0) throw new ArgumentException("threadCount should be greater or equal to 0", "delay");
+            FailedCommandRetryDelayInternal = delay;
+            return this;
+        }
         public LocalBoundedContextRegistration WithCommandsHandler(object handler)
         {
             if (handler == null) throw new ArgumentNullException("handler");

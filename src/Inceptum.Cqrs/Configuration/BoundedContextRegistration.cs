@@ -48,10 +48,12 @@ namespace Inceptum.Cqrs.Configuration
         {
             get; set;
         }
+        protected long FailedCommandRetryDelayInternal { get; set; }
 
         protected BoundedContextRegistration(string name)
         {
             ThreadCount = 4;
+            FailedCommandRetryDelayInternal = 60000;
             m_Name = name;
             AddDescriptor(new SubscriptionDescriptor(m_EventsSubscriptions, m_CommandsSubscriptions));
             AddDescriptor(new RoutingDescriptor(m_EventRoutes, m_CommandRoutes));
@@ -65,7 +67,7 @@ namespace Inceptum.Cqrs.Configuration
 
         void IRegistration.Create(CqrsEngine cqrsEngine)
         {
-            var boundedContext=new BoundedContext(cqrsEngine,Name, ThreadCount);
+            var boundedContext=new BoundedContext(cqrsEngine,Name, ThreadCount,FailedCommandRetryDelayInternal);
             foreach (var descriptor in m_Configurators)
             {
                 descriptor.Create(boundedContext, cqrsEngine.ResolveDependency);
