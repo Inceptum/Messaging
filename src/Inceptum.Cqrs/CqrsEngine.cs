@@ -130,15 +130,19 @@ namespace Inceptum.Cqrs
         {
             if (disposing)
             {
-                foreach (var boundedContext in BoundedContexts)
+                foreach (var boundedContext in BoundedContexts.Where(b => b != null))
                 {
-                    if (boundedContext != null && boundedContext.Processes != null)
+
+                    if (boundedContext.Processes != null)
                     {
                         foreach (var process in boundedContext.Processes)
                         {
                             process.Dispose();
                         }
                     }
+
+                    boundedContext.Dispose();
+
                 }
 
                 if (m_Subscription != null)

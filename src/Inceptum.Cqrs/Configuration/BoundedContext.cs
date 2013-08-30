@@ -4,7 +4,7 @@ using CommonDomain.Persistence;
 
 namespace Inceptum.Cqrs.Configuration
 {
-    public class BoundedContext
+    public class BoundedContext:IDisposable
     {
         internal Dictionary<Type, string> EventRoutes { get; set; }
         internal Dictionary<string, IEnumerable<Type>> EventsSubscriptions { get; set; }
@@ -29,6 +29,10 @@ namespace Inceptum.Cqrs.Configuration
             EventDispatcher = new EventDispatcher(Name);
             Processes = new List<IProcess>();
         }
-         
+
+        public void Dispose()
+        {
+            CommandDispatcher.Dispose();
+        }
     }
 }
