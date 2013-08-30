@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -35,7 +36,7 @@ namespace Inceptum.Cqrs.Tests
         public void Handle(decimal command, IEventPublisher eventPublisher, IRepository repository)
         {
             Thread.Sleep(m_ProcessingTimeout);
-            Console.WriteLine("command recived:" + command);
+            Console.WriteLine(Thread.CurrentThread.ManagedThreadId+" command recived:" + command);
             eventPublisher.PublishEvent(++counter);
             AcceptedCommands.Add(command);
         }
@@ -43,7 +44,7 @@ namespace Inceptum.Cqrs.Tests
         public void Handle(string command,IEventPublisher eventPublisher)
         {
             Thread.Sleep(m_ProcessingTimeout);
-            Console.WriteLine("command recived:" + command);
+            Console.WriteLine(Thread.CurrentThread.ManagedThreadId + " command recived:" + command);
             eventPublisher.PublishEvent(++counter);
             AcceptedCommands.Add(command);
         }
@@ -51,7 +52,7 @@ namespace Inceptum.Cqrs.Tests
         public void Handle(DateTime command, IEventPublisher eventPublisher)
         {
             Thread.Sleep(m_ProcessingTimeout);
-            Console.WriteLine("command recived:" + command);
+            Console.WriteLine(Thread.CurrentThread.ManagedThreadId + " command recived:" + command);
             eventPublisher.PublishEvent(++counter);
             AcceptedCommands.Add(command);
         }
@@ -108,6 +109,37 @@ namespace Inceptum.Cqrs.Tests
         }
 
 
+
+        [Test]
+        public void AllThreadsAreStoppedAfterCqrsDisposeTest()
+        {
+            var initialThtreadCount = Process.GetCurrentProcess().Threads.Count;
+            Console.WriteLine(initialThtreadCount);
+            using (
+                var messagingEngine =
+                    new MessagingEngine(
+                        new TransportResolver(new Dictionary<string, TransportInfo>
+                            {
+                                {"InMemory", new TransportInfo("none", "none", "none", null, "InMemory")}
+                            })))
+            {
+                using (var engine = new CqrsEngine(Activator.CreateInstance, messagingEngine,
+                                                   new InMemoryEndpointResolver(),
+                                                   LocalBoundedContext.Named("bc").ConcurrencyLevel(1)
+                                                                       .PublishingEvents(typeof(int)).To("eventExchange").RoutedTo("eventQueue")
+                                                                       .ListeningCommands(typeof(string))
+                                                                            .On("exchange1", CommandPriority.Low)
+                                                                            .On("exchange2", CommandPriority.High)
+                                                                            .RoutedFrom("commandQueue")
+
+                                                                       .WithCommandsHandler(new CommandHandler(100)))
+                    )
+                {
+                    Console.WriteLine(Process.GetCurrentProcess().Threads.Count);
+                }
+            }
+            Assert.That(Process.GetCurrentProcess().Threads.Count,Is.EqualTo(initialThtreadCount),"Some threads were not stopped");
+        }
 
         [Test]
         public void PrioritizedCommandsProcessingTest()

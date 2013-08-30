@@ -16,7 +16,7 @@ namespace Inceptum.Cqrs.Configuration
     }
 
 
-    internal class CommandDispatcher
+    internal class CommandDispatcher:IDisposable
     {
         readonly Dictionary<Type, Func<object, CommandHandlingResult>> m_Handlers = new Dictionary<Type, Func<object, CommandHandlingResult>>();
         private readonly string m_BoundedContext;
@@ -122,6 +122,11 @@ namespace Inceptum.Cqrs.Configuration
             {
                 acknowledge(m_FailedCommandRetryDelay, false);
             }
+        }
+
+        public void Dispose()
+        {
+            m_QueuedTaskScheduler.Dispose();
         }
     }
 }
