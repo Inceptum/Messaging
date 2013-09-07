@@ -27,7 +27,7 @@ namespace Inceptum.Cqrs.Configuration
         readonly Dictionary<Type, string> m_EventsSubscriptions = new Dictionary<Type, string>();
         readonly List<CommandSubscription> m_CommandsSubscriptions = new List<CommandSubscription>();
         readonly List<IBoundedContextDescriptor> m_Configurators = new List<IBoundedContextDescriptor>();
-        readonly Dictionary<Type, string> m_CommandRoutes=new Dictionary<Type, string>();
+        readonly Dictionary<Tuple<Type, CommandPriority>, string> m_CommandRoutes = new Dictionary<Tuple<Type, CommandPriority>, string>();
         readonly Dictionary<Type, string> m_EventRoutes=new Dictionary<Type, string>();
 
         Type[] m_Dependencies=new Type[0];
@@ -114,13 +114,13 @@ namespace Inceptum.Cqrs.Configuration
             }
         }
 
-        public void AddCommandsRoute(IEnumerable<Type> types, string endpoint)
+        public void AddCommandsRoute(IEnumerable<Type> types, string endpoint, CommandPriority priority)
         {
             foreach (var type in types)
             {
-                if (m_CommandRoutes.ContainsKey(type))
-                    throw new ConfigurationErrorsException(string.Format("Route for command '{0}' is already registered", type));
-                m_CommandRoutes.Add(type,endpoint); 
+                if (m_CommandRoutes.ContainsKey(Tuple.Create(type,priority)))
+                    throw new ConfigurationErrorsException(string.Format("Route for command '{0}' with priority {1} is already registered", type,priority));
+                m_CommandRoutes.Add(Tuple.Create(type, priority), endpoint); 
             }
         }
   

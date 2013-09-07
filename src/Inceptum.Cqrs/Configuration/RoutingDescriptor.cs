@@ -6,9 +6,9 @@ namespace Inceptum.Cqrs.Configuration
     public class RoutingDescriptor : IBoundedContextDescriptor
     {
         private readonly Dictionary<Type, string> m_EventRoutes;
-        private readonly Dictionary<Type, string> m_CommandRoutes;
+        private readonly Dictionary<Tuple<Type, CommandPriority>, string> m_CommandRoutes;
 
-        public RoutingDescriptor(Dictionary<Type, string> eventRoutes, Dictionary<Type, string> commandRoutes)
+        public RoutingDescriptor(Dictionary<Type, string> eventRoutes, Dictionary<Tuple<Type, CommandPriority>, string> commandRoutes)
         {
             m_CommandRoutes = commandRoutes;
             m_EventRoutes = eventRoutes;

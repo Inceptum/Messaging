@@ -38,7 +38,8 @@ namespace Inceptum.Cqrs.Tests
             Thread.Sleep(m_ProcessingTimeout);
             Console.WriteLine(Thread.CurrentThread.ManagedThreadId+" command recived:" + command);
             eventPublisher.PublishEvent(++counter);
-            AcceptedCommands.Add(command);
+            lock (AcceptedCommands)
+                AcceptedCommands.Add(command);
         }
 
         public void Handle(string command,IEventPublisher eventPublisher)
@@ -46,7 +47,8 @@ namespace Inceptum.Cqrs.Tests
             Thread.Sleep(m_ProcessingTimeout);
             Console.WriteLine(Thread.CurrentThread.ManagedThreadId + " command recived:" + command);
             eventPublisher.PublishEvent(++counter);
-            AcceptedCommands.Add(command);
+            lock (AcceptedCommands)
+                AcceptedCommands.Add(command);
         }
 
         public void Handle(DateTime command, IEventPublisher eventPublisher)
@@ -54,7 +56,8 @@ namespace Inceptum.Cqrs.Tests
             Thread.Sleep(m_ProcessingTimeout);
             Console.WriteLine(Thread.CurrentThread.ManagedThreadId + " command recived:" + command);
             eventPublisher.PublishEvent(++counter);
-            AcceptedCommands.Add(command);
+            lock (AcceptedCommands)
+                AcceptedCommands.Add(command);
         }
     }
 

@@ -9,7 +9,7 @@ namespace Inceptum.Cqrs.Configuration
         internal Dictionary<Type, string> EventRoutes { get; set; }
         internal Dictionary<string, IEnumerable<Type>> EventsSubscriptions { get; set; }
         internal List<CommandSubscription> CommandsSubscriptions { get; set; }
-        internal Dictionary<Type, string> CommandRoutes { get; set; }
+        internal Dictionary<Tuple<Type, CommandPriority>, string> CommandRoutes { get; set; }
         internal EventsPublisher EventsPublisher { get; private set; }
         internal CommandDispatcher CommandDispatcher { get; private set; }
         internal EventDispatcher EventDispatcher { get; private set; }

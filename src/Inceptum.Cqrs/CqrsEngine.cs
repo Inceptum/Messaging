@@ -150,15 +150,15 @@ namespace Inceptum.Cqrs
             }
         }
 
-        public void SendCommand<T>(T command,string boundedContext )
+        public void SendCommand<T>(T command,string boundedContext,CommandPriority priority=CommandPriority.Normal )
         {
             var context = BoundedContexts.FirstOrDefault(bc => bc.Name == boundedContext);
             if (context == null)
                 throw new ArgumentException(string.Format("bound context {0} not found",boundedContext),"boundedContext");
             string endpoint;
-            if (!context.CommandRoutes.TryGetValue(typeof (T), out endpoint))
+            if (!context.CommandRoutes.TryGetValue(Tuple.Create(typeof (T),priority), out endpoint))
             {
-                throw new InvalidOperationException(string.Format("bound context '{0}' does not support command '{1}'",boundedContext,typeof(T)));
+                throw new InvalidOperationException(string.Format("bound context '{0}' does not support command '{1}' with priority {2}",boundedContext,typeof(T),priority));
             }
             m_MessagingEngine.Send(command, m_EndpointResolver.Resolve(endpoint));
         }

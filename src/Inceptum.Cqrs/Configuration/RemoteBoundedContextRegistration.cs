@@ -33,9 +33,9 @@ namespace Inceptum.Cqrs.Configuration
             m_Registration = registration;
         }
 
-        public RemoteBoundedContextRegistration On(string publishEndpoint)
+        public RemoteBoundedContextRegistration On(string publishEndpoint, CommandPriority priority = CommandPriority.Normal)
         {
-            m_Registration.AddCommandsRoute(m_Types, publishEndpoint);
+            m_Registration.AddCommandsRoute(m_Types, publishEndpoint, priority);
             return m_Registration;
         }
     }
