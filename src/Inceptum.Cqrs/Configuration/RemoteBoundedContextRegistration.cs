@@ -22,22 +22,23 @@ namespace Inceptum.Cqrs.Configuration
 
 
 
-    public class RemoteListeningCommandsDescriptor
+    public class RemoteListeningCommandsDescriptor : RemoteBoundedContextRegistration
     {
         private readonly RemoteBoundedContextRegistration m_Registration;
         private readonly Type[] m_Types;
-
-        public RemoteListeningCommandsDescriptor(Type[] types, RemoteBoundedContextRegistration registration)
+        
+        public RemoteListeningCommandsDescriptor(Type[] types, RemoteBoundedContextRegistration registration) : base(registration.Name)
         {
             m_Types = types;
             m_Registration = registration;
         }
 
-        public RemoteBoundedContextRegistration On(string publishEndpoint, CommandPriority priority = CommandPriority.Normal)
+        public RemoteListeningCommandsDescriptor On(string publishEndpoint, CommandPriority priority = CommandPriority.Normal)
         {
             m_Registration.AddCommandsRoute(m_Types, publishEndpoint, priority);
-            return m_Registration;
+            return this;
         }
+
     }
 
     public class RemotePublishingEventsDescriptor
