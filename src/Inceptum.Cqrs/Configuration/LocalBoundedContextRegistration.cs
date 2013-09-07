@@ -145,9 +145,9 @@ namespace Inceptum.Cqrs.Configuration
             m_Registration = registration;
         }
  
-        public LocalBoundedContextRegistration RoutedFrom(string publishEndpoint)
+        public LocalBoundedContextRegistration RoutedFrom(string publishEndpoint,CommandPriority priority=CommandPriority.Normal)
         {
-            m_Registration.AddCommandsRoute(m_Types, publishEndpoint);
+            m_Registration.AddCommandsRoute(m_Types, publishEndpoint, priority);
             foreach (var endpoint in m_ListenEndpoints)
             {
                 m_Registration.AddSubscribedCommands(m_Types, endpoint.Key,endpoint.Value);
