@@ -1,4 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading;
+using Castle.Facilities.Logging;
 using Castle.MicroKernel.Registration;
 using Castle.MicroKernel.Resolvers.SpecializedResolvers;
 using Castle.Windsor;
@@ -21,10 +24,10 @@ namespace Inceptum.Messaging.Tests.Castle
         [SetUp]
         public void SetUp()
         {
-            m_Endpoint1 = new Endpoint("transport-id-1", "destination-1");
-            m_Endpoint2 = new Endpoint("transport-id-2", "destination-2");
-            m_Transport1 = new TransportInfo("transport-1", "login1", "pwd1", "None");
-            m_Transport2 = new TransportInfo("transport-2", "login2", "pwd1", "None");
+            m_Endpoint1 = new Endpoint("transport-id-1", "destination-1",serializationFormat:"json");
+            m_Endpoint2 = new Endpoint("transport-id-2", "destination-2", serializationFormat: "json");
+            m_Transport1 = new TransportInfo("transport-1", "login1", "pwd1", "None", "InMemory");
+            m_Transport2 = new TransportInfo("transport-2", "login2", "pwd1", "None", "InMemory");
             m_MessagingConfiguration = new MockMessagingConfiguration(
                 new Dictionary<string, TransportInfo>()
                     {
@@ -90,6 +93,51 @@ namespace Inceptum.Messaging.Tests.Castle
                 Assert.That(transportResolver.GetTransport("transport-id-1"), Is.Not.Null.And.EqualTo(m_Transport1));
                 Assert.That(transportResolver.GetTransport("transport-id-2"), Is.Not.Null.And.EqualTo(m_Transport2));
             }
+        }      
+        
+        [Test]
+        public void AsHandlerTest()
+        {
+            IMessagingEngine engine;
+            using (IWindsorContainer container = new WindsorContainer())
+            {
+                container.Kernel.Resolver.AddSubResolver(new ArrayResolver(container.Kernel));
+                container.AddFacility<LoggingFacility>(f => f.LogUsing(LoggerImplementation.Console));
+                container.AddFacility<MessagingFacility>(f => f.MessagingConfiguration = m_MessagingConfiguration);
+                container.Register(Component.For<Handler>().AsMessageHandler("endpoint-1", "endpoint-2"));
+                engine = container.Resolve<IMessagingEngine>();
+                engine.Send("test", m_Endpoint1);
+                Thread.Sleep(30); 
+                engine.Send(1, m_Endpoint1);
+                Thread.Sleep(30); 
+                engine.Send(DateTime.MinValue, m_Endpoint2);
+                Thread.Sleep(1000);
+                Assert.That(Handler.Handled, Is.EquivalentTo(new object[] { "test", 1, DateTime.MinValue }), "message was not handled");
+            }
+        }
+    }
+
+    public class Handler
+    {
+        readonly static List<object> m_Handled = new List<object>();
+        public void Handle(string message)
+        {
+            m_Handled.Add(message);
+        }
+
+        public void Handle(int message)
+        {
+            m_Handled.Add(message);
+        }
+
+        public void Handle(DateTime message)
+        {
+            m_Handled.Add(message);
+        }
+
+        public static List<object> Handled
+        {
+            get { return m_Handled; }
         }
     }
 }

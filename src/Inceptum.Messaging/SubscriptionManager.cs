@@ -30,7 +30,7 @@ namespace Inceptum.Messaging
             m_TransportManager = transportManager;
             m_ResubscriptionTimeout = resubscriptionTimeout;
             m_DeferredAcknowledger = new SchedulingBackgroundWorker("DeferredAcknowledgement", () => processDefferredAcknowledgements());
-            m_Resubscriber = new SchedulingBackgroundWorker("Resubscrription", () => processResubscription());
+            m_Resubscriber = new SchedulingBackgroundWorker("Resubscription", () => processResubscription());
         }
 
         public IDisposable Subscribe(Endpoint endpoint, CallbackDelegate<BinaryMessage> callback, string messageType)
@@ -58,7 +58,8 @@ namespace Inceptum.Messaging
                     subscriptionHandler.Disposable = subscription;
                     try
                     {
-                        brokenSubscription.Dispose();
+                        if (attemptNumber > 0)
+                            brokenSubscription.Dispose();
                     }catch{}
                     m_Logger.InfoFormat("Subscribed for endpoint {0}", endpoint);
                 }
