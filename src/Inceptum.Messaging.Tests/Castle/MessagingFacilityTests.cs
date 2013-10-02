@@ -102,16 +102,18 @@ namespace Inceptum.Messaging.Tests.Castle
             using (IWindsorContainer container = new WindsorContainer())
             {
                 container.Kernel.Resolver.AddSubResolver(new ArrayResolver(container.Kernel));
-                container.AddFacility<LoggingFacility>(f => f.LogUsing(LoggerImplementation.Console));
-                container.AddFacility<MessagingFacility>(f => f.MessagingConfiguration = m_MessagingConfiguration);
-                container.Register(Component.For<Handler>().AsMessageHandler("endpoint-1", "endpoint-2"));
+                container.AddFacility<LoggingFacility>(f => f.LogUsing(LoggerImplementation.Console))
+                    .AddFacility<MessagingFacility>(f => f.MessagingConfiguration = m_MessagingConfiguration)
+                    .Register(Component.For<Handler>().AsMessageHandler("endpoint-1", "endpoint-2"));
                 engine = container.Resolve<IMessagingEngine>();
+
                 engine.Send("test", m_Endpoint1);
                 Thread.Sleep(30); 
                 engine.Send(1, m_Endpoint1);
                 Thread.Sleep(30); 
                 engine.Send(DateTime.MinValue, m_Endpoint2);
-                Thread.Sleep(1000);
+                Thread.Sleep(100);
+                
                 Assert.That(Handler.Handled, Is.EquivalentTo(new object[] { "test", 1, DateTime.MinValue }), "message was not handled");
             }
         }
