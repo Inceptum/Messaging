@@ -90,14 +90,12 @@ namespace Inceptum.Cqrs.Configuration
 
 
             Func<object, CommandHandlingResult> handler;
-            if (!m_Handlers.TryGetValue(commandType, out handler))
+            if (m_Handlers.TryGetValue(commandType, out handler))
             {
-                m_Handlers.Add(commandType, lambda.Compile());
-                return;
+                throw new InvalidOperationException(string.Format(
+                    "Only one handler per command is allowed. Command {0} handler is already registered in bound context {1}. Can not register {2} as handler for it", commandType, m_BoundedContext, o));
             }
-            throw new InvalidOperationException(string.Format(
-                "Only one handler per command is allowed. Command {0} handler is already registered in bound context {1}. Can not register {2} as handler for it", commandType, m_BoundedContext, o));
-
+            m_Handlers.Add(commandType, lambda.Compile());
         }
 
         public void Dispatch(object command, CommandPriority priority, AcknowledgeDelegate acknowledge)
