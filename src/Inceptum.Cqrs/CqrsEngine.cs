@@ -102,7 +102,7 @@ namespace Inceptum.Cqrs
                         (type, acknowledge) =>
                                  {
                                      throw new InvalidOperationException("Unknown command received: " + type); 
-                                     acknowledge(0, true);
+                                     //acknowledge(0, true);
                                  }, 
                         commandSubscription.Types.Keys.ToArray()));
                 }
@@ -112,11 +112,6 @@ namespace Inceptum.Cqrs
             {
                 boundedContext.Processes.ForEach(p => p.Start(this, boundedContext.EventsPublisher));
             }
-        }
-
-        private void subscribe(Endpoint endpoint, Action<object> callback, Action<string> unknownTypeCallback, params Type[] knownTypes)
-        {
-            m_Subscription.Add(m_MessagingEngine.Subscribe(endpoint, callback, unknownTypeCallback, knownTypes));
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
