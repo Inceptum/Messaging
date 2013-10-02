@@ -98,7 +98,7 @@ namespace Inceptum.Cqrs
                     CommandSubscription commandSubscription = commandsSubscription;
                     m_Subscription.Add(m_MessagingEngine.Subscribe(
                         endpoint,
-                        (command, acknowledge) => context.CommandDispatcher.Dispacth(command, commandSubscription.Types[command.GetType()], acknowledge),
+                        (command, acknowledge) => context.CommandDispatcher.Dispatch(command, commandSubscription.Types[command.GetType()], acknowledge),
                         (type, acknowledge) =>
                                  {
                                      throw new InvalidOperationException("Unknown command received: " + type); 
