@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using Castle.Core;
 using Castle.MicroKernel;
+using Castle.MicroKernel.Context;
 using Castle.MicroKernel.Facilities;
 using Castle.MicroKernel.Registration;
 using Inceptum.Core;
@@ -20,7 +21,8 @@ namespace Inceptum.Messaging.Castle
         private IDictionary<string, JailStrategy> m_JailStrategies;
         private readonly List<IHandler> m_SerializerWaitList = new List<IHandler>();
         private readonly List<IHandler> m_SerializerFactoryWaitList = new List<IHandler>();
-        private ISerializationManager m_SerializationManager;
+        private readonly List<IHandler> m_MessageHandlerWaitList = new List<IHandler>();
+        private IMessagingEngine m_MessagingEngine;
 
         public IDictionary<string, TransportInfo> Transports
         {
@@ -68,9 +70,9 @@ namespace Inceptum.Messaging.Castle
             {
                 Kernel.Register(Component.For<ITransportResolver>().ImplementedBy<TransportResolver>().DependsOn(new { transports, jailStrategies = m_JailStrategies }));
             }
-            
 
-            m_SerializationManager = Kernel.Resolve<IMessagingEngine>().SerializationManager;
+
+            m_MessagingEngine = Kernel.Resolve<IMessagingEngine>();
             Kernel.ComponentRegistered += onComponentRegistered;
             Kernel.ComponentModelCreated += ProcessModel;
         }
@@ -92,12 +94,25 @@ namespace Inceptum.Messaging.Castle
                 }
             }
 
+            var messageHandlerFor = handler.ComponentModel.ExtendedProperties["MessageHandlerFor"] as string[];
+            if (messageHandlerFor!=null && messageHandlerFor.Length > 0)
+            {
+                if (handler.CurrentState == HandlerState.WaitingDependency)
+                {
+                    m_MessageHandlerWaitList.Add(handler);
+                }
+                else
+                {
+                    handler.Resolve(CreationContext.CreateEmpty());
+                }
+            }
+
             processWaitList();
         }
 
         private void registerSerializerFactory(IHandler handler)
         {
-            m_SerializationManager.RegisterSerializerFactory(Kernel.Resolve(handler.ComponentModel.Name,typeof(ISerializerFactory)) as ISerializerFactory);
+            m_MessagingEngine.SerializationManager.RegisterSerializerFactory(Kernel.Resolve(handler.ComponentModel.Name, typeof(ISerializerFactory)) as ISerializerFactory);
         }
  
 
@@ -111,7 +126,11 @@ namespace Inceptum.Messaging.Castle
 
         private void processWaitList()
         {
-            
+            foreach (var handler in m_MessageHandlerWaitList.Where(handler => handler.CurrentState == HandlerState.Valid))
+            {
+                handler.Resolve(CreationContext.CreateEmpty());
+            }
+
             foreach (var factoryHandler in m_SerializerFactoryWaitList.ToArray().Where(factoryHandler => factoryHandler.CurrentState == HandlerState.Valid))
             {
                 registerSerializerFactory(factoryHandler);
@@ -122,8 +141,12 @@ namespace Inceptum.Messaging.Castle
 
         public void ProcessModel(ComponentModel model)
         {
-          
-            
+            var messageHandlerFor = model.ExtendedProperties["MessageHandlerFor"] as string[];
+            if (messageHandlerFor != null && messageHandlerFor.Length > 0)
+            {
+                model.CustomComponentActivator = typeof(MessageHandlerActivator);
+            }
+
             if (model.Services.Contains(typeof(ISerializerFactory)))
             {
                 model.ExtendedProperties["IsSerializerFactory"] = true;

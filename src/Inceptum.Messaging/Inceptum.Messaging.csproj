@@ -80,8 +80,12 @@
     <Compile Include="..\VersionInfo.cs">
       <Link>Properties\VersionInfo.cs</Link>
     </Compile>
+    <Compile Include="Castle\CommandHandlingResult.cs" />
+    <Compile Include="Castle\EndpointsDependencyExtensions.cs" />
+    <Compile Include="Castle\MessageHandlerActivator.cs" />
     <Compile Include="Castle\MessagingConfigurationEndpointResolver.cs" />
     <Compile Include="Castle\MessagingFacility.cs" />
+    <Compile Include="Castle\RegistrationExtension.cs" />
     <Compile Include="Configuration\EndpointConfigurationElement.cs" />
     <Compile Include="Configuration\EndpointsCollection.cs" />
     <Compile Include="Configuration\IMessagingConfiguration.cs" />

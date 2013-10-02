@@ -362,6 +362,7 @@ namespace Inceptum.Messaging
 
         public void Dispose()
         {
+            m_Logger.Debug("Disposing");
             m_Disposing.Set();
             m_RequestTimeoutManager.Dispose();
             m_SubscriptionManager.Dispose();
@@ -478,23 +479,13 @@ namespace Inceptum.Messaging
 
         private IDisposable subscribe(Endpoint endpoint,CallbackDelegate<BinaryMessage> callback, string messageType)
         {
-            return createMessagingHandle(m_SubscriptionManager.Subscribe(endpoint, callback, messageType).Dispose);
-    /*        var subscriptionHandler=new MultipleAssignmentDisposable();
-            Action doSubscribe = null;
-            doSubscribe = () =>
+            var subscription = m_SubscriptionManager.Subscribe(endpoint, callback, messageType);
+
+            return createMessagingHandle(() =>
             {
-                var processingGroup = m_TransportManager.GetProcessingGroup(endpoint.TransportId, endpoint.Destination,doSubscribe);
-                var subscription = processingGroup.Subscribe(endpoint.Destination, (message, ack) => callback(message, createDeferredAcknowledge(ack)), messageType);
-                subscriptionHandler.Disposable=subscription;
-            };
-
-            return createMessagingHandle(subscriptionHandler.Dispose);*/
-
-/*
-            var processingGroup = m_TransportManager.GetProcessingGroup(endpoint.TransportId , endpoint.Destination);
-            IDisposable subscription = processingGroup.Subscribe(endpoint.Destination, (message, ack) => callback(message,createDeferredAcknowledge(ack)), messageType);
-            return createMessagingHandle(subscription.Dispose);
-*/
+                subscription.Dispose();
+                Logger.InfoFormat("Unsubscribed from endpoint {0}", endpoint);
+            });
         }
 
 
