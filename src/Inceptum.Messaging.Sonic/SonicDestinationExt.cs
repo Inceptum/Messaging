@@ -3,17 +3,16 @@ using Sonic.Jms;
 
 namespace Inceptum.Messaging.Sonic
 {
-    static class SonicDestinationExt
+    internal static class SonicDestinationExt
     {
         public static Destination CreateTempDestination(this Session session)
         {
-            if(session is QueueSession)
+            if (session is QueueSession)
                 return session.createTemporaryQueue();
-         /*   if(session is TopicSession)*/
-                return session.createTemporaryTopic();
-            throw new InvalidOperationException("Unknown swssion type");
+            
+            return session.createTemporaryTopic();
         }
-        
+
         public static void Delete(this Destination dest)
         {
             var temporaryQueue = dest as TemporaryQueue;

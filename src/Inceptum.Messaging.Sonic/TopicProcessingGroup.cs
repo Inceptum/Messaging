@@ -6,8 +6,8 @@ namespace Inceptum.Messaging.Sonic
 {
     internal class TopicProcessingGroup : ProcessingGroupBase<Session>
     {
-        public TopicProcessingGroup(QueueConnection connection, string jailedTag)
-            : base(connection, jailedTag)
+        public TopicProcessingGroup(QueueConnection connection, string jailedTag, MessageFormat messageFormat)
+            : base(connection, jailedTag, messageFormat)
         {
         }
 
@@ -16,9 +16,9 @@ namespace Inceptum.Messaging.Sonic
             return Session.createTopic(name.Substring(8));
         }
 
-        protected override  Session CreateSession()
+        protected override Session CreateSession()
         {
-            return (Session)Connection.createSession(false, SessionMode.AUTO_ACKNOWLEDGE);
+            return (Session) Connection.createSession(false, SessionMode.AUTO_ACKNOWLEDGE);
         }
     }
 }

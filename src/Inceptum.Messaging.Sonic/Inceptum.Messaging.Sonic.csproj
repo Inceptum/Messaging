@@ -80,10 +80,10 @@
     </Compile>
     <Compile Include="GenericConnectionStateChangeListener.cs" />
     <Compile Include="GenericMessageListener.cs" />
+    <Compile Include="MessageFormat.cs" />
     <Compile Include="ProcessingGroupBase.cs" />
     <Compile Include="ProcessingGroupWrapper.cs" />
     <Compile Include="QueueProcessingGroup.cs" />
-    <Compile Include="SonicDestinationExt.cs" />
     <Compile Include="SonicTransportFactory.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TopicProcessingGroup.cs" />
