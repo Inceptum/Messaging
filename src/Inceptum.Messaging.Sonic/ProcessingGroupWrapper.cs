@@ -1,32 +1,31 @@
 ﻿using System;
 using System.Globalization;
 using System.Runtime.CompilerServices;
-using Inceptum.Messaging.Contract;
 using Inceptum.Messaging.Transports;
 using Sonic.Jms;
 
 namespace Inceptum.Messaging.Sonic
 {
-    internal class ProcessingGroupWrapper:IProcessingGroup
+    internal class ProcessingGroupWrapper : IProcessingGroup
     {
-        private IProcessingGroup m_Instance;
         private static QueueConnection m_Connection;
         private static string m_JailedTag;
+        private readonly MessageFormat m_MessageFormat;
+        private IProcessingGroup m_Instance;
         private bool m_IsQueueGroup;
-        
 
-        public ProcessingGroupWrapper(QueueConnection connection, string jailedTag)
+
+        public ProcessingGroupWrapper(QueueConnection connection, string jailedTag, MessageFormat messageFormat)
         {
-            
             m_JailedTag = jailedTag;
+            m_MessageFormat = messageFormat;
             m_Connection = connection;
         }
- 
+
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Dispose()
         {
-            if(m_Instance!=null)
-                m_Instance.Dispose();
+            if (m_Instance != null) m_Instance.Dispose();
         }
 
         public IDisposable Subscribe(string destination, Action<BinaryMessage, Action<bool>> callback, string messageType)
@@ -58,26 +57,29 @@ namespace Inceptum.Messaging.Sonic
         {
             if (m_Instance != null)
             {
-                if(m_IsQueueGroup != isQueue(destination))
-                    throw new InvalidOperationException(string.Format("Can not process  {0} {1} as it is already used for {2} processing. Sonic does not support processing topic and queue in same thread", m_IsQueueGroup ? "Topic" : "Queue", destination,  m_IsQueueGroup ? "Queue" : "Topic"));
-                    //throw new InvalidOperationException(string.Format("Can not process  {0} {1} in processing group {2} as it is already used for {3} processing. Sonic does not support processing topic and queue in same thread", m_IsQueueGroup ? "Topic" : "Queue", destination, m_Name, m_IsQueueGroup ? "Queue" : "Topic"));
+                if (m_IsQueueGroup != isQueue(destination))
+                    throw new InvalidOperationException(
+                        string.Format("Can not process  {0} {1} as it is already used for {2} processing. Sonic does not support processing topic and queue in same thread",
+                            m_IsQueueGroup ? "Topic" : "Queue", destination, m_IsQueueGroup ? "Queue" : "Topic"));
                 return;
             }
             m_IsQueueGroup = isQueue(destination);
             if (m_IsQueueGroup)
-                m_Instance=new QueueProcessingGroup(m_Connection, m_JailedTag);
+                m_Instance = new QueueProcessingGroup(m_Connection, m_JailedTag, m_MessageFormat);
             else
-                m_Instance= new TopicProcessingGroup(m_Connection, m_JailedTag);
+                m_Instance = new TopicProcessingGroup(m_Connection, m_JailedTag, m_MessageFormat);
         }
 
         private bool isQueue(string destination)
         {
-            if (destination.StartsWith("queue://", true, CultureInfo.InvariantCulture))
+            if (destination.StartsWith("queue://", true,
+                CultureInfo.InvariantCulture))
             {
                 return true;
             }
 
-            if (destination.StartsWith("topic://", true, CultureInfo.InvariantCulture))
+            if (destination.StartsWith("topic://", true,
+                CultureInfo.InvariantCulture))
             {
                 return false;
             }

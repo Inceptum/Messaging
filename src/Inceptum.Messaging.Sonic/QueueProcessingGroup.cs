@@ -6,10 +6,9 @@ namespace Inceptum.Messaging.Sonic
 {
     internal class QueueProcessingGroup : ProcessingGroupBase<QueueSession>
     {
-        public QueueProcessingGroup(QueueConnection connection, string jailedTag)
-            : base(connection,jailedTag)
+        public QueueProcessingGroup(QueueConnection connection, string jailedTag, MessageFormat messageFormat)
+            : base(connection, jailedTag, messageFormat)
         {
-
         }
 
         protected override Destination CreateDestination(string name)
@@ -19,9 +18,7 @@ namespace Inceptum.Messaging.Sonic
 
         protected override QueueSession CreateSession()
         {
-            return (QueueSession)Connection.createQueueSession(false, SessionMode.AUTO_ACKNOWLEDGE);
+            return (QueueSession) Connection.createQueueSession(false, SessionMode.AUTO_ACKNOWLEDGE);
         }
-
-        
     }
 }
