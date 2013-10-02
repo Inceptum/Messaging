@@ -100,7 +100,7 @@ namespace Inceptum.Cqrs.Configuration
 
         }
 
-        public void Dispacth(object command, CommandPriority priority, AcknowledgeDelegate acknowledge)
+        public void Dispatch(object command, CommandPriority priority, AcknowledgeDelegate acknowledge)
         {
             Func<object, CommandHandlingResult> handler;
             if (!m_Handlers.TryGetValue(command.GetType(), out handler))

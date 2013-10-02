@@ -160,7 +160,7 @@ namespace Inceptum.Cqrs.Tests
                     .Resolve<ICqrsEngineBootstrapper>().Start();
                 var cqrsEngine = (CqrsEngine) container.Resolve<ICommandSender>();
                 var commandsHandler = container.Resolve<CommandsHandler>();
-                cqrsEngine.BoundedContexts.First(c => c.Name == "bc").CommandDispatcher.Dispacth("test",CommandPriority.Low, (delay, acknowledge) => { });
+                cqrsEngine.BoundedContexts.First(c => c.Name == "bc").CommandDispatcher.Dispatch("test",CommandPriority.Low, (delay, acknowledge) => { });
                 Thread.Sleep(200);
                 Assert.That(commandsHandler.HandledCommands, Is.EqualTo(new[] {"test"}), "Command was not dispatched");
             }
@@ -181,7 +181,7 @@ namespace Inceptum.Cqrs.Tests
 
                 bool acknowledged = false;
                 long retrydelay = 0;
-                cqrsEngine.BoundedContexts.First(c => c.Name == "bc").CommandDispatcher.Dispacth(1,CommandPriority.Low, (delay, acknowledge) =>
+                cqrsEngine.BoundedContexts.First(c => c.Name == "bc").CommandDispatcher.Dispatch(1,CommandPriority.Low, (delay, acknowledge) =>
                 {
                     retrydelay = delay;
                     acknowledged = acknowledge;
@@ -207,7 +207,7 @@ namespace Inceptum.Cqrs.Tests
 
                 bool acknowledged = false;
                 long retrydelay = 0;
-                cqrsEngine.BoundedContexts.First(c => c.Name == "bc").CommandDispatcher.Dispacth((long)1,CommandPriority.Low, (delay, acknowledge) =>
+                cqrsEngine.BoundedContexts.First(c => c.Name == "bc").CommandDispatcher.Dispatch((long)1,CommandPriority.Low, (delay, acknowledge) =>
                 {
                     retrydelay = delay;
                     acknowledged = acknowledge;
