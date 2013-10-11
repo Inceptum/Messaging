@@ -29,7 +29,7 @@ namespace Inceptum.Messaging.Tests.Configuration
                                      .And.Property("JailStrategyName").EqualTo("None")
                 );
 
-            var endpoint1 = messagingConfiguration.GetEndpoint("endpoint1");
+            var endpoint1 = messagingConfiguration.GetEndpoints()["endpoint1"];
             Assert.That(endpoint1, Is.Not.Null
                                      .And.Property("TransportId").EqualTo("main")
                                      .And.Property("Destination").EqualTo("queue1")
@@ -45,10 +45,7 @@ namespace Inceptum.Messaging.Tests.Configuration
 
             var transports = messagingConfiguration.GetTransports();
             Assert.IsEmpty(transports);
-
-            Assert.Throws<ArgumentException>(
-                () => { var endpoint = messagingConfiguration.GetEndpoint("not-exist-endpoint"); },
-                "GetEndpoint should from ArgumentException for unknown endpoint.");
+            CollectionAssert.IsEmpty(messagingConfiguration.GetEndpoints());
         }
 
         [Test]
@@ -68,21 +65,21 @@ namespace Inceptum.Messaging.Tests.Configuration
                                      .And.Property("JailStrategyName").EqualTo("None")
                 );
 
-            var endpoint1 = messagingConfiguration.GetEndpoint("endpoint1");
+            var endpoint1 = messagingConfiguration.GetEndpoints()["endpoint1"];
             Assert.That(endpoint1, Is.Not.Null
                                      .And.Property("TransportId").EqualTo("main")
                                      .And.Property("Destination").EqualTo("queue1")
                                      .And.Property("SharedDestination").EqualTo(true)
                 );
 
-            var endpoint2 = messagingConfiguration.GetEndpoint("endpoint2");
+            var endpoint2 = messagingConfiguration.GetEndpoints()["endpoint2"];
             Assert.That(endpoint2, Is.Not.Null
                                      .And.Property("TransportId").EqualTo("main")
                                      .And.Property("Destination").EqualTo("queue2")
                                      .And.Property("SharedDestination").EqualTo(false)
                 );
 
-            var endpoint3 = messagingConfiguration.GetEndpoint("endpoint3");
+            var endpoint3 = messagingConfiguration.GetEndpoints()["endpoint3"];
             Assert.That(endpoint3, Is.Not.Null
                                      .And.Property("TransportId").EqualTo("main")
                                      .And.Property("Destination").EqualTo("queue3")

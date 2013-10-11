@@ -37,19 +37,9 @@ namespace Inceptum.Messaging.Configuration
                                                              tce.Messaging));
         }
 
-        public bool HasEndpoint(string name)
+        public Dictionary<string, Endpoint> GetEndpoints()
         {
-            return Endpoints[name] != null;
-        }
-
-        public Endpoint GetEndpoint(string name)
-        {
-            EndpointConfigurationElement ece = Endpoints[name];
-            if (ece == null)
-            {
-                throw new ArgumentException(string.Format("Endpoint with name '{0}' not found", name), "name");
-            }
-            return new Endpoint(ece.TransportId, ece.Destination, ece.SharedDestination, ece.SerializationFormat);
+            return Endpoints.Cast<EndpointConfigurationElement>().ToDictionary(ece => ece.Name, ece => new Endpoint(ece.TransportId, ece.Destination, ece.SharedDestination, ece.SerializationFormat));
         }
     }
 }

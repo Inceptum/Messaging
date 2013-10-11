@@ -83,11 +83,12 @@
     <Compile Include="Castle\CommandHandlingResult.cs" />
     <Compile Include="Castle\EndpointsDependencyExtensions.cs" />
     <Compile Include="Castle\MessageHandlerActivator.cs" />
-    <Compile Include="Castle\MessagingConfigurationEndpointResolver.cs" />
     <Compile Include="Castle\MessagingFacility.cs" />
     <Compile Include="Castle\RegistrationExtension.cs" />
     <Compile Include="Configuration\EndpointConfigurationElement.cs" />
+    <Compile Include="Configuration\EndpointResolver.cs" />
     <Compile Include="Configuration\EndpointsCollection.cs" />
+    <Compile Include="Configuration\IEndpointProvider.cs" />
     <Compile Include="Configuration\IMessagingConfiguration.cs" />
     <Compile Include="Configuration\MessagingConfigurationSection.cs" />
     <Compile Include="Configuration\NamedConfigurationElement.cs" />

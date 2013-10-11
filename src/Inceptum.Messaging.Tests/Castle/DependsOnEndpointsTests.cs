@@ -39,7 +39,7 @@ namespace Inceptum.Messaging.Tests.Castle
                     {"endpoint4", m_Endpoint4},
                     {"endpoint5", m_Endpoint5},
                 });
-            var endpointResolver = new MessagingConfigurationEndpointResolver(messagingConfiguration);
+            var endpointResolver = new EndpointResolver(messagingConfiguration.GetEndpoints());
 
             m_Container = new WindsorContainer();
             m_Container.Kernel.Resolver.AddSubResolver(endpointResolver);
@@ -145,15 +145,9 @@ namespace Inceptum.Messaging.Tests.Castle
             return m_TransportInfos;
         }
 
-        public bool HasEndpoint(string name)
+        public Dictionary<string, Endpoint> GetEndpoints()
         {
-            return m_Endpoints.ContainsKey(name);
-
-        }
-
-        public Endpoint GetEndpoint(string name)
-        {
-            return m_Endpoints[name];
+            return m_Endpoints;
         }
     }
 

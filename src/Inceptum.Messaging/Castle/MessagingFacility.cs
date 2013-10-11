@@ -63,7 +63,14 @@ namespace Inceptum.Messaging.Castle
             if (messagingConfiguration != null)
             {
                 transports = messagingConfiguration.GetTransports();
-                Kernel.Resolver.AddSubResolver(new MessagingConfigurationEndpointResolver(messagingConfiguration));
+
+                if (Kernel.HasComponent(typeof (IEndpointProvider)))
+                {
+                    throw new Exception("IEndpointProvider already registered in container, can not register IEndpointProvider from MessagingConfiguration");
+                }
+                Kernel.Register(Component.For<IEndpointProvider>().Forward<ISubDependencyResolver>().ImplementedBy<EndpointResolver>().Named("EndpointResolver").DependsOn(new { endpoints = messagingConfiguration.GetEndpoints() }));
+                var endpointResolver = Kernel.Resolve<ISubDependencyResolver>("EndpointResolver");
+                Kernel.Resolver.AddSubResolver(endpointResolver);
             }
 
             if (transports != null)
