@@ -90,6 +90,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Castle\DependsOnEndpointsTests.cs" />
+    <Compile Include="Castle\MessagingConfigurationDependsOnEndpointsTests.cs" />
     <Compile Include="Castle\MessagingFacilityTests.cs" />
     <Compile Include="Configuration\MessagingConfigurationSectionTests.cs" />
     <Compile Include="InMemoryTransportTests.cs" />
