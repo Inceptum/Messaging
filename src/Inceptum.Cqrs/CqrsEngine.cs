@@ -129,11 +129,28 @@ namespace Inceptum.Cqrs
             m_MessagingEngine.Send(command, m_EndpointResolver.Resolve(endpoint));
         }
 
-        public void ReplayEvents<T>(string boundedContext, params Type[] types)
+        public void ReplayEvents(string boundedContext, params Type[] types)
         {
-          /*  m_MessagingEngine.
-            SendCommand(new ReplayEventsCommand { Destination = , From = DateTime.MinValue, Types=types },boundedContext);
-   */     }
+            var context = BoundedContexts.FirstOrDefault(bc => bc.Name == boundedContext);
+                if (context == null)
+                throw new ArgumentException(string.Format("bound context {0} not found",boundedContext),"boundedContext");
+            string endpoint;
+            if (!context.CommandRoutes.TryGetValue(Tuple.Create(typeof (ReplayEventsCommand),CommandPriority.Normal), out endpoint))
+            {
+                throw new InvalidOperationException(string.Format("bound context '{0}' does not support command '{1}' with priority {2}", boundedContext, typeof(ReplayEventsCommand), CommandPriority.Normal));
+            }
+
+            var ep = m_EndpointResolver.Resolve(endpoint);
+
+            Destination tmpDestination;
+            if (context.GetTempDestination(ep.TransportId, () => m_MessagingEngine.CreateTemporaryDestination(ep.TransportId), out tmpDestination))
+            {
+                var replayEndpoint = new Endpoint { Destination = tmpDestination, SerializationFormat = ep.SerializationFormat, SharedDestination = true, TransportId = ep.TransportId };
+                var knownEventTypes = context.EventsSubscriptions.SelectMany(e => e.Value).ToArray();
+                m_Subscription.Add(m_MessagingEngine.Subscribe(replayEndpoint, @event => context.EventDispatcher.Dispacth(@event), t => { }, knownEventTypes));
+            }
+            SendCommand(new ReplayEventsCommand { Destination = tmpDestination.Publish, From = DateTime.MinValue, SerializationFormat = ep.SerializationFormat, Types = types }, boundedContext);
+        }
 
         internal void PublishEvent(object @event,string endpoint)
         {

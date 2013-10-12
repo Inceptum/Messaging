@@ -5,6 +5,7 @@ using System.Configuration;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
+using System.Security.Policy;
 using System.Text;
 using System.Threading;
 using Castle.Core.Logging;
@@ -20,6 +21,8 @@ using Inceptum.Messaging;
 using Inceptum.Messaging.Contract;
 using Inceptum.Messaging.RabbitMq;
 using Inceptum.Messaging.Serialization;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using Rhino.Mocks;
 
@@ -505,11 +508,23 @@ namespace Inceptum.Cqrs.Tests
         [Test]
         public void ReplayEventsTest()
         {
+            var endpointResolver = MockRepository.GenerateMock<IEndpointResolver>();
+            endpointResolver.Expect(r => r.Resolve("commands")).Return(new Endpoint("rmq", "commandsExchange", "commands", true, "json"));
+            endpointResolver.Expect(r => r.Resolve("events")).Return(new Endpoint("rmq", "eventsExchange", "events", true, "json"));
+
+
+            var transports = new Dictionary<string, TransportInfo> { { "rmq", new TransportInfo("localhost", "guest", "guest", null, "RabbitMq") } };
+            var messagingEngine = new MessagingEngine(new TransportResolver(transports), new RabbitMqTransportFactory())
+            {
+                Logger = new ConsoleLogger()
+            };
+
+
             var eventsListener = new EventsListener();
             var localBoundedContext = LocalBoundedContext.Named("local")
                 .PublishingEvents(typeof (TestAggregateRootNameChangedEvent), typeof (TestAggregateRootCreatedEvent)).To("events").RoutedTo("events")
-                .ListeningCommands(typeof (string)).On("commands1").RoutedFromSameEndpoint()
-                .ListeningInfrastructureCommands().On("infrastructureCommands").RoutedFromSameEndpoint()
+                .ListeningCommands(typeof (string)).On("commands").RoutedFromSameEndpoint()
+                .ListeningInfrastructureCommands().On("commands").RoutedFromSameEndpoint()
                 .WithCommandsHandler<EsCommandHandler>()
                 .WithEventStore(dispatchCommits => Wireup.Init()
                     .LogToOutputWindow()
@@ -519,13 +534,14 @@ namespace Inceptum.Cqrs.Tests
                     .UsingSynchronousDispatchScheduler()
                     .DispatchTo(dispatchCommits));
 
-            using (var engine = new InMemoryCqrsEngine(localBoundedContext, LocalBoundedContext.Named("projections").WithProjection(eventsListener, "local")))
+            using (var engine = new CqrsEngine(Activator.CreateInstance,messagingEngine,endpointResolver, localBoundedContext, LocalBoundedContext.Named("projections").WithProjection(eventsListener, "local")))
             {
                 engine.SendCommand("test", "local");
 
                 Thread.Sleep(2000);
-                engine.SendCommand(new ReplayEventsCommand { Destination = "events", From = DateTime.MinValue }, "local");
-                Thread.Sleep(2000);
+                //engine.SendCommand(new ReplayEventsCommand { Destination = "events", From = DateTime.MinValue }, "local");
+                engine.ReplayEvents("local");
+                Thread.Sleep(200000);
                 Console.WriteLine("Disposing...");
             } 
 
@@ -557,4 +573,6 @@ namespace Inceptum.Cqrs.Tests
             Console.WriteLine("Event cought by saga:"+@event);
         }
     }
+
+
 }
