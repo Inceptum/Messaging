@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using Inceptum.Messaging.Transports;
 using Sonic.Jms;
+using Destination = Inceptum.Messaging.Contract.Destination;
 
 namespace Inceptum.Messaging.Sonic
 {
@@ -85,6 +86,11 @@ namespace Inceptum.Messaging.Sonic
             }
 
             throw new InvalidOperationException("Wrong destination name: " + destination + ". Should start with 'queue://' or 'topic://'");
+        }
+
+        public Destination CreateTemporaryDestination()
+        {
+            return m_Instance.CreateTemporaryDestination();
         }
     }
 }

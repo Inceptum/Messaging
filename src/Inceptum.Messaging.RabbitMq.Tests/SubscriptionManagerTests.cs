@@ -57,7 +57,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
                       processed = DateTime.Now;
                       acknowledge(1000, true);
                       Console.WriteLine(processed.ToString("HH:mm:ss.ffff") + " recieved");
-                  },null);
+                  },null,"ProcessingGroup");
                   var acknowledged = new ManualResetEvent(false);
                   callback(new BinaryMessage {Bytes = new byte[0], Type = typeof (string).Name}, b =>
                   {
@@ -80,7 +80,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
                       {
                           acknowledge(60000, true);
                           Console.WriteLine(DateTime.Now.ToString("HH:mm:ss.ffff") + " received");
-                      },null);
+                      }, null, "ProcessingGroup");
                   
                   callback(new BinaryMessage { Bytes = new byte[0], Type = typeof(string).Name }, b => { acknowledged=true; Console.WriteLine(DateTime.Now.ToString("HH:mm:ss.ffff") + " acknowledged"); });
               }
@@ -114,7 +114,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
                 {
                     acknowledge(0, true);
                     Console.WriteLine(DateTime.Now.ToString("HH:mm:ss.ffff") + " recieved");
-                },null);
+                }, null, "ProcessingGroup");
 
                 //First attempt fails next one happends in 1000ms and should be successfull
                 Assert.That(subscribed.WaitOne(1200), Is.True, "Has not resubscribed after first subscription fail");
@@ -160,7 +160,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
                     {
                         Thread.Sleep(rnd.Next(1,10));
                         acknowledge(delay.Key, true);
-                    },null);
+                    }, null, "ProcessingGroup");
                 for (int i = 0; i < messageCount; i++)
                     callback(new BinaryMessage {Bytes = new byte[0], Type = typeof (string).Name}, b =>
                         {
@@ -190,7 +190,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
                                onSubscribe();
                            })
                            .Return(MockRepository.GenerateMock<IDisposable>());
-            transportManager.Expect(t => t.GetProcessingGroup(null,(Destination) null, null))
+            transportManager.Expect(t => t.GetProcessingGroup(null,null, null))
                 .IgnoreArguments()
                 .WhenCalled(invocation => setOnFail((Action)invocation.Arguments[2]))
                 .Return(processingGroup);

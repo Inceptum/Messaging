@@ -61,16 +61,6 @@ namespace Inceptum.Messaging.RabbitMq
             return processingGroup;
         }
 
-        public Destination CreateTemporaryDestination()
-        {
-            using (var con = m_Factory.CreateConnection())
-            {
-                using (var model = con.CreateModel())
-                {
-                    var queueName = model.QueueDeclare().QueueName;
-                    return new Destination { Subscribe = queueName, Publish = new PublicationAddress("direct", "", queueName).ToString() };       
-                }
-            }
-        }
+       
     }
 }

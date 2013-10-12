@@ -34,7 +34,12 @@ namespace Inceptum.Messaging.RabbitMq
         }
 
         readonly Dictionary<string, DefaultBasicConsumer> m_Consumers = new Dictionary<string, DefaultBasicConsumer>();
-
+       
+        public Destination CreateTemporaryDestination()
+        {
+            var queueName = m_Model.QueueDeclare().QueueName;
+            return new Destination { Subscribe = queueName, Publish = new PublicationAddress("direct", "", queueName).ToString() };
+        }
       
 
         public void Send(string destination, BinaryMessage message, int ttl)
