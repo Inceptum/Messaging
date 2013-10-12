@@ -39,6 +39,13 @@
         {
             return !left.Equals(right);
         }
+
+        public override string ToString()
+        {
+            if (Subscribe == Publish)
+                return "["+Subscribe+"]";
+            return string.Format("[s:{0}, p:{1}]", Subscribe, Publish);
+        }
     }
 
 
