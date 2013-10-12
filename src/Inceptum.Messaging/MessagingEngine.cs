@@ -83,7 +83,7 @@ namespace Inceptum.Messaging
 
         public Destination CreateTemporaryDestination(string transportId)
         {
-            throw new NotImplementedException();
+            return m_TransportManager.CreateTemporaryDestination(transportId);
         }
 
         public IDisposable SubscribeOnTransportEvents(TransportEventHandler handler)
