@@ -52,12 +52,7 @@ namespace Inceptum.Messaging.InMemory
             }
         }
 
-        public Destination CreateTemporaryDestination()
-        {
-            var name = Guid.NewGuid().ToString();
-            CreateTemporary(name);
-            return name;
-        }
+     
 
         public IDisposable CreateTemporary(string name)
         {
@@ -116,6 +111,14 @@ namespace Inceptum.Messaging.InMemory
         {
             m_Transport = queues;
         }
+
+        public Destination CreateTemporaryDestination()
+        {
+            var name = Guid.NewGuid().ToString();
+            m_Transport.CreateTemporary(name);
+            return name;
+        }
+      
 
         public void Send(string destination, BinaryMessage message, int ttl)
         {

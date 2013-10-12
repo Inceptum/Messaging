@@ -33,7 +33,7 @@ namespace Inceptum.Messaging
             m_Resubscriber = new SchedulingBackgroundWorker("Resubscription", () => processResubscription());
         }
 
-        public IDisposable Subscribe(Endpoint endpoint, CallbackDelegate<BinaryMessage> callback, string messageType)
+        public IDisposable Subscribe(Endpoint endpoint, CallbackDelegate<BinaryMessage> callback, string messageType, string processingGroup )
         {
             var subscriptionHandler = new MultipleAssignmentDisposable();
             Action<int> doSubscribe = null;
@@ -47,12 +47,12 @@ namespace Inceptum.Messaging
                     m_Logger.InfoFormat("Subscribing for endpoint {0}", endpoint);
                 try
                 {
-                    var processingGroup = m_TransportManager.GetProcessingGroup(endpoint.TransportId, endpoint.Destination,
+                    var procGroup = m_TransportManager.GetProcessingGroup(endpoint.TransportId, processingGroup??endpoint.Destination.ToString(),
                         () => {
                             m_Logger.InfoFormat("Subscription for endpoint {0} failure detected. Attempting subscribe again.", endpoint);
                             doSubscribe(0);
                         });
-                    var subscription = processingGroup.Subscribe(endpoint.Destination.Subscribe, (message, ack) => callback(message, createDeferredAcknowledge(ack)),
+                    var subscription = procGroup.Subscribe(endpoint.Destination.Subscribe, (message, ack) => callback(message, createDeferredAcknowledge(ack)),
                         messageType);
                     var brokenSubscription = subscriptionHandler.Disposable;
                     subscriptionHandler.Disposable = subscription;

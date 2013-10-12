@@ -496,7 +496,7 @@ namespace Inceptum.Cqrs.Tests
             {
                 engine.SendCommand("test", "local");
 
-                Thread.Sleep(2000);
+                Thread.Sleep(3000);
                 Console.WriteLine("Disposing...");
             }
 
@@ -506,7 +506,8 @@ namespace Inceptum.Cqrs.Tests
 
 
         [Test]
-        public void ReplayEventsTest()
+        [Ignore]
+        public void ReplayEventsRmqTest()
         {
             var endpointResolver = MockRepository.GenerateMock<IEndpointResolver>();
             endpointResolver.Expect(r => r.Resolve("commands")).Return(new Endpoint("rmq", "commandsExchange", "commands", true, "json"));
@@ -522,8 +523,49 @@ namespace Inceptum.Cqrs.Tests
 
             var eventsListener = new EventsListener();
             var localBoundedContext = LocalBoundedContext.Named("local")
-                .PublishingEvents(typeof (TestAggregateRootNameChangedEvent), typeof (TestAggregateRootCreatedEvent)).To("events").RoutedTo("events")
-                .ListeningCommands(typeof (string)).On("commands").RoutedFromSameEndpoint()
+                .PublishingEvents(typeof(TestAggregateRootNameChangedEvent), typeof(TestAggregateRootCreatedEvent)).To("events").RoutedTo("events")
+                .ListeningCommands(typeof(string)).On("commands").RoutedFromSameEndpoint()
+                .ListeningInfrastructureCommands().On("commands").RoutedFromSameEndpoint()
+                .WithCommandsHandler<EsCommandHandler>()
+                .WithEventStore(dispatchCommits => Wireup.Init()
+                    .LogToOutputWindow()
+                    .UsingInMemoryPersistence()
+                    .InitializeStorageEngine()
+                    .UsingJsonSerialization()
+                    .UsingSynchronousDispatchScheduler()
+                    .DispatchTo(dispatchCommits));
+            using (messagingEngine)
+            {
+                using (
+                    var engine = new CqrsEngine(Activator.CreateInstance, messagingEngine, endpointResolver, localBoundedContext,
+                        LocalBoundedContext.Named("projections").WithProjection(eventsListener, "local")))
+                {
+                    engine.SendCommand("test", "local");
+
+                    Thread.Sleep(2000);
+                    //engine.SendCommand(new ReplayEventsCommand { Destination = "events", From = DateTime.MinValue }, "local");
+                    engine.ReplayEvents("local");
+                    Thread.Sleep(2000);
+                    Console.WriteLine("Disposing...");
+                }
+            }
+
+
+            Assert.That(eventsListener.Handled.Count, Is.EqualTo(4), "Events were not redelivered");
+
+        }
+        [Test]
+        public void ReplayEventsTest()
+        {
+          
+
+         
+
+
+            var eventsListener = new EventsListener();
+            var localBoundedContext = LocalBoundedContext.Named("local")
+                .PublishingEvents(typeof(TestAggregateRootNameChangedEvent), typeof(TestAggregateRootCreatedEvent)).To("events").RoutedTo("events")
+                .ListeningCommands(typeof(string)).On("commands").RoutedFromSameEndpoint()
                 .ListeningInfrastructureCommands().On("commands").RoutedFromSameEndpoint()
                 .WithCommandsHandler<EsCommandHandler>()
                 .WithEventStore(dispatchCommits => Wireup.Init()
@@ -534,20 +576,21 @@ namespace Inceptum.Cqrs.Tests
                     .UsingSynchronousDispatchScheduler()
                     .DispatchTo(dispatchCommits));
 
-            using (var engine = new CqrsEngine(Activator.CreateInstance,messagingEngine,endpointResolver, localBoundedContext, LocalBoundedContext.Named("projections").WithProjection(eventsListener, "local")))
-            {
-                engine.SendCommand("test", "local");
+                using (
+                    var engine = new InMemoryCqrsEngine(localBoundedContext,
+                        LocalBoundedContext.Named("projections").WithProjection(eventsListener, "local")))
+                {
+                    engine.SendCommand("test", "local");
 
-                Thread.Sleep(2000);
-                //engine.SendCommand(new ReplayEventsCommand { Destination = "events", From = DateTime.MinValue }, "local");
-                engine.ReplayEvents("local");
-                Thread.Sleep(200000);
-                Console.WriteLine("Disposing...");
-            } 
+                    Thread.Sleep(2000);
+                    //engine.SendCommand(new ReplayEventsCommand { Destination = "events", From = DateTime.MinValue }, "local");
+                    engine.ReplayEvents("local");
+                    Thread.Sleep(2000);
+                    Console.WriteLine("Disposing...");
+                }
 
+            Assert.That(eventsListener.Handled.Count, Is.EqualTo(4), "Events were not redelivered");
 
-            Assert.That(eventsListener.Handled.Count,Is.EqualTo(4),"Events were not redelivered");
- 
         }
 
 

@@ -34,12 +34,7 @@ namespace Inceptum.Messaging.Sonic
             m_Connection.start();
         }
 
-        public Destination CreateTemporaryDestination()
-        {
-            return m_Connection.createQueueSession(false, 1).createTemporaryQueue().getQueueName();
-        }
-
-        
+       
 
         private void connectionStateHandler(int state)
         {

@@ -4,6 +4,7 @@ using System.Configuration;
 using System.Linq;
 using System.Text;
 using Inceptum.Messaging.Configuration;
+using Inceptum.Messaging.Contract;
 using NUnit.Framework;
 
 namespace Inceptum.Messaging.Tests.Configuration
@@ -14,7 +15,8 @@ namespace Inceptum.Messaging.Tests.Configuration
         [Test]
         public void GetDefaultSectionTest()
         {
-            var messagingConfiguration = ConfigurationManager.GetSection("default-messaging") as IMessagingConfiguration;
+            var configuration = ConfigurationManager.OpenExeConfiguration(new Uri(GetType().Assembly.CodeBase).LocalPath);
+            var messagingConfiguration = configuration.GetSection("default-messaging") as IMessagingConfiguration;
             Assert.IsNotNull(messagingConfiguration);
 
             var transports = messagingConfiguration.GetTransports();
@@ -32,7 +34,7 @@ namespace Inceptum.Messaging.Tests.Configuration
             var endpoint1 = messagingConfiguration.GetEndpoints()["endpoint1"];
             Assert.That(endpoint1, Is.Not.Null
                                      .And.Property("TransportId").EqualTo("main")
-                                     .And.Property("Destination").EqualTo("queue1")
+                                     .And.Property("Destination").EqualTo((Destination)"queue1")
                                      .And.Property("SharedDestination").EqualTo(false)
                 );
         }
@@ -40,7 +42,8 @@ namespace Inceptum.Messaging.Tests.Configuration
         [Test]
         public void GetEmptySectionTest()
         {
-            var messagingConfiguration = ConfigurationManager.GetSection("empty-messaging") as IMessagingConfiguration;
+            var configuration = ConfigurationManager.OpenExeConfiguration(new Uri(GetType().Assembly.CodeBase).LocalPath);
+            var messagingConfiguration = configuration.GetSection("empty-messaging") as IMessagingConfiguration;
             Assert.IsNotNull(messagingConfiguration);
 
             var transports = messagingConfiguration.GetTransports();
@@ -51,7 +54,8 @@ namespace Inceptum.Messaging.Tests.Configuration
         [Test]
         public void GetNotEmptySectionTest()
         {
-            var messagingConfiguration = ConfigurationManager.GetSection("one-transport-messaging") as IMessagingConfiguration;
+            var configuration = ConfigurationManager.OpenExeConfiguration(new Uri(GetType().Assembly.CodeBase).LocalPath);
+            var messagingConfiguration = configuration.GetSection("one-transport-messaging") as IMessagingConfiguration;
             Assert.IsNotNull(messagingConfiguration);
             var transports = messagingConfiguration.GetTransports();
             Assert.IsNotEmpty(transports);
@@ -68,21 +72,21 @@ namespace Inceptum.Messaging.Tests.Configuration
             var endpoint1 = messagingConfiguration.GetEndpoints()["endpoint1"];
             Assert.That(endpoint1, Is.Not.Null
                                      .And.Property("TransportId").EqualTo("main")
-                                     .And.Property("Destination").EqualTo("queue1")
+                                     .And.Property("Destination").EqualTo((Destination)"queue1")
                                      .And.Property("SharedDestination").EqualTo(true)
                 );
 
             var endpoint2 = messagingConfiguration.GetEndpoints()["endpoint2"];
             Assert.That(endpoint2, Is.Not.Null
                                      .And.Property("TransportId").EqualTo("main")
-                                     .And.Property("Destination").EqualTo("queue2")
+                                     .And.Property("Destination").EqualTo((Destination)"queue2")
                                      .And.Property("SharedDestination").EqualTo(false)
                 );
 
             var endpoint3 = messagingConfiguration.GetEndpoints()["endpoint3"];
             Assert.That(endpoint3, Is.Not.Null
                                      .And.Property("TransportId").EqualTo("main")
-                                     .And.Property("Destination").EqualTo("queue3")
+                                     .And.Property("Destination").EqualTo((Destination)"queue3")
                                      .And.Property("SharedDestination").EqualTo(false)
                 );
         }

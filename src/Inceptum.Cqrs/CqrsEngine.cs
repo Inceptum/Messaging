@@ -143,11 +143,11 @@ namespace Inceptum.Cqrs
             var ep = m_EndpointResolver.Resolve(endpoint);
 
             Destination tmpDestination;
-            if (context.GetTempDestination(ep.TransportId, () => m_MessagingEngine.CreateTemporaryDestination(ep.TransportId), out tmpDestination))
+            if (context.GetTempDestination(ep.TransportId, () => m_MessagingEngine.CreateTemporaryDestination(ep.TransportId,"EventReplay"), out tmpDestination))
             {
                 var replayEndpoint = new Endpoint { Destination = tmpDestination, SerializationFormat = ep.SerializationFormat, SharedDestination = true, TransportId = ep.TransportId };
                 var knownEventTypes = context.EventsSubscriptions.SelectMany(e => e.Value).ToArray();
-                m_Subscription.Add(m_MessagingEngine.Subscribe(replayEndpoint, @event => context.EventDispatcher.Dispacth(@event), t => { }, knownEventTypes));
+                m_Subscription.Add(m_MessagingEngine.Subscribe(replayEndpoint, @event => context.EventDispatcher.Dispacth(@event), t => { }, "EventReplay",knownEventTypes));
             }
             SendCommand(new ReplayEventsCommand { Destination = tmpDestination.Publish, From = DateTime.MinValue, SerializationFormat = ep.SerializationFormat, Types = types }, boundedContext);
         }

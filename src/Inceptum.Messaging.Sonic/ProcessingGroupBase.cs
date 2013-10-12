@@ -29,6 +29,7 @@ namespace Inceptum.Messaging.Sonic
             JailedSelector = SonicTransportConstants.JAILED_PROPERTY_NAME + " = \'" + m_JailedTag + "\'";
         }
 
+
         protected TSession Session
         {
             get { return m_Session; }
@@ -225,6 +226,8 @@ namespace Inceptum.Messaging.Sonic
             ensureSessionIsCreated();
             return CreateDestination(name);
         }
+
+        public abstract Contract.Destination CreateTemporaryDestination();
 
         protected abstract TSession CreateSession();
     }

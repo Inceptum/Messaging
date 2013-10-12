@@ -81,9 +81,9 @@ namespace Inceptum.Messaging
 
         #region IMessagingEngine Members
 
-        public Destination CreateTemporaryDestination(string transportId)
+        public Destination CreateTemporaryDestination(string transportId,string processingGroup)
         {
-            return m_TransportManager.CreateTemporaryDestination(transportId);
+            return m_TransportManager.GetProcessingGroup(transportId,processingGroup).CreateTemporaryDestination();
         }
 
         public IDisposable SubscribeOnTransportEvents(TransportEventHandler handler)
@@ -103,28 +103,28 @@ namespace Inceptum.Messaging
             return Disposable.Create(() => m_TransportManager.TransportEvents -= safeHandler);
         }
 
-        public void Send<TMessage>(TMessage message, Endpoint endpoint)
+        public void Send<TMessage>(TMessage message, Endpoint endpoint, string processingGroup = null)
         {
             Send(message, endpoint, MESSAGE_DEFAULT_LIFESPAN);
         }
 
-        public void Send<TMessage>(TMessage message, Endpoint endpoint, int ttl)
+        public void Send<TMessage>(TMessage message, Endpoint endpoint, int ttl, string processingGroup = null)
         {
             var serializedMessage = serializeMessage(endpoint.SerializationFormat, message);
-            send(serializedMessage,endpoint,ttl);
+            send(serializedMessage,endpoint,ttl, processingGroup??endpoint.Destination.ToString());
         }
 
- 
 
-        public void Send(object message, Endpoint endpoint)
+
+        public void Send(object message, Endpoint endpoint, string processingGroup = null)
         {
             var type = getMessageType(message.GetType());
             var bytes = m_SerializationManager.SerializeObject(endpoint.SerializationFormat, message);
             var serializedMessage = new BinaryMessage { Bytes = bytes, Type = type };
-            send(serializedMessage,endpoint,MESSAGE_DEFAULT_LIFESPAN);
+            send(serializedMessage, endpoint, MESSAGE_DEFAULT_LIFESPAN, processingGroup??endpoint.Destination.ToString());
         }
         
-        private void send(BinaryMessage message, Endpoint endpoint, int ttl)
+        private void send(BinaryMessage message, Endpoint endpoint, int ttl,string processingGroup)
         {
             if (endpoint.Destination == null) throw new ArgumentException("Destination can not be null");
             if (m_Disposing.WaitOne(0))
@@ -134,8 +134,8 @@ namespace Inceptum.Messaging
             {
                 try
                 {
-                    var processingGroup = m_TransportManager.GetProcessingGroup(endpoint.TransportId,endpoint.Destination);
-                    processingGroup.Send(endpoint.Destination.Publish, message, ttl);
+                    var procGroup = m_TransportManager.GetProcessingGroup(endpoint.TransportId, processingGroup);
+                    procGroup.Send(endpoint.Destination.Publish, message, ttl);
                 }
                 catch (Exception e)
                 {
@@ -154,7 +154,7 @@ namespace Inceptum.Messaging
 		            acknowledge(0,true);
 		        });
 		}
-        public IDisposable Subscribe<TMessage>(Endpoint endpoint, CallbackDelegate<TMessage> callback)
+        public IDisposable Subscribe<TMessage>(Endpoint endpoint, CallbackDelegate<TMessage> callback, string processingGroup = null)
         {
 			if (endpoint.Destination == null) throw new ArgumentException("Destination can not be null");
             if (m_Disposing.WaitOne(0))
@@ -164,7 +164,7 @@ namespace Inceptum.Messaging
             {
                 try
                 {
-                    return subscribe(endpoint, (m, ack) => processMessage(m, typeof(TMessage),  message  => callback((TMessage)message, ack), ack, endpoint), endpoint.SharedDestination ? getMessageType(typeof(TMessage)) : null);
+                    return subscribe(endpoint, (m, ack) => processMessage(m, typeof(TMessage), message => callback((TMessage)message, ack), ack, endpoint), endpoint.SharedDestination ? getMessageType(typeof(TMessage)) : null, processingGroup);
                 }
                 catch (Exception e)
                 {
@@ -174,7 +174,12 @@ namespace Inceptum.Messaging
             }
         }
 
-        public IDisposable Subscribe(Endpoint endpoint, Action<object> callback, Action<string> unknownTypeCallback,
+        public IDisposable Subscribe(Endpoint endpoint, Action<object> callback, Action<string> unknownTypeCallback,params Type[] knownTypes)
+        {
+            return Subscribe(endpoint, callback, unknownTypeCallback, null, knownTypes);
+        }
+
+        public IDisposable Subscribe(Endpoint endpoint, Action<object> callback, Action<string> unknownTypeCallback, string processingGroup,
                                      params Type[] knownTypes)
         {
             return Subscribe(endpoint,
@@ -188,10 +193,16 @@ namespace Inceptum.Messaging
                                      unknownTypeCallback(type);
                                      acknowledge(0, true);
                                  },
+                             processingGroup,
                              knownTypes);
         }
 
-        public IDisposable Subscribe(Endpoint endpoint, CallbackDelegate<object> callback, Action<string, AcknowledgeDelegate> unknownTypeCallback, params Type[] knownTypes)
+        public IDisposable Subscribe(Endpoint endpoint, CallbackDelegate<object> callback, Action<string, AcknowledgeDelegate> unknownTypeCallback,
+            params Type[] knownTypes)
+        {
+            return Subscribe(endpoint, callback, unknownTypeCallback, null, knownTypes);
+        }
+        public IDisposable Subscribe(Endpoint endpoint, CallbackDelegate<object> callback, Action<string, AcknowledgeDelegate> unknownTypeCallback, string processingGroup, params Type[] knownTypes)
         {
             if (endpoint.Destination == null) throw new ArgumentException("Destination can not be null");
             if (m_Disposing.WaitOne(0))
@@ -220,7 +231,7 @@ namespace Inceptum.Messaging
                                 return;
                             }
                             processMessage(m, messageType, message => callback(message, ack), ack, endpoint);
-                        }, null);
+                        }, null, processingGroup);
                 }
                 catch (Exception e)
                 {
@@ -301,7 +312,7 @@ namespace Inceptum.Messaging
 
 
 
-        public IDisposable SendRequestAsync<TRequest, TResponse>(TRequest request, Endpoint endpoint, Action<TResponse> callback, Action<Exception> onFailure, long timeout)
+        public IDisposable SendRequestAsync<TRequest, TResponse>(TRequest request, Endpoint endpoint, Action<TResponse> callback, Action<Exception> onFailure, long timeout, string processingGroup = null)
         {
             if (m_Disposing.WaitOne(0))
                 throw new InvalidOperationException("Engine is disposing");
@@ -310,8 +321,8 @@ namespace Inceptum.Messaging
             {
                 try
                 {
-                    var processingGroup = m_TransportManager.GetProcessingGroup(endpoint.TransportId,endpoint.Destination);
-                    RequestHandle requestHandle = processingGroup.SendRequest(endpoint.Destination.Publish, serializeMessage(endpoint.SerializationFormat,request),
+                    var procGroup = m_TransportManager.GetProcessingGroup(endpoint.TransportId,processingGroup??endpoint.Destination.ToString());
+                    RequestHandle requestHandle = procGroup.SendRequest(endpoint.Destination.Publish, serializeMessage(endpoint.SerializationFormat, request),
                                                                      message =>
                                                                      {
                                                                          try
@@ -411,7 +422,7 @@ namespace Inceptum.Messaging
         }
 
 
-		public IDisposable registerHandler<TRequest, TResponse>(Func<TRequest, TResponse> handler, Endpoint endpoint)
+        private IDisposable registerHandler<TRequest, TResponse>(Func<TRequest, TResponse> handler, Endpoint endpoint, string processingGroup = null)
             where TResponse : class
         {
             //BUG: registering handler while disposing causes endless loop
@@ -422,8 +433,8 @@ namespace Inceptum.Messaging
             {
                 try
                 {
-                    var processingGroup = m_TransportManager.GetProcessingGroup( endpoint.TransportId, endpoint.Destination);
-                	var subscription = processingGroup.RegisterHandler(endpoint.Destination.Subscribe,
+                    var procGroup = m_TransportManager.GetProcessingGroup(endpoint.TransportId, processingGroup??endpoint.Destination.ToString());
+                    var subscription = procGroup.RegisterHandler(endpoint.Destination.Subscribe,
                 	                                                     requestMessage =>
                 	                                                     	{
                                                                                 var message = m_SerializationManager.Deserialize<TRequest>(endpoint.SerializationFormat, requestMessage.Bytes); 
@@ -480,11 +491,11 @@ namespace Inceptum.Messaging
         	                                           		return typeName ?? clrType.Name;
         	                                           	});
         }
-         
 
-        private IDisposable subscribe(Endpoint endpoint,CallbackDelegate<BinaryMessage> callback, string messageType)
+
+        private IDisposable subscribe(Endpoint endpoint, CallbackDelegate<BinaryMessage> callback, string messageType, string processingGroup)
         {
-            var subscription = m_SubscriptionManager.Subscribe(endpoint, callback, messageType);
+            var subscription = m_SubscriptionManager.Subscribe(endpoint, callback, messageType, processingGroup);
 
             return createMessagingHandle(() =>
             {

@@ -11,7 +11,11 @@ namespace Inceptum.Messaging.Sonic
         {
         }
 
-       
+        public override Contract.Destination CreateTemporaryDestination()
+        {
+            return "topic://" + Session.createTemporaryTopic().getTopicName();
+        }
+
 
         protected override Destination CreateDestination(string name)
         {
