@@ -80,11 +80,7 @@ namespace Inceptum.Cqrs.Tests
             var ar = new TestAggregateRoot(Guid.NewGuid());
             ar.Create();
             ar.Name = command;
-            for (int i = 0; i < 10000; i++)
-            {
-                ar.Name = command+i;
-            }
-
+    
             repository.Save(ar, Guid.NewGuid());
             Console.WriteLine(Thread.CurrentThread.ManagedThreadId + " command recived:" + command);
         } 
@@ -465,38 +461,40 @@ namespace Inceptum.Cqrs.Tests
     
 
         [Test]
-        [TestCase(true, TestName = "GYoungEventStore")]
-        //[TestCase(false, TestName = "JOliverEventStore")]
+        //[TestCase(true, TestName = "GYoungEventStore")]
+        [TestCase(false, TestName = "JOliverEventStore")]
         public void GetEventStoreTest(bool getES)
         {
             
-            var eventStoreConnection = EventStoreConnection.Create(ConnectionSettings.Default, new IPEndPoint(IPAddress.Loopback, 1113));
-            eventStoreConnection.Connect();
+     
             var eventsListener = new EventsListener();
             var localBoundedContext = LocalBoundedContext.Named("local")
                                     .PublishingEvents(typeof (TestAggregateRootNameChangedEvent), typeof (TestAggregateRootCreatedEvent)).To("events").RoutedTo("events")
                                     .ListeningCommands(typeof (string)).On("commands1").RoutedFromSameEndpoint()
-                                    .WithCommandsHandler<EsCommandHandler>()
-                                    .WithProcess<TestProcess>();
+                                    .WithCommandsHandler<EsCommandHandler>();
             if (getES)
+            {
+                var eventStoreConnection = EventStoreConnection.Create(ConnectionSettings.Default, new IPEndPoint(IPAddress.Loopback, 1113));
+                eventStoreConnection.Connect();
                 localBoundedContext.WithEventStore(eventStoreConnection);
+            }
             else
                 localBoundedContext.WithEventStore(dispatchCommits => Wireup.Init()
-                                                                            .LogToOutputWindow()
-                                                                            .UsingInMemoryPersistence()
-                                                                            .InitializeStorageEngine()
-                                                                            .UsingJsonSerialization()
-                                                                            .UsingSynchronousDispatchScheduler()
-                                                                            .DispatchTo(dispatchCommits));
+                    .LogToOutputWindow()
+                    .UsingInMemoryPersistence()
+                    .InitializeStorageEngine()
+                    .UsingJsonSerialization()
+                    .UsingSynchronousDispatchScheduler()
+                    .DispatchTo(dispatchCommits));
             using (var engine = new InMemoryCqrsEngine(localBoundedContext,LocalBoundedContext.Named("projections").WithProjection(eventsListener,"local")))
             {
                 engine.SendCommand("test", "local");
 
-                Thread.Sleep(100000);
+                Thread.Sleep(2000);
                 Console.WriteLine("Disposing...");
             }
 
-            Assert.That(eventsListener.Handled.Select(e=>e.GetType()),Is.EqualTo( new[]{typeof(TestAggregateRootCreatedEvent), typeof(TestAggregateRootNameChangedEvent)}),"Events were not stored or published");
+            Assert.That(eventsListener.Handled.Select(e=>e.GetType()).ToArray(),Is.EqualTo( new[]{typeof(TestAggregateRootCreatedEvent), typeof(TestAggregateRootNameChangedEvent)}),"Events were not stored or published");
             Console.WriteLine("Dispose completed.");
         }
     }
