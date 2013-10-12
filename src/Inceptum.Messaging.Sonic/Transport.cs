@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Inceptum.Messaging.Contract;
 using Inceptum.Messaging.Transports;
 using Sonic.Jms.Ext;
 using Connection = Sonic.Jms.Ext.Connection;
@@ -32,6 +33,13 @@ namespace Inceptum.Messaging.Sonic
             ((Connection)m_Connection).setPingInterval(30);
             m_Connection.start();
         }
+
+        public Destination CreateTemporaryDestination()
+        {
+            return m_Connection.createQueueSession(false, 1).createTemporaryQueue().getQueueName();
+        }
+
+        
 
         private void connectionStateHandler(int state)
         {

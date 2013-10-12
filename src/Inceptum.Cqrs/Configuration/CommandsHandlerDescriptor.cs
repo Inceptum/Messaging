@@ -18,12 +18,16 @@ namespace Inceptum.Cqrs.Configuration
         {
             foreach (var handler in ResolvedDependencies)
             {
+                IRepository repository = boundedContext.EventStore==null?null:boundedContext.EventStore.Repository;
                 boundedContext.CommandDispatcher.Wire(handler,
                                                       new OptionalParameter<IEventPublisher>(boundedContext.EventsPublisher),
-                                                      new OptionalParameter<IRepository>(boundedContext.Repository)
+                                                      new OptionalParameter<IRepository>(repository) 
                     );
             }
         }
 
-    }
+    } 
+    
+    
+    
 }

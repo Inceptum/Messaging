@@ -10,6 +10,7 @@ using Castle.Windsor;
 using EventStore;
 using Inceptum.Cqrs.Castle;
 using Inceptum.Cqrs.Configuration;
+using Inceptum.Cqrs.InfrastructureCommands;
 using Inceptum.Messaging;
 using Inceptum.Messaging.Contract;
 using Inceptum.Messaging.RabbitMq;
@@ -19,9 +20,10 @@ using Rhino.Mocks;
 
 namespace Inceptum.Cqrs.Tests
 {
+
     internal class CommandsHandler
     {
-        public readonly List<string> HandledCommands= new List<string>();
+        public readonly List<object> HandledCommands= new List<object>();
 
         private void Handle(string m)
         {
@@ -32,7 +34,14 @@ namespace Inceptum.Cqrs.Tests
         private CommandHandlingResult Handle(int m)
         {
             Console.WriteLine("Command received:" + m);
-            HandledCommands.Add(m.ToString());
+            HandledCommands.Add(m);
+            return new CommandHandlingResult{Retry = true,RetryDelay = 100};
+        }    
+
+        private CommandHandlingResult Handle(RoutedCommand<DateTime> m)
+        {
+            Console.WriteLine("Command received:" + m.Command+" Origination Endpoint:"+m.OriginEndpoint);
+            HandledCommands.Add(m);
             return new CommandHandlingResult{Retry = true,RetryDelay = 100};
         }    
 
@@ -160,7 +169,7 @@ namespace Inceptum.Cqrs.Tests
                     .Resolve<ICqrsEngineBootstrapper>().Start();
                 var cqrsEngine = (CqrsEngine) container.Resolve<ICommandSender>();
                 var commandsHandler = container.Resolve<CommandsHandler>();
-                cqrsEngine.BoundedContexts.First(c => c.Name == "bc").CommandDispatcher.Dispatch("test",CommandPriority.Low, (delay, acknowledge) => { });
+                cqrsEngine.BoundedContexts.First(c => c.Name == "bc").CommandDispatcher.Dispatch("test",CommandPriority.Low, (delay, acknowledge) => { },new Endpoint());
                 Thread.Sleep(200);
                 Assert.That(commandsHandler.HandledCommands, Is.EqualTo(new[] {"test"}), "Command was not dispatched");
             }
@@ -185,9 +194,42 @@ namespace Inceptum.Cqrs.Tests
                 {
                     retrydelay = delay;
                     acknowledged = acknowledge;
-                });
+                }, new Endpoint());
                 Thread.Sleep(200);
-                Assert.That(commandsHandler.HandledCommands, Is.EqualTo(new[] {"1"}), "Command was not dispatched");
+                Assert.That(commandsHandler.HandledCommands, Is.EqualTo(new[] {1}), "Command was not dispatched");
+                Assert.That(retrydelay,Is.EqualTo(100));
+                Assert.That(acknowledged,Is.EqualTo(false));
+            }
+        }          
+
+
+        [Test]
+        public void CommandsHandlerWithResultAndCommandOriginEndpointWiringTest()
+        {
+            using (var container = new WindsorContainer())
+            {
+                container
+                    .Register(Component.For<IMessagingEngine>().Instance(MockRepository.GenerateMock<IMessagingEngine>()))
+                    .AddFacility<CqrsFacility>(f => f.RunInMemory().BoundedContexts(LocalBoundedContext.Named("bc")))
+                    .Register(Component.For<CommandsHandler>().AsCommandsHandler("bc"))
+                    .Resolve<ICqrsEngineBootstrapper>().Start();
+                var cqrsEngine = (CqrsEngine) container.Resolve<ICommandSender>();
+                var commandsHandler = container.Resolve<CommandsHandler>();
+
+                bool acknowledged = false;
+                long retrydelay = 0;
+                var endpoint = new Endpoint();
+                var command = DateTime.Now;
+                cqrsEngine.BoundedContexts.First(c => c.Name == "bc").CommandDispatcher.Dispatch(command,CommandPriority.Low, (delay, acknowledge) =>
+                {
+                    retrydelay = delay;
+                    acknowledged = acknowledge;
+                }, endpoint);
+                Thread.Sleep(200);
+                Assert.That(commandsHandler.HandledCommands.Count, Is.EqualTo(1), "Command was not dispatched");
+                Assert.That(commandsHandler.HandledCommands[0], Is.TypeOf<RoutedCommand<DateTime>>(), "Command was not dispatched with wrong type");
+                Assert.That(((RoutedCommand<DateTime>)(commandsHandler.HandledCommands[0])).Command, Is.EqualTo(command), "Routed command was not dispatched with wrong command");
+                Assert.That(((RoutedCommand<DateTime>)(commandsHandler.HandledCommands[0])).OriginEndpoint, Is.EqualTo(endpoint), "Routed command was not dispatched with wrong origin endpoint");
                 Assert.That(retrydelay,Is.EqualTo(100));
                 Assert.That(acknowledged,Is.EqualTo(false));
             }
@@ -211,7 +253,7 @@ namespace Inceptum.Cqrs.Tests
                 {
                     retrydelay = delay;
                     acknowledged = acknowledge;
-                });
+                }, new Endpoint());
                 Thread.Sleep(200);
                 Assert.That(retrydelay,Is.EqualTo(100));
                 Assert.That(acknowledged,Is.EqualTo(false));

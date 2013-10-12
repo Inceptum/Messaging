@@ -20,14 +20,14 @@ namespace Inceptum.Cqrs.Configuration
             m_EventStoreConnection = eventStoreConnection;
         }
 
-        public IEnumerable<Type> GetDependedncies()
+        public IEnumerable<Type> GetDependencies()
         {
             return new Type[0];
         }
 
         public void Create(BoundedContext boundedContext, Func<Type, object> resolve)
         {
-            boundedContext.Repository = new GetEventStoreRepository(m_EventStoreConnection,boundedContext.EventsPublisher);
+            boundedContext.EventStore = new GetEventStoreAdapter(m_EventStoreConnection, boundedContext.EventsPublisher);
         }
 
         public void Process(BoundedContext boundedContext, CqrsEngine cqrsEngine)

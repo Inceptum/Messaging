@@ -65,6 +65,7 @@ namespace Inceptum.Messaging.Sonic
                 messageType);
         }
 
+         
         [MethodImpl(MethodImplOptions.Synchronized)]
         public RequestHandle SendRequest(string destination, BinaryMessage message, Action<BinaryMessage> callback)
         {

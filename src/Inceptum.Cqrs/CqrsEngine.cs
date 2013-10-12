@@ -4,40 +4,11 @@ using System.Linq;
 using System.Reactive.Disposables;
 using System.Runtime.CompilerServices;
 using Inceptum.Cqrs.Configuration;
-using Inceptum.Messaging;
+using Inceptum.Cqrs.InfrastructureCommands;
 using Inceptum.Messaging.Contract;
 
 namespace Inceptum.Cqrs
 {
-    public class InMemoryCqrsEngine : CqrsEngine
-    {
-         public InMemoryCqrsEngine(params IRegistration[] registrations) :
-            base(Activator.CreateInstance, new MessagingEngine(new TransportResolver(new Dictionary<string, TransportInfo> { { "InMemory", new TransportInfo("none", "none", "none", null, "InMemory") } })),
-            new InMemoryEndpointResolver(),
-            registrations
-            )
-        {
-             
-        }
-         public InMemoryCqrsEngine(Func<Type, object> dependencyResolver, params IRegistration[] registrations) :
-            base(dependencyResolver,new MessagingEngine(new TransportResolver(new Dictionary<string, TransportInfo> { { "InMemory", new TransportInfo("none", "none", "none", null, "InMemory") } })),
-            new InMemoryEndpointResolver(),
-            registrations
-            )
-        {
-             
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            base.Dispose(disposing);
-            if (disposing)
-            {
-                MessagingEngine.Dispose();
-            }
-        }
-    }
-
     public class CqrsEngine : ICommandSender
     {
         private readonly IMessagingEngine m_MessagingEngine;
@@ -98,7 +69,7 @@ namespace Inceptum.Cqrs
                     CommandSubscription commandSubscription = commandsSubscription;
                     m_Subscription.Add(m_MessagingEngine.Subscribe(
                         endpoint,
-                        (command, acknowledge) => context.CommandDispatcher.Dispatch(command, commandSubscription.Types[command.GetType()], acknowledge),
+                        (command, acknowledge) => context.CommandDispatcher.Dispatch(command, commandSubscription.Types[command.GetType()], acknowledge,endpoint),
                         (type, acknowledge) =>
                                  {
                                      throw new InvalidOperationException("Unknown command received: " + type); 
@@ -158,9 +129,20 @@ namespace Inceptum.Cqrs
             m_MessagingEngine.Send(command, m_EndpointResolver.Resolve(endpoint));
         }
 
+        public void ReplayEvents<T>(string boundedContext, params Type[] types)
+        {
+          /*  m_MessagingEngine.
+            SendCommand(new ReplayEventsCommand { Destination = , From = DateTime.MinValue, Types=types },boundedContext);
+   */     }
+
         internal void PublishEvent(object @event,string endpoint)
         {
-            m_MessagingEngine.Send(@event, m_EndpointResolver.Resolve(endpoint));
+            PublishEvent(@event, m_EndpointResolver.Resolve(endpoint));
+        }
+
+        internal void PublishEvent(object @event,Endpoint endpoint)
+        {
+            m_MessagingEngine.Send(@event, endpoint);
         }
 
         internal object ResolveDependency(Type type)

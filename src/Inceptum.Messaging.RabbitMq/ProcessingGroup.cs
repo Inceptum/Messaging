@@ -35,6 +35,8 @@ namespace Inceptum.Messaging.RabbitMq
 
         readonly Dictionary<string, DefaultBasicConsumer> m_Consumers = new Dictionary<string, DefaultBasicConsumer>();
 
+      
+
         public void Send(string destination, BinaryMessage message, int ttl)
         {
             send(destination, message, properties =>

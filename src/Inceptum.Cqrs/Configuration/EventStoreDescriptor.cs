@@ -7,6 +7,7 @@ using CommonDomain.Persistence;
 using CommonDomain.Persistence.EventStore;
 using EventStore;
 using EventStore.Dispatcher;
+using Inceptum.Cqrs.EventSourcing;
 
 namespace Inceptum.Cqrs.Configuration
 {
@@ -20,31 +21,22 @@ namespace Inceptum.Cqrs.Configuration
             m_ConfigureEventStore = configureEventStore;
         }
 
-        public IEnumerable<Type> GetDependedncies()
+        public IEnumerable<Type> GetDependencies()
         {
             return new Type[0];
         }
 
         public void Create(BoundedContext boundedContext, Func<Type, object> resolve)
         {
-            var eventStore = m_ConfigureEventStore(new CommitDispatcher(boundedContext.EventsPublisher)).Build();
+            IStoreEvents eventStore = m_ConfigureEventStore(new CommitDispatcher(boundedContext.EventsPublisher)).Build();
 
-            boundedContext.Repository = new EventStoreRepository(eventStore, new AggregateFactory(), new ConflictDetector());
+            boundedContext.EventStore = new NEventStoreAdapter(eventStore);
         }
 
         public void Process(BoundedContext boundedContext, CqrsEngine cqrsEngine)
         {
 
         }
-        
-        //TODO:  resolve aggregates from IoC
-        public class AggregateFactory : IConstructAggregates
-        {
-            public IAggregate Build(Type type, Guid id, IMemento snapshot)
-            {
-                ConstructorInfo constructor = type.GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, new Type[] { typeof(Guid), typeof(IMemento) }, null);
-                return constructor.Invoke(new object[] {id, snapshot}) as IAggregate;
-            }
-        } 
+      
     }
 }

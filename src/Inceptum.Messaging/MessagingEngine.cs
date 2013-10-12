@@ -81,6 +81,11 @@ namespace Inceptum.Messaging
 
         #region IMessagingEngine Members
 
+        public Destination CreateTemporaryDestination(string transportId)
+        {
+            throw new NotImplementedException();
+        }
+
         public IDisposable SubscribeOnTransportEvents(TransportEventHandler handler)
         {
             TransportEventHandler safeHandler = (transportId, @event) =>
@@ -130,7 +135,7 @@ namespace Inceptum.Messaging
                 try
                 {
                     var processingGroup = m_TransportManager.GetProcessingGroup(endpoint.TransportId,endpoint.Destination);
-                    processingGroup.Send(endpoint.Destination, message, ttl);
+                    processingGroup.Send(endpoint.Destination.Publish, message, ttl);
                 }
                 catch (Exception e)
                 {
@@ -306,7 +311,7 @@ namespace Inceptum.Messaging
                 try
                 {
                     var processingGroup = m_TransportManager.GetProcessingGroup(endpoint.TransportId,endpoint.Destination);
-                    RequestHandle requestHandle = processingGroup.SendRequest(endpoint.Destination, serializeMessage(endpoint.SerializationFormat,request),
+                    RequestHandle requestHandle = processingGroup.SendRequest(endpoint.Destination.Publish, serializeMessage(endpoint.SerializationFormat,request),
                                                                      message =>
                                                                      {
                                                                          try
@@ -418,7 +423,7 @@ namespace Inceptum.Messaging
                 try
                 {
                     var processingGroup = m_TransportManager.GetProcessingGroup( endpoint.TransportId, endpoint.Destination);
-                	var subscription = processingGroup.RegisterHandler(endpoint.Destination,
+                	var subscription = processingGroup.RegisterHandler(endpoint.Destination.Subscribe,
                 	                                                     requestMessage =>
                 	                                                     	{
                                                                                 var message = m_SerializationManager.Deserialize<TRequest>(endpoint.SerializationFormat, requestMessage.Bytes); 

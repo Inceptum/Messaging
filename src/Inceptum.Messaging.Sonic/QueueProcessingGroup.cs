@@ -11,6 +11,7 @@ namespace Inceptum.Messaging.Sonic
         {
         }
 
+
         protected override Destination CreateDestination(string name)
         {
             return Session.createQueue(name.Substring(8));

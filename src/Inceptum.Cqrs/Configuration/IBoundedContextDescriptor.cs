@@ -5,7 +5,7 @@ namespace Inceptum.Cqrs.Configuration
 {
     public interface IBoundedContextDescriptor
     {
-        IEnumerable<Type> GetDependedncies();
+        IEnumerable<Type> GetDependencies();
         void Create(BoundedContext boundedContext, Func<Type, object> resolve);
         void Process(BoundedContext boundedContext, CqrsEngine cqrsEngine);
     }

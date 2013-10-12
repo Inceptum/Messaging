@@ -14,7 +14,7 @@ namespace Inceptum.Cqrs.Configuration
             m_CommandsSubscriptions = commandsSubscriptions;
             m_EventsSubscriptions = eventsSubscriptions;
         }
-        public IEnumerable<Type> GetDependedncies()
+        public IEnumerable<Type> GetDependencies()
         {
             return new Type[0];
         }

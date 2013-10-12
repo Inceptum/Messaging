@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Inceptum.Cqrs.InfrastructureCommands;
 
 namespace Inceptum.Cqrs.Configuration
 {
@@ -14,7 +15,7 @@ namespace Inceptum.Cqrs.Configuration
             m_EventRoutes = eventRoutes;
         }
 
-        public IEnumerable<Type> GetDependedncies()
+        public IEnumerable<Type> GetDependencies()
         {
             return new Type[0];
         }
@@ -23,6 +24,8 @@ namespace Inceptum.Cqrs.Configuration
         {
             boundedContext.CommandRoutes = m_CommandRoutes;
             boundedContext.EventRoutes = m_EventRoutes;
+
+
         }
 
         public void Process(BoundedContext boundedContext, CqrsEngine cqrsEngine)

@@ -14,6 +14,7 @@ namespace Inceptum.Messaging
     {
         event TransportEventHandler TransportEvents;
         IProcessingGroup GetProcessingGroup(string transportId, string name, Action onFailure=null);
+        IProcessingGroup GetProcessingGroup(string transportId, Destination destination, Action onFailure=null);
     }
 
     internal class TransportManager : ITransportManager
@@ -234,6 +235,11 @@ namespace Inceptum.Messaging
             {
                 throw new TransportException(string.Format("Failed to create transport with id '{0}' and parameters {1}", transportId, transportInfo), e);
             }
+        }
+
+        public IProcessingGroup GetProcessingGroup(string transportId, Destination destination, Action onFailure = null)
+        {
+            return GetProcessingGroup(transportId, destination.Subscribe, onFailure);
         }
 
         internal virtual void ProcessTransportFailure(TransportInfo transportInfo)
