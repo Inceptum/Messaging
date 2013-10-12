@@ -36,7 +36,8 @@ namespace Inceptum.Cqrs.Configuration
         {
 
         }
-
+        
+        //TODO:  resolve aggregates from IoC
         public class AggregateFactory : IConstructAggregates
         {
             public IAggregate Build(Type type, Guid id, IMemento snapshot)
@@ -44,6 +45,6 @@ namespace Inceptum.Cqrs.Configuration
                 ConstructorInfo constructor = type.GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, new Type[] { typeof(Guid), typeof(IMemento) }, null);
                 return constructor.Invoke(new object[] {id, snapshot}) as IAggregate;
             }
-        }
+        } 
     }
 }

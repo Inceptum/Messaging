@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using EventStore;
+using EventStore.ClientAPI;
 using EventStore.Dispatcher;
 
 namespace Inceptum.Cqrs.Configuration
@@ -107,6 +108,11 @@ namespace Inceptum.Cqrs.Configuration
         public LocalBoundedContextRegistration WithEventStore(Func<IDispatchCommits, Wireup> configureEventStore)
         {
             AddDescriptor(new EventStoreDescriptor(configureEventStore));
+            return this;
+        }
+        public LocalBoundedContextRegistration WithEventStore(IEventStoreConnection eventStoreConnection)
+        {
+            AddDescriptor(new GetEventStoreDescriptor(eventStoreConnection));
             return this;
         }
     }
