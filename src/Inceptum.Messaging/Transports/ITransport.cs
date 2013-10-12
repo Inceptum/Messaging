@@ -7,6 +7,7 @@ namespace Inceptum.Messaging.Transports
     public interface ITransport : IDisposable
     {
         IProcessingGroup CreateProcessingGroup(Action onFailure);
+        Destination CreateTemporaryDestination();
     }
 
     public interface IProcessingGroup : IDisposable
@@ -15,6 +16,5 @@ namespace Inceptum.Messaging.Transports
         RequestHandle SendRequest(string destination, BinaryMessage message, Action<BinaryMessage> callback);
         IDisposable RegisterHandler(string destination, Func<BinaryMessage, BinaryMessage> handler, string messageType);
         IDisposable Subscribe(string destination, Action<BinaryMessage, Action<bool>> callback, string messageType);
-
     }
 }

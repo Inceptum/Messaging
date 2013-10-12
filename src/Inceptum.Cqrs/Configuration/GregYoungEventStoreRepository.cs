@@ -51,7 +51,7 @@ namespace Inceptum.Cqrs.Configuration
         }
     }
 
-    public class GetEventStoreRepository : IRepository
+    public class GetEventStoreAdapter : IRepository,IEventStoreAdapter
     {
         private const string EVENT_CLR_TYPE_HEADER = "EventClrTypeName";
         private const string AGGREGATE_CLR_TYPE_HEADER = "AggregateClrTypeName";
@@ -65,17 +65,17 @@ namespace Inceptum.Cqrs.Configuration
         private static readonly JsonSerializerSettings m_SerializerSettings;
         private IEventPublisher m_EventsPublisher;
 
-        static GetEventStoreRepository()
+        static GetEventStoreAdapter()
         {
             m_SerializerSettings = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.None };
         }
 
-        public GetEventStoreRepository(IEventStoreConnection eventStoreConnection, IEventPublisher eventsPublisher)
+        public GetEventStoreAdapter(IEventStoreConnection eventStoreConnection, IEventPublisher eventsPublisher)
             : this(eventStoreConnection,eventsPublisher, (t, g) => string.Format("{0}-{1}", char.ToLower(t.Name[0]) + t.Name.Substring(1), g.ToString("N")))
         {
         }
 
-        public GetEventStoreRepository(IEventStoreConnection eventStoreConnection, IEventPublisher eventsPublisher, Func<Type, Guid, string> aggregateIdToStreamName)
+        public GetEventStoreAdapter(IEventStoreConnection eventStoreConnection, IEventPublisher eventsPublisher, Func<Type, Guid, string> aggregateIdToStreamName)
         {
             m_EventsPublisher = eventsPublisher;
             m_EventStoreConnection = eventStoreConnection;
@@ -201,6 +201,16 @@ namespace Inceptum.Cqrs.Configuration
             var typeName = evnt.GetType().Name;
 
             return new EventData(eventId, typeName, true, data, metadata);
+        }
+
+        public IRepository Repository
+        {
+            get { return this; }
+        }
+
+        public IEnumerable<object> GetEventsFrom(DateTime @from, params Type[] types)
+        {
+            throw new NotImplementedException();
         }
     }
 }

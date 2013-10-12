@@ -1,4 +1,5 @@
 ﻿using System;
+using Inceptum.Cqrs.InfrastructureCommands;
 using Inceptum.Messaging.Contract;
 
 namespace Inceptum.Cqrs.Configuration
@@ -12,6 +13,11 @@ namespace Inceptum.Cqrs.Configuration
         public RemoteListeningCommandsDescriptor ListeningCommands(params Type[] types)
         {
             return new RemoteListeningCommandsDescriptor(types, this);
+        }
+
+        public RemoteListeningCommandsDescriptor ListeningInfrastructureCommands()
+        {
+            return new RemoteListeningCommandsDescriptor(new[]{typeof(ReplayEventsCommand)}, this);
         }
 
         public RemotePublishingEventsDescriptor PublishingEvents(params Type[] types)

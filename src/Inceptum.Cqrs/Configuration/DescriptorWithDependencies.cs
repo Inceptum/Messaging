@@ -21,7 +21,7 @@ namespace Inceptum.Cqrs.Configuration
 
         }
 
-        public IEnumerable<Type> GetDependedncies()
+        public IEnumerable<Type> GetDependencies()
         {
             return m_Dependedncies;
         }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using CommonDomain.Persistence;
+using Inceptum.Cqrs.InfrastructureCommands;
 
 namespace Inceptum.Cqrs.Configuration
 {
@@ -14,7 +15,8 @@ namespace Inceptum.Cqrs.Configuration
         internal CommandDispatcher CommandDispatcher { get; private set; }
         internal EventDispatcher EventDispatcher { get; private set; }
         internal List<IProcess> Processes { get; private set; }
-        internal IRepository Repository { get; set; }
+        internal IEventStoreAdapter EventStore { get; set; }
+        internal InfrastructureCommandsHandler InfrastructureCommandsHandler { get; set; }
         public string Name { get; set; }
         public int ThreadCount { get; set; }
         public long FailedCommandRetryDelay { get; set; }
@@ -28,6 +30,7 @@ namespace Inceptum.Cqrs.Configuration
             CommandDispatcher = new CommandDispatcher(Name, threadCount, failedCommandRetryDelay);
             EventDispatcher = new EventDispatcher(Name);
             Processes = new List<IProcess>();
+            InfrastructureCommandsHandler = new InfrastructureCommandsHandler(cqrsEngine, this);
         }
 
         public void Dispose()

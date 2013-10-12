@@ -79,7 +79,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
                   subscriptionManager.Subscribe(new Endpoint("test", "test", false, "fake"), (message, acknowledge) =>
                       {
                           acknowledge(60000, true);
-                          Console.WriteLine(DateTime.Now.ToString("HH:mm:ss.ffff") + " recieved");
+                          Console.WriteLine(DateTime.Now.ToString("HH:mm:ss.ffff") + " received");
                       },null);
                   
                   callback(new BinaryMessage { Bytes = new byte[0], Type = typeof(string).Name }, b => { acknowledged=true; Console.WriteLine(DateTime.Now.ToString("HH:mm:ss.ffff") + " acknowledged"); });
@@ -190,7 +190,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
                                onSubscribe();
                            })
                            .Return(MockRepository.GenerateMock<IDisposable>());
-            transportManager.Expect(t => t.GetProcessingGroup(null, null, null))
+            transportManager.Expect(t => t.GetProcessingGroup(null,(Destination) null, null))
                 .IgnoreArguments()
                 .WhenCalled(invocation => setOnFail((Action)invocation.Arguments[2]))
                 .Return(processingGroup);

@@ -4,6 +4,7 @@ using System.Linq;
 using EventStore;
 using EventStore.ClientAPI;
 using EventStore.Dispatcher;
+using Inceptum.Cqrs.InfrastructureCommands;
 
 namespace Inceptum.Cqrs.Configuration
 {
@@ -80,6 +81,11 @@ namespace Inceptum.Cqrs.Configuration
         public LocalListeningCommandsDescriptor ListeningCommands(params Type[] types)
         {
             return new LocalListeningCommandsDescriptor(types, this);
+        }
+
+        public LocalListeningCommandsDescriptor ListeningInfrastructureCommands()
+        {
+            return ListeningCommands(typeof(ReplayEventsCommand));
         }
 
         public LocalPublishingEventsDescriptor PublishingEvents(params Type[] types)

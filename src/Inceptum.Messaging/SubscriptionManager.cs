@@ -52,7 +52,7 @@ namespace Inceptum.Messaging
                             m_Logger.InfoFormat("Subscription for endpoint {0} failure detected. Attempting subscribe again.", endpoint);
                             doSubscribe(0);
                         });
-                    var subscription = processingGroup.Subscribe(endpoint.Destination, (message, ack) => callback(message, createDeferredAcknowledge(ack)),
+                    var subscription = processingGroup.Subscribe(endpoint.Destination.Subscribe, (message, ack) => callback(message, createDeferredAcknowledge(ack)),
                         messageType);
                     var brokenSubscription = subscriptionHandler.Disposable;
                     subscriptionHandler.Disposable = subscription;

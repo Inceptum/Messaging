@@ -52,6 +52,13 @@ namespace Inceptum.Messaging.InMemory
             }
         }
 
+        public Destination CreateTemporaryDestination()
+        {
+            var name = Guid.NewGuid().ToString();
+            CreateTemporary(name);
+            return name;
+        }
+
         public IDisposable CreateTemporary(string name)
         {
             lock (m_Topics)

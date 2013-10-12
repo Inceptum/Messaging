@@ -35,7 +35,7 @@ namespace Inceptum.Messaging.Contract
         void Send(object message, Endpoint endpoint);
         IDisposable Subscribe<TMessage>(Endpoint endpoint, Action<TMessage> callback);
         IDisposable Subscribe<TMessage>(Endpoint endpoint, CallbackDelegate<TMessage> callback);
-
+        Destination CreateTemporaryDestination(string transportId);
 
         IDisposable Subscribe(Endpoint endpoint, Action<object> callback, Action<string> unknownTypeCallback, params Type[] knownTypes);
         IDisposable Subscribe(Endpoint endpoint, CallbackDelegate<object> callback, Action<string, AcknowledgeDelegate> unknownTypeCallback, params Type[] knownTypes);

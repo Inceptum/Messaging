@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
+using Inceptum.Cqrs.InfrastructureCommands;
 
 namespace Inceptum.Cqrs.Configuration
 {
@@ -59,9 +60,9 @@ namespace Inceptum.Cqrs.Configuration
             AddDescriptor(new RoutingDescriptor(m_EventRoutes, m_CommandRoutes));
         }
 
-        protected internal void AddDescriptor(IBoundedContextDescriptor descriptor)
+        protected void AddDescriptor(IBoundedContextDescriptor descriptor)
         {
-            m_Dependencies = m_Dependencies.Concat(descriptor.GetDependedncies()).Distinct().ToArray();
+            m_Dependencies = m_Dependencies.Concat(descriptor.GetDependencies()).Distinct().ToArray();
             m_Configurators.Add(descriptor);
         }
 
@@ -72,6 +73,7 @@ namespace Inceptum.Cqrs.Configuration
             {
                 descriptor.Create(boundedContext, cqrsEngine.ResolveDependency);
             }
+            
             cqrsEngine.BoundedContexts.Add(boundedContext);
         }
 
@@ -82,6 +84,8 @@ namespace Inceptum.Cqrs.Configuration
             {
                 descriptor.Process(boundedContext, cqrsEngine);
             }
+
+            boundedContext.CommandDispatcher.Wire(boundedContext.InfrastructureCommandsHandler);
         }
 
         internal void AddSubscribedEvents(IEnumerable<Type> types, string endpoint)
@@ -149,4 +153,5 @@ namespace Inceptum.Cqrs.Configuration
         }
  
     }
+
 }
