@@ -1,21 +1,33 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using Castle.Core;
 using Castle.MicroKernel;
 using Castle.MicroKernel.Context;
-using Inceptum.Messaging.Configuration;
 using Inceptum.Messaging.Contract;
 
-namespace Inceptum.Messaging.Castle
+namespace Inceptum.Messaging.Configuration
 {
-    internal class MessagingConfigurationEndpointResolver : ISubDependencyResolver
+    public class EndpointResolver : IEndpointProvider, ISubDependencyResolver
     {
-        private readonly IMessagingConfiguration m_MessagingConfiguration;
-        
-        public MessagingConfigurationEndpointResolver(IMessagingConfiguration messagingConfiguration)
+        private readonly Dictionary<string, Endpoint> m_Endpoints;
+        public EndpointResolver(Dictionary<string, Endpoint> endpoints)
         {
-            if (messagingConfiguration == null) throw new ArgumentNullException("messagingConfiguration");
-            m_MessagingConfiguration = messagingConfiguration;
+            m_Endpoints = endpoints;
+            m_Endpoints = new Dictionary<string, Endpoint>(endpoints, StringComparer.InvariantCultureIgnoreCase);
+        }
+
+        public bool Contains(string endpointName)
+        {
+            return m_Endpoints.ContainsKey(endpointName);
+        }
+
+        public Endpoint Get(string endpointName)
+        {
+            if (!Contains(endpointName))
+                throw new ConfigurationErrorsException(string.Format("Endpoint with name '{0} not found", endpointName));
+
+            return m_Endpoints[endpointName];
         }
 
         public bool CanResolve(CreationContext context, ISubDependencyResolver parentResolver,
@@ -24,14 +36,14 @@ namespace Inceptum.Messaging.Castle
             if (dependency.TargetItemType != typeof(Endpoint)) return false;
 
             var endpointName = getEndpointName(model, dependency);
-            return m_MessagingConfiguration.HasEndpoint(endpointName);
+            return this.Contains(endpointName);
         }
 
         public object Resolve(CreationContext context, ISubDependencyResolver parentResolver,
                               ComponentModel model, DependencyModel dependency)
         {
             var endpointName = getEndpointName(model, dependency);
-            return m_MessagingConfiguration.GetEndpoint(endpointName);
+            return this.Get(endpointName);
         }
 
         private static string getEndpointName(ComponentModel model, DependencyModel dependency)
