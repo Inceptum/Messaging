@@ -555,13 +555,10 @@ namespace Inceptum.Cqrs.Tests
 
         }
         [Test]
-        public void ReplayEventsTest()
+        [TestCase(new Type[0],2,TestName = "AllEvents")]
+        [TestCase(new []{typeof(TestAggregateRootNameChangedEvent)},1,TestName = "FilteredEvents")]
+        public void ReplayEventsTest(Type[] types,int expectedReplayCount)
         {
-          
-
-         
-
-
             var eventsListener = new EventsListener();
             var localBoundedContext = LocalBoundedContext.Named("local")
                 .PublishingEvents(typeof(TestAggregateRootNameChangedEvent), typeof(TestAggregateRootCreatedEvent)).To("events").RoutedTo("events")
@@ -584,12 +581,12 @@ namespace Inceptum.Cqrs.Tests
 
                     Thread.Sleep(2000);
                     //engine.SendCommand(new ReplayEventsCommand { Destination = "events", From = DateTime.MinValue }, "local");
-                    engine.ReplayEvents("local");
+                    engine.ReplayEvents("local", types);
                     Thread.Sleep(2000);
                     Console.WriteLine("Disposing...");
                 }
 
-            Assert.That(eventsListener.Handled.Count, Is.EqualTo(4), "Events were not redelivered");
+            Assert.That(eventsListener.Handled.Count, Is.EqualTo(2+expectedReplayCount), "Wrong number of events was replayed");
 
         }
 
