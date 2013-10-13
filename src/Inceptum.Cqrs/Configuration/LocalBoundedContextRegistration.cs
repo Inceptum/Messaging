@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using EventStore;
 using EventStore.ClientAPI;
-using EventStore.Dispatcher;
+using NEventStore.Dispatcher;
 using Inceptum.Cqrs.InfrastructureCommands;
+using NEventStore;
+using NEventStore.Dispatcher;
 
 namespace Inceptum.Cqrs.Configuration
 {

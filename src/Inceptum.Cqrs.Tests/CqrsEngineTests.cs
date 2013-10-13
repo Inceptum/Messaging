@@ -21,6 +21,8 @@ using Inceptum.Messaging;
 using Inceptum.Messaging.Contract;
 using Inceptum.Messaging.RabbitMq;
 using Inceptum.Messaging.Serialization;
+using NEventStore;
+using NEventStore.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
@@ -211,8 +213,10 @@ namespace Inceptum.Cqrs.Tests
         [Test]
         public void AllThreadsAreStoppedAfterCqrsDisposeTest()
         {
-            var initialThtreadCount = Process.GetCurrentProcess().Threads.Count;
-            Console.WriteLine(initialThtreadCount);
+            var initialThreadCount = Process.GetCurrentProcess().Threads.Count;
+            
+           
+            Console.WriteLine(initialThreadCount);
             using (
                 var messagingEngine =
                     new MessagingEngine(
@@ -238,7 +242,7 @@ namespace Inceptum.Cqrs.Tests
                     Console.WriteLine(Process.GetCurrentProcess().Threads.Count);
                 }
             }
-            Assert.That(Process.GetCurrentProcess().Threads.Count, Is.EqualTo(initialThtreadCount),
+            Assert.That(Process.GetCurrentProcess().Threads.Count, Is.EqualTo(initialThreadCount),
                         "Some threads were not stopped");
         }
 
@@ -343,8 +347,10 @@ namespace Inceptum.Cqrs.Tests
 
 
         [Test]
-        public void Method_Scenario_Expected()
+        [Ignore]
+        public void NEventSToreInvestigationTest()
         {
+            var log = MockRepository.GenerateMock<ILog>();
             using (var engine = new InMemoryCqrsEngine(
                 LocalBoundedContext.Named("local")
                                    .PublishingEvents(typeof (int)).To("events").RoutedTo("events")
@@ -353,7 +359,7 @@ namespace Inceptum.Cqrs.Tests
                                    .WithCommandsHandler<CommandHandler>()
                                    .WithProcess<TestProcess>()
                                    .WithEventStore(dispatchCommits => Wireup.Init()
-                                                                            .LogToOutputWindow()
+                                                                            .LogTo(type => log)
                                                                             .UsingInMemoryPersistence()
                                                                             .InitializeStorageEngine()
                                                                             .UsingJsonSerialization()
@@ -387,6 +393,7 @@ namespace Inceptum.Cqrs.Tests
         [Test]
         public void EventStoreTest()
         {
+            var log = MockRepository.GenerateMock<ILog>();
             var eventStoreConnection = EventStoreConnection.Create(ConnectionSettings.Default,
                                                                    new IPEndPoint(IPAddress.Loopback, 1113));
             eventStoreConnection.Connect();
@@ -400,7 +407,7 @@ namespace Inceptum.Cqrs.Tests
                                    .WithCommandsHandler<CommandHandler>()
                                    .WithProcess<TestProcess>()
                                    .WithEventStore(dispatchCommits => Wireup.Init()
-                                                                            .LogToOutputWindow()
+                                                                            .LogTo(type => log)
                                                                             .UsingInMemoryPersistence()
                                                                             .InitializeStorageEngine()
                                                                             .UsingJsonSerialization()
@@ -467,12 +474,12 @@ namespace Inceptum.Cqrs.Tests
     
 
         [Test]
-        //[TestCase(true, TestName = "GYoungEventStore")]
-        [TestCase(false, TestName = "JOliverEventStore")]
+        //[TestCase(true, TestName = "GetEventStore")]
+        [TestCase(false, TestName = "NEventStore")]
         public void GetEventStoreTest(bool getES)
         {
-            
-     
+
+            var log = MockRepository.GenerateMock<ILog>();
             var eventsListener = new EventsListener();
             var localBoundedContext = LocalBoundedContext.Named("local")
                                     .PublishingEvents(typeof (TestAggregateRootNameChangedEvent), typeof (TestAggregateRootCreatedEvent)).To("events").RoutedTo("events")
@@ -486,7 +493,7 @@ namespace Inceptum.Cqrs.Tests
             }
             else
                 localBoundedContext.WithEventStore(dispatchCommits => Wireup.Init()
-                    .LogToOutputWindow()
+                    .LogTo(type => log)
                     .UsingInMemoryPersistence()
                     .InitializeStorageEngine()
                     .UsingJsonSerialization()
@@ -559,6 +566,7 @@ namespace Inceptum.Cqrs.Tests
         [TestCase(new []{typeof(TestAggregateRootNameChangedEvent)},1,TestName = "FilteredEvents")]
         public void ReplayEventsTest(Type[] types,int expectedReplayCount)
         {
+            var log = MockRepository.GenerateMock<ILog>();
             var eventsListener = new EventsListener();
             var localBoundedContext = LocalBoundedContext.Named("local")
                 .PublishingEvents(typeof(TestAggregateRootNameChangedEvent), typeof(TestAggregateRootCreatedEvent)).To("events").RoutedTo("events")
@@ -566,7 +574,7 @@ namespace Inceptum.Cqrs.Tests
                 .ListeningInfrastructureCommands().On("commands").RoutedFromSameEndpoint()
                 .WithCommandsHandler<EsCommandHandler>()
                 .WithEventStore(dispatchCommits => Wireup.Init()
-                 //   .LogToOutputWindow()
+                    .LogTo(type => log)
                     .UsingInMemoryPersistence()
                     .InitializeStorageEngine()
                     .UsingJsonSerialization()

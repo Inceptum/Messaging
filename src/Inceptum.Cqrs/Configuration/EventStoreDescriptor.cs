@@ -1,13 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Reflection;
-using CommonDomain;
-using CommonDomain.Core;
-using CommonDomain.Persistence;
-using CommonDomain.Persistence.EventStore;
-using EventStore;
-using EventStore.Dispatcher;
-using Inceptum.Cqrs.EventSourcing;
+ using Inceptum.Cqrs.EventSourcing;
+using NEventStore;
+using NEventStore.Dispatcher;
 
 namespace Inceptum.Cqrs.Configuration
 {

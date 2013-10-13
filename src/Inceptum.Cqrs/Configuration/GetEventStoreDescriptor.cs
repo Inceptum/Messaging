@@ -7,7 +7,7 @@ using CommonDomain.Persistence;
 using CommonDomain.Persistence.EventStore;
 using EventStore;
 using EventStore.ClientAPI;
-using EventStore.Dispatcher;
+using NEventStore.Dispatcher;
 
 namespace Inceptum.Cqrs.Configuration
 {
