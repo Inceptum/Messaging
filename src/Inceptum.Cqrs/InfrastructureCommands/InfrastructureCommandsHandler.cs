@@ -37,7 +37,7 @@ namespace Inceptum.Cqrs.InfrastructureCommands
                 serialization = routedCommand.OriginEndpoint.SerializationFormat;
             var endpoint = new Endpoint(routedCommand.OriginEndpoint.TransportId, routedCommand.Command.Destination, true, serialization);
 
-            var eventsFrom = m_BoundedContext.EventStore.GetEventsFrom(routedCommand.Command.From).ToArray();
+            var eventsFrom = m_BoundedContext.EventStore.GetEventsFrom(routedCommand.Command.From,routedCommand.Command.Types).ToArray();
             foreach (var @event in eventsFrom)
             {
                 m_CqrsEngine.PublishEvent(@event,endpoint);
