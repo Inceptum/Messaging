@@ -566,7 +566,7 @@ namespace Inceptum.Cqrs.Tests
                 .ListeningInfrastructureCommands().On("commands").RoutedFromSameEndpoint()
                 .WithCommandsHandler<EsCommandHandler>()
                 .WithEventStore(dispatchCommits => Wireup.Init()
-                    .LogToOutputWindow()
+                 //   .LogToOutputWindow()
                     .UsingInMemoryPersistence()
                     .InitializeStorageEngine()
                     .UsingJsonSerialization()
