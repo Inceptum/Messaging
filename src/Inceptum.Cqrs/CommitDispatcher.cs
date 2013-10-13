@@ -1,5 +1,5 @@
-﻿using EventStore;
-using EventStore.Dispatcher;
+﻿using NEventStore;
+using NEventStore.Dispatcher;
 
 namespace Inceptum.Cqrs
 {
