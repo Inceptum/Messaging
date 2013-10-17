@@ -149,7 +149,7 @@ namespace Inceptum.Cqrs.Tests
                     .Register(Component.For<EventListener>().AsProjection("local", "remote"))
                     .Resolve<ICqrsEngineBootstrapper>().Start();
 
-                var cqrsEngine = (CqrsEngine) container.Resolve<ICommandSender>();
+                var cqrsEngine = (CqrsEngine)container.Resolve<ICqrsEngine>();
                 var eventListener = container.Resolve<EventListener>();
                 cqrsEngine.BoundedContexts.First(c => c.Name == "remote").EventDispatcher.Dispacth("test");
                 Assert.That(eventListener.EventsWithBoundedContext, Is.EquivalentTo(new[] {Tuple.Create("test", "remote")}), "Event was not dispatched");
@@ -167,7 +167,7 @@ namespace Inceptum.Cqrs.Tests
                     .AddFacility<CqrsFacility>(f => f.RunInMemory().BoundedContexts(LocalBoundedContext.Named("bc")))
                     .Register(Component.For<CommandsHandler>().AsCommandsHandler("bc"))
                     .Resolve<ICqrsEngineBootstrapper>().Start();
-                var cqrsEngine = (CqrsEngine) container.Resolve<ICommandSender>();
+                var cqrsEngine = (CqrsEngine)container.Resolve<ICqrsEngine>();
                 var commandsHandler = container.Resolve<CommandsHandler>();
                 cqrsEngine.BoundedContexts.First(c => c.Name == "bc").CommandDispatcher.Dispatch("test",CommandPriority.Low, (delay, acknowledge) => { },new Endpoint());
                 Thread.Sleep(200);
@@ -185,7 +185,7 @@ namespace Inceptum.Cqrs.Tests
                     .AddFacility<CqrsFacility>(f => f.RunInMemory().BoundedContexts(LocalBoundedContext.Named("bc")))
                     .Register(Component.For<CommandsHandler>().AsCommandsHandler("bc"))
                     .Resolve<ICqrsEngineBootstrapper>().Start();
-                var cqrsEngine = (CqrsEngine) container.Resolve<ICommandSender>();
+                var cqrsEngine = (CqrsEngine)container.Resolve<ICqrsEngine>();
                 var commandsHandler = container.Resolve<CommandsHandler>();
 
                 bool acknowledged = false;
@@ -213,7 +213,7 @@ namespace Inceptum.Cqrs.Tests
                     .AddFacility<CqrsFacility>(f => f.RunInMemory().BoundedContexts(LocalBoundedContext.Named("bc")))
                     .Register(Component.For<CommandsHandler>().AsCommandsHandler("bc"))
                     .Resolve<ICqrsEngineBootstrapper>().Start();
-                var cqrsEngine = (CqrsEngine) container.Resolve<ICommandSender>();
+                var cqrsEngine = (CqrsEngine)container.Resolve<ICqrsEngine>();
                 var commandsHandler = container.Resolve<CommandsHandler>();
 
                 bool acknowledged = false;
@@ -244,7 +244,7 @@ namespace Inceptum.Cqrs.Tests
                     .AddFacility<CqrsFacility>(f => f.RunInMemory().BoundedContexts(LocalBoundedContext.Named("bc").FailedCommandRetryDelay(100)))
                     .Register(Component.For<CommandsHandler>().AsCommandsHandler("bc"))
                     .Resolve<ICqrsEngineBootstrapper>().Start();
-                var cqrsEngine = (CqrsEngine) container.Resolve<ICommandSender>();
+                var cqrsEngine = (CqrsEngine)container.Resolve<ICqrsEngine>();
                 var commandsHandler = container.Resolve<CommandsHandler>();
 
                 bool acknowledged = false;
