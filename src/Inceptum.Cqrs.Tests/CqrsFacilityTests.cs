@@ -175,6 +175,32 @@ namespace Inceptum.Cqrs.Tests
             }
         }
         
+
+        [Test]
+        public void DependencyOnICommandSenderTest()
+        {
+            using (var container = new WindsorContainer())
+            {
+                var messagingEngine = MockRepository.GenerateMock<IMessagingEngine>();
+                container
+                    .Register(Component.For<IMessagingEngine>().Instance(messagingEngine))
+                    .AddFacility<CqrsFacility>(f => f.RunInMemory().BoundedContexts(
+                        LocalBoundedContext.Named("bc").ListeningCommands(typeof(string)).On("cmd").RoutedFromSameEndpoint())
+                            )
+                    .Register(Component.For<EventListenerWithICommandSenderDependency>().AsSaga("bc"))
+                    .Register(Component.For<CommandsHandler>().AsCommandsHandler("bc"))
+                    .Resolve<ICqrsEngineBootstrapper>().Start();
+
+
+                var listener = container.Resolve<EventListenerWithICommandSenderDependency>();
+                var commandsHandler = container.Resolve<CommandsHandler>();
+                Assert.That(listener.Sender,Is.Not.Null);
+                listener.Sender.SendCommand("test", "bc");
+                Thread.Sleep(200);
+                Assert.That(commandsHandler.HandledCommands, Is.EqualTo(new[] { "test" }), "Command was not dispatched");
+            }
+        }
+        
         [Test]
         public void CommandsHandlerWithResultWiringTest()
         {
@@ -283,6 +309,20 @@ namespace Inceptum.Cqrs.Tests
         }
 
 
+    }
+
+    public class EventListenerWithICommandSenderDependency
+    {
+        public ICommandSender Sender { get; set; }
+
+        public EventListenerWithICommandSenderDependency(ICommandSender sender)
+        {
+            Sender = sender;
+        }
+
+        void Handle(string m)
+        {
+        } 
     }
 
     public class FakeEndpointResolver : IEndpointResolver
