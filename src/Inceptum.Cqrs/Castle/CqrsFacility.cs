@@ -135,16 +135,64 @@ namespace Inceptum.Cqrs.Castle
         {
             Func<Type, object> dependencyResolver = Kernel.Resolve;
             var engineReg = m_InMemory
-                ? Component.For<ICommandSender>().ImplementedBy<InMemoryCqrsEngine>()
-                : Component.For<ICommandSender>().ImplementedBy<CqrsEngine>();
+                ? Component.For<ICqrsEngine>().ImplementedBy<InMemoryCqrsEngine>()
+                : Component.For<ICqrsEngine>().ImplementedBy<CqrsEngine>();
             Kernel.Register(engineReg.Named(m_EngineComponetName).DependsOn(new
                 {
                     registrations = m_BoundedContexts.Cast<IRegistration>().Concat(m_Sagas).ToArray(),
                     dependencyResolver
                 }));
-            Kernel.Resolve<ICommandSender>();
+            Kernel.Register(
+                Component.For<ICommandSender>().ImplementedBy<CommandSender>().DependsOn(new {kernel = Kernel}));
+
+
+            Kernel.Resolve<ICqrsEngine>();
         }
     }
 
+
+    class CommandSender:ICommandSender
+    {
+        private CqrsEngine m_Engine;
+        private IKernel m_Kernel;
+        private object m_SyncRoot=new object();
+
+        public CommandSender(IKernel kernel)
+        {
+            m_Kernel = kernel;
+        }
+
+        private ICqrsEngine CqrsEngine
+        {
+           get
+            {
+                if (m_Engine == null)
+                {
+                    lock (m_SyncRoot)
+                    {
+                        if (m_Engine == null)
+                        {
+                            m_Engine = m_Kernel.Resolve<CqrsEngine>();
+                        }
+                    }
+                }
+                return m_Engine;
+            }
+        }
+
+        public void Dispose()
+        {
+        }
+
+        public void SendCommand<T>(T command, string boundedContext, CommandPriority priority = CommandPriority.Normal)
+        {
+            CqrsEngine.SendCommand(command,boundedContext,priority);
+        }
+
+        public void ReplayEvents(string boundedContext, params Type[] types)
+        {
+            CqrsEngine.ReplayEvents(boundedContext, types);
+        }
+    }
 
 }

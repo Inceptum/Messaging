@@ -9,7 +9,7 @@ using Inceptum.Messaging.Contract;
 
 namespace Inceptum.Cqrs
 {
-    public class CqrsEngine : ICommandSender
+    public class CqrsEngine :ICqrsEngine
     {
         private readonly IMessagingEngine m_MessagingEngine;
         private readonly CompositeDisposable m_Subscription=new CompositeDisposable();
@@ -166,5 +166,10 @@ namespace Inceptum.Cqrs
         {
             return m_DependencyResolver(type);
         }
+    }
+
+    internal interface ICqrsEngine : ICommandSender
+    {
+
     }
 }
