@@ -153,7 +153,7 @@ namespace Inceptum.Cqrs.Castle
 
     class CommandSender:ICommandSender
     {
-        private CqrsEngine m_Engine;
+        private ICqrsEngine m_Engine;
         private IKernel m_Kernel;
         private object m_SyncRoot=new object();
 
@@ -172,7 +172,7 @@ namespace Inceptum.Cqrs.Castle
                     {
                         if (m_Engine == null)
                         {
-                            m_Engine = m_Kernel.Resolve<CqrsEngine>();
+                            m_Engine = m_Kernel.Resolve<ICqrsEngine>();
                         }
                     }
                 }
