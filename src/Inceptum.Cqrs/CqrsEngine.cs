@@ -48,7 +48,12 @@ namespace Inceptum.Cqrs
             {
                 registration.Process(this);
             }
- 
+
+            foreach (var boundedContext in BoundedContexts)
+            {
+                boundedContext.Processes.ForEach(p => p.Start(this, boundedContext.EventsPublisher));
+            }
+
             foreach (var boundedContext in BoundedContexts)
             {
                 foreach (var eventsSubscription in boundedContext.EventsSubscriptions)
@@ -79,10 +84,6 @@ namespace Inceptum.Cqrs
                 }
             }
 
-            foreach (var boundedContext in BoundedContexts)
-            {
-                boundedContext.Processes.ForEach(p => p.Start(this, boundedContext.EventsPublisher));
-            }
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
