@@ -30,19 +30,18 @@ using Rhino.Mocks;
 
 namespace Inceptum.Cqrs.Tests
 {
-
-    class  TestAggregateRootCreatedEvent
+    public class  TestAggregateRootCreatedEvent
     {
         public Guid Id { get; set; }
     }
 
-    internal class TestAggregateRootNameChangedEvent
+    public class TestAggregateRootNameChangedEvent
     {
         public Guid Id { get; set; }
         public string Name { get; set; }
     }
 
-    class TestAggregateRoot : AggregateBase
+    public class TestAggregateRoot : AggregateBase
     {
         private string m_Name;
 
@@ -56,7 +55,7 @@ namespace Inceptum.Cqrs.Tests
         {
         }
 
-        public TestAggregateRoot(Guid id)
+        public TestAggregateRoot(Guid id,IMemento memento=null)
              
         {
             Id = id;
@@ -83,13 +82,20 @@ namespace Inceptum.Cqrs.Tests
 
         public void Handle(string command, IEventPublisher eventPublisher, IRepository repository)
         {
-            var ar = new TestAggregateRoot(Guid.NewGuid());
-            ar.Create();
-            ar.Name = command;
-
-            
-    
-            repository.Save(ar, Guid.NewGuid());
+            var guid = new Guid(command.Substring(0,36));
+            command=command.Substring(37);
+            if (command == "create")
+            {
+                var ar = new TestAggregateRoot(guid);
+                ar.Create();
+                repository.Save(ar, Guid.NewGuid());
+            }
+            if (command.StartsWith("changeName:"))
+            {
+                var ar = repository.GetById<TestAggregateRoot>(guid);
+                ar.Name = command.Replace("changeName:","");
+                repository.Save(ar, Guid.NewGuid());
+            }
             Console.WriteLine(Thread.CurrentThread.ManagedThreadId + " command recived:" + command);
         } 
     }
@@ -501,9 +507,11 @@ namespace Inceptum.Cqrs.Tests
                     .DispatchTo(dispatchCommits));
             using (var engine = new InMemoryCqrsEngine(localBoundedContext,LocalBoundedContext.Named("projections").WithProjection(eventsListener,"local")))
             {
-                engine.SendCommand("test", "local");
+                var guid = Guid.NewGuid();
+                engine.SendCommand(guid+":create", "local");
+                engine.SendCommand(guid + ":changeName:newName", "local");
 
-                Thread.Sleep(3000);
+                Thread.Sleep(5000);
                 Console.WriteLine("Disposing...");
             }
 
@@ -547,7 +555,9 @@ namespace Inceptum.Cqrs.Tests
                     var engine = new CqrsEngine(Activator.CreateInstance, messagingEngine, endpointResolver, localBoundedContext,
                         LocalBoundedContext.Named("projections").WithProjection(eventsListener, "local")))
                 {
-                    engine.SendCommand("test", "local");
+                    var guid=Guid.NewGuid();
+                    engine.SendCommand(guid + ":create", "local");
+                    engine.SendCommand(guid + ":changeName:newName", "local");
 
                     Thread.Sleep(2000);
                     //engine.SendCommand(new ReplayEventsCommand { Destination = "events", From = DateTime.MinValue }, "local");
@@ -585,7 +595,10 @@ namespace Inceptum.Cqrs.Tests
                     var engine = new InMemoryCqrsEngine(localBoundedContext,
                         LocalBoundedContext.Named("projections").WithProjection(eventsListener, "local")))
                 {
-                    engine.SendCommand("test", "local");
+                    var guid = Guid.NewGuid();
+                    engine.SendCommand(guid + ":create", "local");
+                    engine.SendCommand(guid + ":changeName:newName", "local");
+
 
                     Thread.Sleep(2000);
                     //engine.SendCommand(new ReplayEventsCommand { Destination = "events", From = DateTime.MinValue }, "local");

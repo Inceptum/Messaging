@@ -68,7 +68,7 @@ namespace Inceptum.Messaging.RabbitMq
                                 if(ack)
                                     Model.BasicAck(deliveryTag, false);
                                 else
-                                    //TODO: allow callnack to decide whether to redeliver
+                                    //TODO: allow callback to decide whether to redeliver
                                     Model.BasicNack(deliveryTag, false,true);
                             });
                         
