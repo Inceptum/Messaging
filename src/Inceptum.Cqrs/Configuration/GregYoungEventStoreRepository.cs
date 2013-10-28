@@ -60,6 +60,7 @@ namespace Inceptum.Cqrs.Configuration
         private const int READ_PAGE_SIZE = 500;
 
         private readonly Func<Type, Guid, string> m_AggregateIdToStreamName;
+        private readonly IConstructAggregates m_ConstructAggregates;
 
         private readonly IEventStoreConnection m_EventStoreConnection;
         private static readonly JsonSerializerSettings m_SerializerSettings;
@@ -70,16 +71,17 @@ namespace Inceptum.Cqrs.Configuration
             m_SerializerSettings = new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.None };
         }
 
-        public GetEventStoreAdapter(IEventStoreConnection eventStoreConnection, IEventPublisher eventsPublisher)
-            : this(eventStoreConnection,eventsPublisher, (t, g) => string.Format("{0}-{1}", char.ToLower(t.Name[0]) + t.Name.Substring(1), g.ToString("N")))
+        public GetEventStoreAdapter(IEventStoreConnection eventStoreConnection, IEventPublisher eventsPublisher, IConstructAggregates constructAggregates)
+            : this(eventStoreConnection, eventsPublisher, (t, g) => string.Format("{0}-{1}", char.ToLower(t.Name[0]) + t.Name.Substring(1), g.ToString("N")), constructAggregates)
         {
         }
 
-        public GetEventStoreAdapter(IEventStoreConnection eventStoreConnection, IEventPublisher eventsPublisher, Func<Type, Guid, string> aggregateIdToStreamName)
+        public GetEventStoreAdapter(IEventStoreConnection eventStoreConnection, IEventPublisher eventsPublisher, Func<Type, Guid, string> aggregateIdToStreamName, IConstructAggregates constructAggregates)
         {
             m_EventsPublisher = eventsPublisher;
             m_EventStoreConnection = eventStoreConnection;
             m_AggregateIdToStreamName = aggregateIdToStreamName;
+            m_ConstructAggregates = constructAggregates;
         }
 
         public TAggregate GetById<TAggregate>(Guid id) where TAggregate : class, IAggregate
@@ -93,7 +95,7 @@ namespace Inceptum.Cqrs.Configuration
                 throw new InvalidOperationException("Cannot get version <= 0");
 
             var streamName = m_AggregateIdToStreamName(typeof(TAggregate), id);
-            var aggregate = ConstructAggregate<TAggregate>();
+            var aggregate = ConstructAggregate<TAggregate>(id);
 
             var sliceStart = 0;
             StreamEventsSlice currentSlice;
@@ -123,9 +125,10 @@ namespace Inceptum.Cqrs.Configuration
             return aggregate;
         }
         
-        private static TAggregate ConstructAggregate<TAggregate>()
+        private TAggregate ConstructAggregate<TAggregate>(Guid id)
         {
-            return (TAggregate)Activator.CreateInstance(typeof(TAggregate), true);
+            return (TAggregate)m_ConstructAggregates.Build(typeof(TAggregate), id, null);
+            //return (TAggregate)Activator.CreateInstance(typeof(TAggregate), true);
         }
 
         private static object DeserializeEvent(byte[] metadata, byte[] data)

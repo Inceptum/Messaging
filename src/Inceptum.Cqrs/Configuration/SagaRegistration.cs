@@ -19,7 +19,7 @@ namespace Inceptum.Cqrs.Configuration
     {
         public static SagaRegistration Listening(params string[] boundContexts)
         {
-            return new SagaRegistration(engine => engine.ResolveDependency(typeof(T)), boundContexts,typeof(T));
+            return new SagaRegistration(engine => engine.DependencyResolver.GetService(typeof(T)), boundContexts,typeof(T));
         }
     }
 
@@ -66,7 +66,7 @@ namespace Inceptum.Cqrs.Configuration
         public SagaListeningDescriptor(Type saga)
         {
             m_SagaType = new [] {saga};
-            m_SagaResolver = engine => engine.ResolveDependency(saga);
+            m_SagaResolver = engine => engine.DependencyResolver.GetService(saga);
         }
 
         public SagaRegistration Listening(params string[] boundContexts)

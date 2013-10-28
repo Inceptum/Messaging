@@ -9,6 +9,25 @@ using Inceptum.Messaging.Contract;
 
 namespace Inceptum.Cqrs
 {
+    public interface IDependencyResolver
+    {
+        object GetService(Type type);
+        bool HasService(Type type);
+    }
+
+    internal class DefaultDependencyResolver : IDependencyResolver
+    {
+        public object GetService(Type type)
+        {
+            return Activator.CreateInstance(type);
+        }
+
+        public bool HasService(Type type)
+        {
+            return !type.IsInterface;
+        }
+    }
+
     public class CqrsEngine :ICqrsEngine
     {
         private readonly IMessagingEngine m_MessagingEngine;
@@ -19,7 +38,7 @@ namespace Inceptum.Cqrs
             get { return m_BoundedContexts; }
         }
         private readonly IRegistration[] m_Registrations;
-        private readonly Func<Type,object> m_DependencyResolver;
+        private readonly IDependencyResolver m_DependencyResolver;
 
         protected IMessagingEngine MessagingEngine
         {
@@ -27,7 +46,13 @@ namespace Inceptum.Cqrs
         }
 
 
-        public CqrsEngine(Func<Type, object> dependencyResolver, IMessagingEngine messagingEngine, IEndpointResolver endpointResolver, params IRegistration[] registrations)
+        public CqrsEngine(IMessagingEngine messagingEngine,
+                          IEndpointResolver endpointResolver, params IRegistration[] registrations)
+            :this(new DefaultDependencyResolver(), messagingEngine, endpointResolver, registrations)
+        {
+        }
+
+        public CqrsEngine(IDependencyResolver dependencyResolver, IMessagingEngine messagingEngine, IEndpointResolver endpointResolver, params IRegistration[] registrations)
         {
             m_DependencyResolver = dependencyResolver;
             m_Registrations = registrations;
@@ -163,9 +188,8 @@ namespace Inceptum.Cqrs
             m_MessagingEngine.Send(@event, endpoint);
         }
 
-        internal object ResolveDependency(Type type)
-        {
-            return m_DependencyResolver(type);
+        internal IDependencyResolver DependencyResolver {
+            get { return m_DependencyResolver; }
         }
     }
 

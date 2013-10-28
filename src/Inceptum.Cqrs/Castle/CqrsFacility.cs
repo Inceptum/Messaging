@@ -17,6 +17,27 @@ namespace Inceptum.Cqrs.Castle
         void Start();
     }
 
+    internal class CastleDependencyResolver : IDependencyResolver
+    {
+        private readonly IKernel m_Kernel;
+
+        public CastleDependencyResolver(IKernel kernel)
+        {
+            if (kernel == null) throw new ArgumentNullException("kernel");
+            m_Kernel = kernel;
+        }
+
+        public object GetService(Type type)
+        {
+            return m_Kernel.Resolve(type);
+        }
+
+        public bool HasService(Type type)
+        {
+            return m_Kernel.HasComponent(type);
+        }
+    }
+
     public class CqrsFacility : AbstractFacility,  ICqrsEngineBootstrapper
     {
         private readonly string m_EngineComponetName = Guid.NewGuid().ToString();
@@ -39,7 +60,6 @@ namespace Inceptum.Cqrs.Castle
 
         protected override void Init()
         {
-            Func<Type, object> dependencyResolver = Kernel.Resolve;
             Kernel.Register(Component.For<ICqrsEngineBootstrapper>().Instance(this));
             Kernel.ComponentRegistered += onComponentRegistered;
             Kernel.HandlersChanged += (ref bool changed) => processWaitList();
@@ -127,20 +147,17 @@ namespace Inceptum.Cqrs.Castle
 
                 (registration as LocalBoundedContextRegistration).WithProcess(handler.ComponentModel.Services.First());
             }
-
         }
-
 
         public void Start()
         {
-            Func<Type, object> dependencyResolver = Kernel.Resolve;
             var engineReg = m_InMemory
                 ? Component.For<ICqrsEngine>().ImplementedBy<InMemoryCqrsEngine>()
                 : Component.For<ICqrsEngine>().ImplementedBy<CqrsEngine>();
+            Kernel.Register(Component.For<IDependencyResolver>().ImplementedBy<CastleDependencyResolver>());
             Kernel.Register(engineReg.Named(m_EngineComponetName).DependsOn(new
                 {
-                    registrations = m_BoundedContexts.Cast<IRegistration>().Concat(m_Sagas).ToArray(),
-                    dependencyResolver
+                    registrations = m_BoundedContexts.Cast<IRegistration>().Concat(m_Sagas).ToArray()
                 }));
             Kernel.Register(
                 Component.For<ICommandSender>().ImplementedBy<CommandSender>().DependsOn(new {kernel = Kernel}));

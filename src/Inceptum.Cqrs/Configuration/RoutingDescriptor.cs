@@ -20,7 +20,7 @@ namespace Inceptum.Cqrs.Configuration
             return new Type[0];
         }
 
-        public void Create(BoundedContext boundedContext, Func<Type, object> resolve)
+        public void Create(BoundedContext boundedContext, IDependencyResolver resolver)
         {
             boundedContext.CommandRoutes = m_CommandRoutes;
             boundedContext.EventRoutes = m_EventRoutes;
