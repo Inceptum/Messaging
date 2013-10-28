@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
- using Inceptum.Cqrs.EventSourcing;
+using CommonDomain.Persistence;
+using Inceptum.Cqrs.EventSourcing;
 using NEventStore;
 using NEventStore.Dispatcher;
 
@@ -21,17 +22,19 @@ namespace Inceptum.Cqrs.Configuration
             return new Type[0];
         }
 
-        public void Create(BoundedContext boundedContext, Func<Type, object> resolve)
+        public void Create(BoundedContext boundedContext, IDependencyResolver resolver)
         {
             IStoreEvents eventStore = m_ConfigureEventStore(new CommitDispatcher(boundedContext.EventsPublisher)).Build();
 
-            boundedContext.EventStore = new NEventStoreAdapter(eventStore);
+            boundedContext.EventStore = new NEventStoreAdapter(eventStore,
+                                                               resolver.HasService(typeof (IConstructAggregates))
+                                                                   ? (IConstructAggregates)resolver.GetService(typeof(IConstructAggregates))
+                                                                   : null);
         }
 
         public void Process(BoundedContext boundedContext, CqrsEngine cqrsEngine)
         {
 
         }
-      
     }
 }

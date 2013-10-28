@@ -197,7 +197,7 @@ namespace Inceptum.Cqrs.Tests
                             })))
             {
                 var commandHandler = new CommandHandler();
-                using (var engine = new CqrsEngine(Activator.CreateInstance, messagingEngine,
+                using (var engine = new CqrsEngine(messagingEngine,
                                                    new InMemoryEndpointResolver(),
                                                    LocalBoundedContext.Named("bc")
                                                                       .PublishingEvents(typeof (int)).To("eventExchange").RoutedTo("eventQueue")
@@ -231,7 +231,7 @@ namespace Inceptum.Cqrs.Tests
                                 {"InMemory", new TransportInfo("none", "none", "none", null, "InMemory")}
                             })))
             {
-                using (var engine = new CqrsEngine(Activator.CreateInstance, messagingEngine,
+                using (var engine = new CqrsEngine(messagingEngine,
                                                    new InMemoryEndpointResolver(),
                                                    LocalBoundedContext.Named("bc").ConcurrencyLevel(1)
                                                                       .PublishingEvents(typeof (int))
@@ -264,7 +264,7 @@ namespace Inceptum.Cqrs.Tests
                             })))
             {
                 var commandHandler = new CommandHandler(100);
-                using (var engine = new CqrsEngine(Activator.CreateInstance, messagingEngine,
+                using (var engine = new CqrsEngine(messagingEngine,
                                                    new InMemoryEndpointResolver(),
                                                    LocalBoundedContext.Named("bc").ConcurrencyLevel(1)
                                                                       .PublishingEvents(typeof (int)).To("eventExchange").RoutedTo("eventQueue")
@@ -311,7 +311,7 @@ namespace Inceptum.Cqrs.Tests
             {
 
 
-                var cqrsEngine = new CqrsEngine(Activator.CreateInstance, messagingEngine, new FakeEndpointResolver(),
+                var cqrsEngine = new CqrsEngine(messagingEngine, new FakeEndpointResolver(),
                                                 LocalBoundedContext.Named("integration")
                                                                    .PublishingEvents(typeof (int))
                                                                    .To("eventExchange")
@@ -552,7 +552,7 @@ namespace Inceptum.Cqrs.Tests
             using (messagingEngine)
             {
                 using (
-                    var engine = new CqrsEngine(Activator.CreateInstance, messagingEngine, endpointResolver, localBoundedContext,
+                    var engine = new CqrsEngine(messagingEngine, endpointResolver, localBoundedContext,
                         LocalBoundedContext.Named("projections").WithProjection(eventsListener, "local")))
                 {
                     var guid=Guid.NewGuid();

@@ -71,7 +71,7 @@ namespace Inceptum.Cqrs.Configuration
             var boundedContext=new BoundedContext(cqrsEngine,Name, ThreadCount,FailedCommandRetryDelayInternal);
             foreach (var descriptor in m_Configurators)
             {
-                descriptor.Create(boundedContext, cqrsEngine.ResolveDependency);
+                descriptor.Create(boundedContext, cqrsEngine.DependencyResolver);
             }
             
             cqrsEngine.BoundedContexts.Add(boundedContext);

@@ -20,7 +20,7 @@ namespace Inceptum.Cqrs.Configuration
         }
 
 
-        public void Create(BoundedContext boundedContext, Func<Type, object> resolve)
+        public void Create(BoundedContext boundedContext, IDependencyResolver resolver)
         {
             var eventSubscriptions = from pair in m_EventsSubscriptions
                                      group pair by pair.Value

@@ -14,10 +14,10 @@ namespace Inceptum.Cqrs.EventSourcing
     {
         private readonly IStoreEvents m_StoreEvents;
 
-        public NEventStoreAdapter(IStoreEvents storeEvents)
+        public NEventStoreAdapter(IStoreEvents storeEvents, IConstructAggregates aggregateFactory = null)
         {
             m_StoreEvents = storeEvents;
-            Repository=new EventStoreRepository(storeEvents, new AggregateFactory(), new ConflictDetector());
+            Repository = new EventStoreRepository(storeEvents, aggregateFactory ?? new AggregateFactory(), new ConflictDetector());
         }
 
         public IRepository Repository { get; private set; }

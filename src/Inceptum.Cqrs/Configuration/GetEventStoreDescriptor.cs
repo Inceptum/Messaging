@@ -25,9 +25,12 @@ namespace Inceptum.Cqrs.Configuration
             return new Type[0];
         }
 
-        public void Create(BoundedContext boundedContext, Func<Type, object> resolve)
+        public void Create(BoundedContext boundedContext, IDependencyResolver resolver)
         {
-            boundedContext.EventStore = new GetEventStoreAdapter(m_EventStoreConnection, boundedContext.EventsPublisher);
+            var aggregateConstructor = resolver.HasService(typeof (IConstructAggregates))
+                                           ? (IConstructAggregates) resolver.GetService(typeof (IConstructAggregates))
+                                           : null;
+            boundedContext.EventStore = new GetEventStoreAdapter(m_EventStoreConnection, boundedContext.EventsPublisher, aggregateConstructor);
         }
 
         public void Process(BoundedContext boundedContext, CqrsEngine cqrsEngine)

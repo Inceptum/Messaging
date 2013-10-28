@@ -26,10 +26,10 @@ namespace Inceptum.Cqrs.Configuration
             return m_Dependedncies;
         }
 
-        public void Create(BoundedContext boundedContext, Func<Type, object> resolve)
+        public void Create(BoundedContext boundedContext, IDependencyResolver resolver)
         {
            
-            ResolvedDependencies = m_ResolveDependedncies(resolve);
+            ResolvedDependencies = m_ResolveDependedncies(resolver.GetService);
             Create(boundedContext);
         }
 

@@ -8,14 +8,14 @@ namespace Inceptum.Cqrs
     public class InMemoryCqrsEngine : CqrsEngine
     {
         public InMemoryCqrsEngine(params IRegistration[] registrations) :
-            base(Activator.CreateInstance, new MessagingEngine(new TransportResolver(new Dictionary<string, TransportInfo> { { "InMemory", new TransportInfo("none", "none", "none", null, "InMemory") } })),
+            base(new MessagingEngine(new TransportResolver(new Dictionary<string, TransportInfo> { { "InMemory", new TransportInfo("none", "none", "none", null, "InMemory") } })),
                 new InMemoryEndpointResolver(),
                 registrations
             )
         {
              
         }
-        public InMemoryCqrsEngine(Func<Type, object> dependencyResolver, params IRegistration[] registrations) :
+        public InMemoryCqrsEngine(IDependencyResolver dependencyResolver, params IRegistration[] registrations) :
             base(dependencyResolver,new MessagingEngine(new TransportResolver(new Dictionary<string, TransportInfo> { { "InMemory", new TransportInfo("none", "none", "none", null, "InMemory") } })),
                 new InMemoryEndpointResolver(),
                 registrations
