@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Runtime.CompilerServices;
+using Castle.Components.DictionaryAdapter.Xml;
 using Inceptum.Cqrs.Configuration;
 using Inceptum.Cqrs.InfrastructureCommands;
 using Inceptum.Messaging.Contract;
+using NLog;
 
 namespace Inceptum.Cqrs
 {
@@ -30,6 +32,7 @@ namespace Inceptum.Cqrs
 
     public class CqrsEngine :ICqrsEngine
     {
+        readonly Logger m_Logger = LogManager.GetCurrentClassLogger();
         private readonly IMessagingEngine m_MessagingEngine;
         private readonly CompositeDisposable m_Subscription=new CompositeDisposable();
         private readonly IEndpointResolver m_EndpointResolver;
@@ -99,8 +102,8 @@ namespace Inceptum.Cqrs
                     CommandSubscription commandSubscription = commandsSubscription;
                     m_Subscription.Add(m_MessagingEngine.Subscribe(
                         endpoint,
-                        (command, acknowledge) => context.CommandDispatcher.Dispatch(command, commandSubscription.Types[command.GetType()], acknowledge,endpoint),
-                        (type, acknowledge) =>
+                        (command, acknowledge) =>context.CommandDispatcher.Dispatch(command, commandSubscription.Types[command.GetType()], acknowledge, endpoint),
+                    (type, acknowledge) =>
                                  {
                                      throw new InvalidOperationException("Unknown command received: " + type); 
                                      //acknowledge(0, true);

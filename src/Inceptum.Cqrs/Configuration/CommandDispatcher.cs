@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Inceptum.Cqrs.InfrastructureCommands;
 using Inceptum.Cqrs.Utils;
 using Inceptum.Messaging.Contract;
+using NLog;
 
 namespace Inceptum.Cqrs.Configuration
 {
@@ -24,7 +25,7 @@ namespace Inceptum.Cqrs.Configuration
         private readonly QueuedTaskScheduler m_QueuedTaskScheduler;
         private readonly Dictionary<CommandPriority,TaskFactory> m_TaskFactories=new Dictionary<CommandPriority, TaskFactory>();
         private static long m_FailedCommandRetryDelay = 60000;
-
+        readonly Logger m_Logger= LogManager.GetCurrentClassLogger();
         public CommandDispatcher(string boundedContext, int threadCount=1,long failedCommandRetryDelay = 60000)
         {
             m_FailedCommandRetryDelay = failedCommandRetryDelay;
@@ -127,13 +128,15 @@ namespace Inceptum.Cqrs.Configuration
             Func<object,Endpoint, CommandHandlingResult> handler;
             if (!m_Handlers.TryGetValue(command.GetType(), out handler))
             {
-                throw new InvalidOperationException(string.Format("Failed to handle command {0} in bound context {1}, no handler was registered for it", command, m_BoundedContext));
+
+                m_Logger.Warn("Failed to handle command {0} in bound context {1}, no handler was registered for it", command, m_BoundedContext);
+                acknowledge(m_FailedCommandRetryDelay, false);
             }
 
             m_TaskFactories[priority].StartNew(() => handle(command, acknowledge, handler,commandOriginEndpoint));
         }
 
-        private static void handle(object command, AcknowledgeDelegate acknowledge, Func<object,Endpoint, CommandHandlingResult> handler, Endpoint commandOriginEndpoint)
+        private void handle(object command, AcknowledgeDelegate acknowledge, Func<object,Endpoint, CommandHandlingResult> handler, Endpoint commandOriginEndpoint)
         {
             try
             {
@@ -142,6 +145,7 @@ namespace Inceptum.Cqrs.Configuration
             }
             catch (Exception e)
             {
+                m_Logger.WarnException("Failed to handle command of type " + (command==null?"null":command.GetType().Name), e);
                 acknowledge(m_FailedCommandRetryDelay, false);
             }
         }
