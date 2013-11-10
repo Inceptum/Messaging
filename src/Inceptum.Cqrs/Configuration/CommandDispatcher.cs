@@ -131,6 +131,7 @@ namespace Inceptum.Cqrs.Configuration
 
                 m_Logger.Warn("Failed to handle command {0} in bound context {1}, no handler was registered for it", command, m_BoundedContext);
                 acknowledge(m_FailedCommandRetryDelay, false);
+                return;
             }
 
             m_TaskFactories[priority].StartNew(() => handle(command, acknowledge, handler,commandOriginEndpoint));
