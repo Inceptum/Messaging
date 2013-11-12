@@ -119,7 +119,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
                 //First attempt fails next one happends in 1000ms and should be successfull
                 Assert.That(subscribed.WaitOne(1200), Is.True, "Has not resubscribed after first subscription fail");
                 callback(new BinaryMessage {Bytes = new byte[0], Type = typeof (string).Name}, b => Console.WriteLine(DateTime.Now.ToString("HH:mm:ss.ffff") + " acknowledged"));
-                Thread.Sleep(200);
+                Thread.Sleep(300);
 
                 Console.WriteLine("{0:H:mm:ss.fff} Emulating fail", DateTime.Now);
                 emulateFail();
@@ -128,7 +128,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
                 Assert.That(subscriptionsCounter, Is.EqualTo(4));
                 
                 
-                Thread.Sleep(200);
+                Thread.Sleep(300);
                 Console.WriteLine("{0:H:mm:ss.fff} Emulating fail", DateTime.Now);
 
                 emulateFail();
