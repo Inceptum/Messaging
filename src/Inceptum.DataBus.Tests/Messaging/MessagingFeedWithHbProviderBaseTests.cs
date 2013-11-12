@@ -83,7 +83,7 @@ namespace Inceptum.DataBus.Tests.Messaging
                                                                                   if (ex as HeartbeatLostException == null) throw exception;
                                                                               }))
             {
-                Assert.That(emulateHb.WaitForValue(100), Is.True);
+                Assert.That(emulateHb.WaitForValue(200), Is.True);
                 Thread.Sleep(1350);
             }
 
