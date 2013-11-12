@@ -18,7 +18,7 @@ namespace Inceptum.Cqrs.Configuration
         internal List<IProcess> Processes { get; private set; }
         internal IEventStoreAdapter EventStore { get; set; }
         internal InfrastructureCommandsHandler InfrastructureCommandsHandler { get; set; }
-        Dictionary<string,Destination> m_TempDestinations=new Dictionary<string, Destination>(); 
+        readonly Dictionary<string,Destination> m_TempDestinations=new Dictionary<string, Destination>(); 
         public string Name { get; set; }
         public int ThreadCount { get; set; }
         public long FailedCommandRetryDelay { get; set; }
