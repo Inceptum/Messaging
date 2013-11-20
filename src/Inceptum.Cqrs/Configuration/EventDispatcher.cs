@@ -85,28 +85,33 @@ namespace Inceptum.Cqrs.Configuration
 
             if (@event == null)
             {
+                //TODO: need to handle null deserialized from messaging
                 throw new ArgumentNullException("event");
             }
             if (!m_Handlers.TryGetValue(@event.GetType(), out list))
                 return;
 
-            var results = list.Select(handler =>
-                {
-                    try
-                    {
-                        return handler(@event);
-                    }
-                    catch (Exception e)
-                    {
-                        m_Logger.WarnException("Failed to handle command of type " + @event.GetType().Name, e);
-                        return new CommandHandlingResult {Retry = true, RetryDelay = m_FailedEventRetryDelay};
-                    }
-                }).ToArray();
 
-            if (results.Any(result => result.Retry))
+            foreach (var handler in list)
             {
-                acknowledge(results.Where(r=>r.Retry).Min(r=>r.RetryDelay), false);
+                CommandHandlingResult result;
+                try
+                {
+                    result = handler(@event);
+                }
+                catch (Exception e)
+                {
+                    m_Logger.WarnException("Failed to handle command of type " + @event.GetType().Name, e);
+                    result = new CommandHandlingResult {Retry = true, RetryDelay = m_FailedEventRetryDelay};
+                }
+
+                if (result.Retry)
+                {
+                    acknowledge(result.RetryDelay, !result.Retry);
+                    return;
+                }
             }
+            acknowledge(0, true);
         }
     }
 }
