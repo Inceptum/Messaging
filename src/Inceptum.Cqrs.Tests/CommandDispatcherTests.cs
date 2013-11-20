@@ -55,11 +55,12 @@ namespace Inceptum.Cqrs.Tests
 
 
         [Test]
-        [ExpectedException(ExpectedException = typeof(InvalidOperationException), ExpectedMessage = "Failed to handle command testCommand in bound context testBC, no handler was registered for it")]
         public void DispatchOfUnknownCommandShouldFailTest()
         {
             var dispatcher = new CommandDispatcher("testBC");
-            dispatcher.Dispatch("testCommand", CommandPriority.Normal, (delay, acknowledge) => { }, new Endpoint());
+            var ack = true;
+            dispatcher.Dispatch("testCommand", CommandPriority.Normal, (delay, acknowledge) => { ack = acknowledge; }, new Endpoint());
+            Assert.That(ack,Is.False);
         }
 
         [Test]
