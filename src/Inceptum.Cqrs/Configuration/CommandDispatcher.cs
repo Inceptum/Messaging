@@ -11,6 +11,7 @@ using NLog;
 
 namespace Inceptum.Cqrs.Configuration
 {
+    //TODO: rename to EventHandlingResult
     public class CommandHandlingResult
     {
         public long  RetryDelay { get; set; } 

@@ -88,7 +88,15 @@ namespace Inceptum.Cqrs
                 {
                     var endpoint = m_EndpointResolver.Resolve(eventsSubscription.Key);
                     BoundedContext context = boundedContext;
-                    m_Subscription.Add(m_MessagingEngine.Subscribe(endpoint, @event => context.EventDispatcher.Dispacth(@event), t => { }, eventsSubscription.Value.ToArray()));
+                    m_Subscription.Add(m_MessagingEngine.Subscribe(
+                        endpoint,
+                        (@event, acknowledge) => context.EventDispatcher.Dispacth(@event, acknowledge),
+                        (type, acknowledge) =>
+                         {
+                             throw new InvalidOperationException("Unknown event received: " + type);
+                             //acknowledge(0, true);
+                         },
+                        eventsSubscription.Value.ToArray()));
 
                 }
             }
@@ -176,7 +184,12 @@ namespace Inceptum.Cqrs
             {
                 var replayEndpoint = new Endpoint { Destination = tmpDestination, SerializationFormat = ep.SerializationFormat, SharedDestination = true, TransportId = ep.TransportId };
                 var knownEventTypes = context.EventsSubscriptions.SelectMany(e => e.Value).ToArray();
-                m_Subscription.Add(m_MessagingEngine.Subscribe(replayEndpoint, @event => context.EventDispatcher.Dispacth(@event), t => { }, "EventReplay",knownEventTypes));
+                m_Subscription.Add(m_MessagingEngine.Subscribe(
+                    replayEndpoint,
+                    (@event, acknowledge) => context.EventDispatcher.Dispacth(@event, acknowledge),
+                    (typeName, acknowledge) => { }, 
+                    "EventReplay",
+                    knownEventTypes));
             }
             SendCommand(new ReplayEventsCommand { Destination = tmpDestination.Publish, From = DateTime.MinValue, SerializationFormat = ep.SerializationFormat, Types = types }, boundedContext);
         }
