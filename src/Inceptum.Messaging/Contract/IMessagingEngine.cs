@@ -47,6 +47,13 @@ namespace Inceptum.Messaging.Contract
         IDisposable SendRequestAsync<TRequest, TResponse>(TRequest request, Endpoint endpoint, Action<TResponse> callback, Action<Exception> onFailure, long timeout = TransportConstants.DEFAULT_REQUEST_TIMEOUT, string processingGroup = null);
 		IDisposable RegisterHandler<TRequest, TResponse>(Func<TRequest, TResponse> handler, Endpoint endpoint) where TResponse : class;
 
-        void EnsureEndpointExist(Endpoint endpoint);
+        void VerifyEndpoint(Endpoint endpoint, EndpointUsage usage=EndpointUsage.Publish|EndpointUsage.Subscribe, bool configureIfRequired=false);
+    }
+
+    [Flags]
+    public enum EndpointUsage
+    {
+        Publish,
+        Subscribe,
     }
 }

@@ -61,16 +61,34 @@ namespace Inceptum.Messaging.RabbitMq
             return processingGroup;
         }
 
-        public void EnsureDestination(Destination destination)
+        public void VerifyDestination(Destination destination, EndpointUsage usage, bool configureIfRequired)
         {
             var publish = PublicationAddress.Parse(destination.Publish);
             using (IConnection connection = m_Factory.CreateConnection())
             {
                 using (IModel channel = connection.CreateModel())
                 {
-                    channel.ExchangeDeclare(publish.ExchangeName,publish.ExchangeType, true);
-                    channel.QueueDeclare(destination.Subscribe,  true,false,false,null);
-                    channel.QueueBind(destination.Subscribe, publish.ExchangeName,publish.RoutingKey);
+                    if ((usage & EndpointUsage.Publish) == EndpointUsage.Publish)
+                    {
+                        if (configureIfRequired)
+                            channel.ExchangeDeclare(publish.ExchangeName, publish.ExchangeType, true);
+                        else
+                            channel.ExchangeDeclarePassive(publish.ExchangeName);
+
+                    }
+
+                    if ((usage & EndpointUsage.Subscribe) == EndpointUsage.Subscribe)
+                    {
+                        if (configureIfRequired)
+                            channel.QueueDeclare(destination.Subscribe, true, false, false, null);
+                        else
+                            channel.QueueDeclarePassive(destination.Subscribe);
+                    }
+
+                    if (configureIfRequired && ((usage & EndpointUsage.Publish) == EndpointUsage.Publish) && ((usage & EndpointUsage.Subscribe) == EndpointUsage.Subscribe))
+                    {
+                        channel.QueueBind(destination.Subscribe, publish.ExchangeName, publish.RoutingKey);
+                    }
                 }
             }
         }
