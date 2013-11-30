@@ -62,7 +62,7 @@ namespace Inceptum.Messaging.Sonic
             return group;
         }
 
-        public void VerifyDestination(Destination destination, EndpointUsage usage, bool configureIfRequired)
+        public bool VerifyDestination(Destination destination, EndpointUsage usage, bool configureIfRequired, out string error)
         {
             throw new NotImplementedException();
         }

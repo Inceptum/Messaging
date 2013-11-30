@@ -81,9 +81,9 @@ namespace Inceptum.Messaging
 
         #region IMessagingEngine Members
 
-        public  void VerifyEndpoint(Endpoint endpoint, EndpointUsage usage, bool configureIfRequired)
+        public  bool VerifyEndpoint(Endpoint endpoint, EndpointUsage usage, bool configureIfRequired,out string error)
         {
-            m_TransportManager.VerifyDestination(endpoint.TransportId,endpoint.Destination,usage,configureIfRequired);
+            return m_TransportManager.VerifyDestination(endpoint.TransportId,endpoint.Destination,usage,configureIfRequired,out error);
         }
 
         public Destination CreateTemporaryDestination(string transportId,string processingGroup)
