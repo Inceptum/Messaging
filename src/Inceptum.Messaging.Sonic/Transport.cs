@@ -62,6 +62,11 @@ namespace Inceptum.Messaging.Sonic
             return group;
         }
 
+        public void EnsureDestination(Destination destination)
+        {
+            throw new NotImplementedException();
+        }
+
         #region IDisposable Members
 
         public void Dispose()

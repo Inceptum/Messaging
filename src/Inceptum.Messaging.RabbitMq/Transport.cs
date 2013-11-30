@@ -61,6 +61,18 @@ namespace Inceptum.Messaging.RabbitMq
             return processingGroup;
         }
 
-       
+        public void EnsureDestination(Destination destination)
+        {
+            var publish = PublicationAddress.Parse(destination.Publish);
+            using (IConnection connection = m_Factory.CreateConnection())
+            {
+                using (IModel channel = connection.CreateModel())
+                {
+                    channel.ExchangeDeclare(publish.ExchangeName,publish.ExchangeType, true);
+                    channel.QueueDeclare(destination.Subscribe,  true,false,false,null);
+                    channel.QueueBind(destination.Subscribe, publish.ExchangeName,publish.RoutingKey);
+                }
+            }
+        }
     }
 }

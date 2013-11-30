@@ -96,6 +96,11 @@ namespace Inceptum.Messaging.InMemory
                 return processingGroup;
             }
         }
+
+        public void EnsureDestination(Destination destination)
+        {
+            
+        }
     }
 
      
