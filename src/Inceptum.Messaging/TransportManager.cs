@@ -160,6 +160,13 @@ namespace Inceptum.Messaging
                 Transport.Dispose();
                 Transport = null;
             }
+            
+            [MethodImpl(MethodImplOptions.Synchronized)]
+            public void EnsureDestination(Destination destination)
+            {
+                var transport = Transport ?? (Transport = m_Factory.Create(m_TransportInfo, processTransportFailure));
+                transport.EnsureDestination(destination);
+            }
         }
 
 
@@ -197,6 +204,20 @@ namespace Inceptum.Messaging
 
         public IProcessingGroup GetProcessingGroup(string transportId, string name, Action onFailure = null)
         {
+            ResolvedTransport transport = resolveTransport(transportId);
+
+            try
+            {
+                return transport.GetProcessingGroup(transportId, name, onFailure);
+            }
+            catch (Exception e)
+            {
+                throw new TransportException(string.Format("Failed to create processing group {0} on transport {1}", name, transportId), e);
+            }
+        }
+
+        private ResolvedTransport resolveTransport(string transportId)
+        {
             if (m_IsDisposed.WaitOne(0))
                 throw new ObjectDisposedException(string.Format("Can not create transport {0}. TransportManager instance is disposed", transportId));
 
@@ -207,7 +228,8 @@ namespace Inceptum.Messaging
                 throw new ConfigurationErrorsException(string.Format("Transport '{0}' is not resolvable", transportId));
             var factory = m_TransportFactories.FirstOrDefault(f => f.Name == transportInfo.Messaging);
             if (factory == null)
-                throw new ConfigurationErrorsException(string.Format("Can not create transport '{0}', {1} messaging is not supported", transportId, transportInfo.Messaging));
+                throw new ConfigurationErrorsException(string.Format("Can not create transport '{0}', {1} messaging is not supported", transportId,
+                    transportInfo.Messaging));
 
             ResolvedTransport transport;
 
@@ -223,17 +245,8 @@ namespace Inceptum.Messaging
                         m_Transports.Add(transportInfo, transport);
                     }
                 }
-
             }
-
-            try
-            {
-                return transport.GetProcessingGroup(transportId, name, onFailure);
-            }
-            catch (Exception e)
-            {
-                throw new TransportException(string.Format("Failed to create transport with id '{0}' and parameters {1}", transportId, transportInfo), e);
-            }
+            return transport;
         }
 
         internal virtual void ProcessTransportFailure(TransportInfo transportInfo)
@@ -255,6 +268,20 @@ namespace Inceptum.Messaging
                 {
                     handler(transportId, Contract.TransportEvents.Failure);
                 }
+            }
+        }
+
+        public void EnsureDestination(string transportId,Destination destination)
+        {
+             ResolvedTransport transport = resolveTransport(transportId);
+
+            try
+            {
+                transport.EnsureDestination(destination);
+            }
+            catch (Exception e)
+            {
+                throw new TransportException(string.Format("Destination {0} is not properly configured on transport {1}", destination, transportId), e);
             }
         }
     }

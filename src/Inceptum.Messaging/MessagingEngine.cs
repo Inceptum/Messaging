@@ -81,6 +81,11 @@ namespace Inceptum.Messaging
 
         #region IMessagingEngine Members
 
+        public void EnsureEndpointExist(Endpoint endpoint)
+        {
+            m_TransportManager.EnsureDestination(endpoint.TransportId,endpoint.Destination);
+        }
+
         public Destination CreateTemporaryDestination(string transportId,string processingGroup)
         {
             return m_TransportManager.GetProcessingGroup(transportId,processingGroup).CreateTemporaryDestination();
