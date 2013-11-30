@@ -343,6 +343,17 @@ namespace Inceptum.Messaging.RabbitMq.Tests
 
 
         [Test]
+        public void EndpointVerificationTest()
+        {
+            using (var transport = new Transport(HOST, "guest", "guest"))
+            {
+                string error;
+                var res = transport.VerifyDestination("unistream.processing.events", EndpointUsage.Publish | EndpointUsage.Subscribe, false, out error);
+                Console.WriteLine(error);
+                Assert.That(res,Is.False);
+            }
+        }
+        [Test]
         [ExpectedException(typeof (InvalidOperationException))]
         public void AttemptToSubscribeSameDestinationAndMessageTypeTwiceFailureTest()
         {

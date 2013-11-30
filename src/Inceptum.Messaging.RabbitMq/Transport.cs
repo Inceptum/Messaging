@@ -65,7 +65,7 @@ namespace Inceptum.Messaging.RabbitMq
         {
             try
             {
-                var publish = PublicationAddress.Parse(destination.Publish);
+                var publish = PublicationAddress.Parse(destination.Publish) ?? new PublicationAddress("direct", destination.Publish, ""); ;
                 using (IConnection connection = m_Factory.CreateConnection())
                 {
                     using (IModel channel = connection.CreateModel())
@@ -88,7 +88,7 @@ namespace Inceptum.Messaging.RabbitMq
 
                             if (configureIfRequired)
                             {
-                                channel.QueueBind(destination.Subscribe, publish.ExchangeName, publish.RoutingKey);
+                                channel.QueueBind(destination.Subscribe, publish.ExchangeName, publish.RoutingKey == "" ? "#" : publish.RoutingKey);
                             }
                         }
                     }
@@ -96,6 +96,8 @@ namespace Inceptum.Messaging.RabbitMq
             }
             catch (Exception e)
             {
+                if (!e.GetType().Namespace.StartsWith("RabbitMQ") || e.GetType().Assembly != typeof (OperationInterruptedException).Assembly)
+                    throw;
                 error = e.Message;
                 return false;
             }
