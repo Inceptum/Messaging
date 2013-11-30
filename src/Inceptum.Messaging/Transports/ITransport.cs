@@ -7,7 +7,7 @@ namespace Inceptum.Messaging.Transports
     public interface ITransport : IDisposable
     {
         IProcessingGroup CreateProcessingGroup(Action onFailure);
-        void VerifyDestination(Destination destination, EndpointUsage usage, bool configureIfRequired);
+        bool VerifyDestination(Destination destination, EndpointUsage usage, bool configureIfRequired,out string error);
     }
 
     public interface IProcessingGroup : IDisposable

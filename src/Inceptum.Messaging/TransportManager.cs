@@ -164,10 +164,10 @@ namespace Inceptum.Messaging
             }
 
             [MethodImpl(MethodImplOptions.Synchronized)]
-            public void VerifyDestination(Destination destination, EndpointUsage usage, bool configureIfRequired)
+            public bool VerifyDestination(Destination destination, EndpointUsage usage, bool configureIfRequired,out string error)
             {
                 var transport = Transport ?? (Transport = m_Factory.Create(m_TransportInfo, processTransportFailure));
-                transport.VerifyDestination(destination, usage, configureIfRequired);
+                return transport.VerifyDestination(destination, usage, configureIfRequired, out error);
             }
 
         }
@@ -274,13 +274,13 @@ namespace Inceptum.Messaging
             }
         }
 
-        public void VerifyDestination(string transportId, Destination destination, EndpointUsage usage, bool configureIfRequired)
+        public bool VerifyDestination(string transportId, Destination destination, EndpointUsage usage, bool configureIfRequired,out string error)
         {
             ResolvedTransport transport = resolveTransport(transportId);
 
             try
             {
-                transport.VerifyDestination(destination, usage, configureIfRequired);
+                return transport.VerifyDestination(destination, usage, configureIfRequired,out error);
             }
             catch (Exception e)
             {

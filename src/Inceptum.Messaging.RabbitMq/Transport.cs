@@ -61,36 +61,46 @@ namespace Inceptum.Messaging.RabbitMq
             return processingGroup;
         }
 
-        public void VerifyDestination(Destination destination, EndpointUsage usage, bool configureIfRequired)
+        public bool VerifyDestination(Destination destination, EndpointUsage usage, bool configureIfRequired, out string error)
         {
-            var publish = PublicationAddress.Parse(destination.Publish);
-            using (IConnection connection = m_Factory.CreateConnection())
+            try
             {
-                using (IModel channel = connection.CreateModel())
+                var publish = PublicationAddress.Parse(destination.Publish);
+                using (IConnection connection = m_Factory.CreateConnection())
                 {
-                    if ((usage & EndpointUsage.Publish) == EndpointUsage.Publish)
+                    using (IModel channel = connection.CreateModel())
                     {
-                        if (configureIfRequired)
-                            channel.ExchangeDeclare(publish.ExchangeName, publish.ExchangeType, true);
-                        else
-                            channel.ExchangeDeclarePassive(publish.ExchangeName);
+                        if ((usage & EndpointUsage.Publish) == EndpointUsage.Publish)
+                        {
+                            if (configureIfRequired)
+                                channel.ExchangeDeclare(publish.ExchangeName, publish.ExchangeType, true);
+                            else
+                                channel.ExchangeDeclarePassive(publish.ExchangeName);
 
-                    }
+                        }
 
-                    if ((usage & EndpointUsage.Subscribe) == EndpointUsage.Subscribe)
-                    {
-                        if (configureIfRequired)
-                            channel.QueueDeclare(destination.Subscribe, true, false, false, null);
-                        else
-                            channel.QueueDeclarePassive(destination.Subscribe);
-                    }
+                        if ((usage & EndpointUsage.Subscribe) == EndpointUsage.Subscribe)
+                        {
+                            if (configureIfRequired)
+                                channel.QueueDeclare(destination.Subscribe, true, false, false, null);
+                            else
+                                channel.QueueDeclarePassive(destination.Subscribe);
 
-                    if (configureIfRequired && ((usage & EndpointUsage.Publish) == EndpointUsage.Publish) && ((usage & EndpointUsage.Subscribe) == EndpointUsage.Subscribe))
-                    {
-                        channel.QueueBind(destination.Subscribe, publish.ExchangeName, publish.RoutingKey);
+                            if (configureIfRequired)
+                            {
+                                channel.QueueBind(destination.Subscribe, publish.ExchangeName, publish.RoutingKey);
+                            }
+                        }
                     }
                 }
             }
+            catch (Exception e)
+            {
+                error = e.Message;
+                return false;
+            }
+            error = null;
+            return true;
         }
     }
 }
