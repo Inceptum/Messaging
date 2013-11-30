@@ -20,7 +20,7 @@ namespace Inceptum.Messaging
     {
         private class ResolvedTransport : IDisposable
         {
-            class ProcessingGroupWrapper : IDisposable
+            private class ProcessingGroupWrapper : IDisposable
             {
                 public string TransportId { get; private set; }
                 public string Name { get; private set; }
@@ -65,11 +65,13 @@ namespace Inceptum.Messaging
                     }
                 }
             }
+
             private readonly List<string> m_KnownIds = new List<string>();
             private readonly TransportInfo m_TransportInfo;
             private readonly Action m_ProcessTransportFailure;
             private readonly ITransportFactory m_Factory;
             private readonly List<ProcessingGroupWrapper> m_ProcessingGroups = new List<ProcessingGroupWrapper>();
+
             public ResolvedTransport(TransportInfo transportInfo, Action processTransportFailure, ITransportFactory factory)
             {
                 m_Factory = factory;
@@ -160,25 +162,26 @@ namespace Inceptum.Messaging
                 Transport.Dispose();
                 Transport = null;
             }
-            
+
             [MethodImpl(MethodImplOptions.Synchronized)]
-            public void EnsureDestination(Destination destination)
+            public void VerifyDestination(Destination destination, EndpointUsage usage, bool configureIfRequired)
             {
                 var transport = Transport ?? (Transport = m_Factory.Create(m_TransportInfo, processTransportFailure));
-                transport.EnsureDestination(destination);
+                transport.VerifyDestination(destination, usage, configureIfRequired);
             }
+
         }
 
 
         private readonly Dictionary<TransportInfo, ResolvedTransport> m_Transports = new Dictionary<TransportInfo, ResolvedTransport>();
         private readonly ITransportResolver m_TransportResolver;
-        readonly ManualResetEvent m_IsDisposed = new ManualResetEvent(false);
+        private readonly ManualResetEvent m_IsDisposed = new ManualResetEvent(false);
         private readonly ITransportFactory[] m_TransportFactories;
 
 
         public TransportManager(ITransportResolver transportResolver, params ITransportFactory[] transportFactories)
         {
-            m_TransportFactories = transportFactories.Concat(new[] { new InMemoryTransportFactory() }).ToArray();
+            m_TransportFactories = transportFactories.Concat(new[] {new InMemoryTransportFactory()}).ToArray();
             if (transportResolver == null) throw new ArgumentNullException("transportResolver");
             m_TransportResolver = transportResolver;
         }
@@ -271,18 +274,19 @@ namespace Inceptum.Messaging
             }
         }
 
-        public void EnsureDestination(string transportId,Destination destination)
+        public void VerifyDestination(string transportId, Destination destination, EndpointUsage usage, bool configureIfRequired)
         {
-             ResolvedTransport transport = resolveTransport(transportId);
+            ResolvedTransport transport = resolveTransport(transportId);
 
             try
             {
-                transport.EnsureDestination(destination);
+                transport.VerifyDestination(destination, usage, configureIfRequired);
             }
             catch (Exception e)
             {
                 throw new TransportException(string.Format("Destination {0} is not properly configured on transport {1}", destination, transportId), e);
             }
         }
+
     }
 }
