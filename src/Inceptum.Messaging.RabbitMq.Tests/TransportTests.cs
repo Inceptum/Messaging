@@ -410,7 +410,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
         [TestCase(EndpointUsage.Publish,Result = @"The AMQP operation was interrupted: AMQP close-reason, initiated by Peer, code=404, text=""NOT_FOUND - no exchange 'non.existing' in vhost '/'"", classId=40, methodId=10, cause=")]
         public string VerifySubscriptionEndpointTest(EndpointUsage usage)
         {
-            var transport = new Transport("localhost", "guest", "guest");
+            var transport = new Transport(HOST, "guest", "guest");
             string error;
             var valid = transport.VerifyDestination("non.existing", usage, false, out error);
             Assert.That(valid,Is.False, "endpoint reported as valid");
