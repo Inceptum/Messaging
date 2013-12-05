@@ -65,7 +65,7 @@ namespace Inceptum.Messaging.RabbitMq
         {
             try
             {
-                var publish = PublicationAddress.Parse(destination.Publish) ?? new PublicationAddress("direct", destination.Publish, ""); ;
+                var publish = PublicationAddress.Parse(destination.Publish) ?? new PublicationAddress("topic", destination.Publish, ""); ;
                 using (IConnection connection = m_Factory.CreateConnection())
                 {
                     using (IModel channel = connection.CreateModel())
