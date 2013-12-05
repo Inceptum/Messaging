@@ -53,6 +53,7 @@ namespace Inceptum.Messaging.Contract
     [Flags]
     public enum EndpointUsage
     {
+        None,
         Publish,
         Subscribe,
     }
