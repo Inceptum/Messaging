@@ -103,6 +103,7 @@
     <Compile Include="SubscriptionExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Inceptum.DataBus.nuspec" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
