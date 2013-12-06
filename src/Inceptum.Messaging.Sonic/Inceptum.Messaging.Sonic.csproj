@@ -90,6 +90,7 @@
     <Compile Include="Transport.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Inceptum.Messaging.Sonic.nuspec" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
