@@ -12,7 +12,7 @@
 		<copyright>Copyright 2013</copyright>
 		<tags></tags>
 		<dependencies>
-			<dependency id="Inceptum.Messaging" version="[$version$]" />
+			<dependency id="Inceptum.Messaging" version="[$messagingVersion$]" />
 		</dependencies>  
 	</metadata>
 	<files>
