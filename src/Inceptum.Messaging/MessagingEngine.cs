@@ -159,7 +159,7 @@ namespace Inceptum.Messaging
 		            acknowledge(0,true);
 		        });
 		}
-        public IDisposable Subscribe<TMessage>(Endpoint endpoint, CallbackDelegate<TMessage> callback, string processingGroup = null)
+        public IDisposable Subscribe<TMessage>(Endpoint endpoint, CallbackDelegate<TMessage> callback, string processingGroup = null, int priority = 0)
         {
 			if (endpoint.Destination == null) throw new ArgumentException("Destination can not be null");
             if (m_Disposing.WaitOne(0))
@@ -169,7 +169,7 @@ namespace Inceptum.Messaging
             {
                 try
                 {
-                    return subscribe(endpoint, (m, ack) => processMessage(m, typeof(TMessage), message => callback((TMessage)message, ack), ack, endpoint), endpoint.SharedDestination ? getMessageType(typeof(TMessage)) : null, processingGroup);
+                    return subscribe(endpoint, (m, ack) => processMessage(m, typeof(TMessage), message => callback((TMessage)message, ack), ack, endpoint), endpoint.SharedDestination ? getMessageType(typeof(TMessage)) : null, processingGroup, priority);
                 }
                 catch (Exception e)
                 {
@@ -181,11 +181,10 @@ namespace Inceptum.Messaging
 
         public IDisposable Subscribe(Endpoint endpoint, Action<object> callback, Action<string> unknownTypeCallback,params Type[] knownTypes)
         {
-            return Subscribe(endpoint, callback, unknownTypeCallback, null, knownTypes);
+            return Subscribe(endpoint, callback, unknownTypeCallback, null,0, knownTypes);
         }
 
-        public IDisposable Subscribe(Endpoint endpoint, Action<object> callback, Action<string> unknownTypeCallback, string processingGroup,
-                                     params Type[] knownTypes)
+        public IDisposable Subscribe(Endpoint endpoint, Action<object> callback, Action<string> unknownTypeCallback, string processingGroup, int priority, params Type[] knownTypes)
         {
             return Subscribe(endpoint,
                              (message, acknowledge) =>
@@ -198,16 +197,16 @@ namespace Inceptum.Messaging
                                      unknownTypeCallback(type);
                                      acknowledge(0, true);
                                  },
-                             processingGroup,
+                             processingGroup,priority,
                              knownTypes);
         }
 
         public IDisposable Subscribe(Endpoint endpoint, CallbackDelegate<object> callback, Action<string, AcknowledgeDelegate> unknownTypeCallback,
             params Type[] knownTypes)
         {
-            return Subscribe(endpoint, callback, unknownTypeCallback, null, knownTypes);
+            return Subscribe(endpoint, callback, unknownTypeCallback, null,0, knownTypes);
         }
-        public IDisposable Subscribe(Endpoint endpoint, CallbackDelegate<object> callback, Action<string, AcknowledgeDelegate> unknownTypeCallback, string processingGroup, params Type[] knownTypes)
+        public IDisposable Subscribe(Endpoint endpoint, CallbackDelegate<object> callback, Action<string, AcknowledgeDelegate> unknownTypeCallback, string processingGroup, int priority = 0, params Type[] knownTypes)
         {
             if (endpoint.Destination == null) throw new ArgumentException("Destination can not be null");
             if (m_Disposing.WaitOne(0))
@@ -236,7 +235,7 @@ namespace Inceptum.Messaging
                                 return;
                             }
                             processMessage(m, messageType, message => callback(message, ack), ack, endpoint);
-                        }, null, processingGroup);
+                        }, null, processingGroup, priority);
                 }
                 catch (Exception e)
                 {
@@ -498,9 +497,9 @@ namespace Inceptum.Messaging
         }
 
 
-        private IDisposable subscribe(Endpoint endpoint, CallbackDelegate<BinaryMessage> callback, string messageType, string processingGroup)
+        private IDisposable subscribe(Endpoint endpoint, CallbackDelegate<BinaryMessage> callback, string messageType, string processingGroup, int priority)
         {
-            var subscription = m_SubscriptionManager.Subscribe(endpoint, callback, messageType, processingGroup);
+            var subscription = m_SubscriptionManager.Subscribe(endpoint, callback, messageType, processingGroup,priority);
 
             return createMessagingHandle(() =>
             {

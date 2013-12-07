@@ -33,15 +33,15 @@ namespace Inceptum.Messaging.Contract
         void Send<TMessage>(TMessage message, Endpoint endpoint, string processingGroup = null);
         void Send<TMessage>(TMessage message, Endpoint endpoint, int ttl, string processingGroup = null);
         void Send(object message, Endpoint endpoint, string processingGroup = null);
-        IDisposable Subscribe<TMessage>(Endpoint endpoint, Action<TMessage> callback);
-        IDisposable Subscribe<TMessage>(Endpoint endpoint, CallbackDelegate<TMessage> callback, string processingGroup = null);
         Destination CreateTemporaryDestination(string transportId, string processingGroup);
 
+        IDisposable Subscribe<TMessage>(Endpoint endpoint, Action<TMessage> callback);
+        IDisposable Subscribe<TMessage>(Endpoint endpoint, CallbackDelegate<TMessage> callback, string processingGroup = null, int priority = 0);
         IDisposable Subscribe(Endpoint endpoint, Action<object> callback, Action<string> unknownTypeCallback, params Type[] knownTypes);
-        IDisposable Subscribe(Endpoint endpoint, Action<object> callback, Action<string> unknownTypeCallback, string processingGroup, params Type[] knownTypes);
+        IDisposable Subscribe(Endpoint endpoint, Action<object> callback, Action<string> unknownTypeCallback, string processingGroup, int priority = 0, params Type[] knownTypes);
         //TODO: pass type to callback
         IDisposable Subscribe(Endpoint endpoint, CallbackDelegate<object> callback, Action<string, AcknowledgeDelegate> unknownTypeCallback, params Type[] knownTypes);
-        IDisposable Subscribe(Endpoint endpoint, CallbackDelegate<object> callback, Action<string, AcknowledgeDelegate> unknownTypeCallback, string processingGroup, params Type[] knownTypes);
+        IDisposable Subscribe(Endpoint endpoint, CallbackDelegate<object> callback, Action<string, AcknowledgeDelegate> unknownTypeCallback, string processingGroup, int priority = 0, params Type[] knownTypes);
       
         TResponse SendRequest<TRequest, TResponse>(TRequest request, Endpoint endpoint, long timeout = TransportConstants.DEFAULT_REQUEST_TIMEOUT);
         IDisposable SendRequestAsync<TRequest, TResponse>(TRequest request, Endpoint endpoint, Action<TResponse> callback, Action<Exception> onFailure, long timeout = TransportConstants.DEFAULT_REQUEST_TIMEOUT, string processingGroup = null);

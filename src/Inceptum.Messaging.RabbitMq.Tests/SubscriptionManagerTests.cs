@@ -53,11 +53,11 @@ namespace Inceptum.Messaging.RabbitMq.Tests
                   DateTime processed = default(DateTime);
                   DateTime acked = default(DateTime);
                   subscriptionManager.Subscribe(new Endpoint("test", "test", false, "fake"), (message, acknowledge) =>
-                  {
-                      processed = DateTime.Now;
-                      acknowledge(1000, true);
-                      Console.WriteLine(processed.ToString("HH:mm:ss.ffff") + " recieved");
-                  },null,"ProcessingGroup");
+                      {
+                          processed = DateTime.Now;
+                          acknowledge(1000, true);
+                          Console.WriteLine(processed.ToString("HH:mm:ss.ffff") + " recieved");
+                      },null,"ProcessingGroup", 0);
                   var acknowledged = new ManualResetEvent(false);
                   callback(new BinaryMessage {Bytes = new byte[0], Type = typeof (string).Name}, b =>
                   {
@@ -80,7 +80,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
                       {
                           acknowledge(60000, true);
                           Console.WriteLine(DateTime.Now.ToString("HH:mm:ss.ffff") + " received");
-                      }, null, "ProcessingGroup");
+                      }, null, "ProcessingGroup", 0);
                   
                   callback(new BinaryMessage { Bytes = new byte[0], Type = typeof(string).Name }, b => { acknowledged=true; Console.WriteLine(DateTime.Now.ToString("HH:mm:ss.ffff") + " acknowledged"); });
               }
@@ -111,10 +111,10 @@ namespace Inceptum.Messaging.RabbitMq.Tests
             using (var subscriptionManager = createSubscriptionManagerWithMockedDependencies(action => callback = action, action => emulateFail = action, onSubscribe ))
             {
                 var subscription =subscriptionManager.Subscribe(new Endpoint("test", "test", false, "fake"), (message, acknowledge) =>
-                {
-                    acknowledge(0, true);
-                    Console.WriteLine(DateTime.Now.ToString("HH:mm:ss.ffff") + " recieved");
-                }, null, "ProcessingGroup");
+                    {
+                        acknowledge(0, true);
+                        Console.WriteLine(DateTime.Now.ToString("HH:mm:ss.ffff") + " recieved");
+                    }, null, "ProcessingGroup", 0);
 
                 //First attempt fails next one happends in 1000ms and should be successfull
                 Assert.That(subscribed.WaitOne(1200), Is.True, "Has not resubscribed after first subscription fail");
@@ -160,7 +160,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
                     {
                         Thread.Sleep(rnd.Next(1,10));
                         acknowledge(delay.Key, true);
-                    }, null, "ProcessingGroup");
+                    }, null, "ProcessingGroup", 0);
                 for (int i = 0; i < messageCount; i++)
                     callback(new BinaryMessage {Bytes = new byte[0], Type = typeof (string).Name}, b =>
                         {

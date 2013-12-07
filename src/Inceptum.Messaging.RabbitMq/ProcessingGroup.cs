@@ -63,6 +63,8 @@ namespace Inceptum.Messaging.RabbitMq
                 properties.Type = message.Type;
             if (tuneMessage != null)
                 tuneMessage(properties);
+
+            properties.Headers.Add("initialRoute", destination.ToString());
             lock(m_Model)
                 m_Model.BasicPublish(destination, properties, message.Bytes);
         }
