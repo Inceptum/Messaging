@@ -109,7 +109,7 @@ namespace Inceptum.Messaging.InMemory
     internal class InMemoryProcessingGroup : IProcessingGroup
     {
         private readonly InMemoryTransport m_Transport;
-        readonly EventLoopScheduler m_Scheduler=new EventLoopScheduler(ts => new Thread(ts));
+        readonly EventLoopScheduler m_Scheduler=new EventLoopScheduler(ts => new Thread(ts){Name = "inmemory transport"});
         readonly CompositeDisposable m_Subscriptions=new CompositeDisposable();
         private bool m_IsDisposed=false;
 

@@ -4,33 +4,57 @@ using System.Configuration;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Threading.Tasks;
 using Inceptum.Messaging.Contract;
 using Inceptum.Messaging.InMemory;
 using Inceptum.Messaging.Transports;
+using Inceptum.Messaging.Utils;
 
 namespace Inceptum.Messaging
 {
     internal interface ITransportManager : IDisposable
     {
         event TransportEventHandler TransportEvents;
-        IProcessingGroup GetProcessingGroup(string transportId, string name, Action onFailure = null);
+        IPrioritisedProcessingGroup GetProcessingGroup(string transportId, string name, Action onFailure = null);
     }
 
     internal class TransportManager : ITransportManager
     {
         private class ResolvedTransport : IDisposable
         {
-            private class ProcessingGroupWrapper : IDisposable
+            private class ProcessingGroupWrapper : IDisposable, IPrioritisedProcessingGroup
             {
+                private readonly QueuedTaskScheduler m_TaskScheduler;
+                private readonly Dictionary<int,TaskFactory> m_TaskFactories=new Dictionary<int, TaskFactory>();
                 public string TransportId { get; private set; }
                 public string Name { get; private set; }
-                public IProcessingGroup ProcessingGroup { get; private set; }
+                private IProcessingGroup ProcessingGroup { get;  set; }
                 public event Action OnFailure;
 
-                public ProcessingGroupWrapper(string transportId, string name)
+                public ProcessingGroupWrapper(string transportId, string name, ProcessingGroupInfo processingGroupInfo)
                 {
                     TransportId = transportId;
                     Name = name;
+                    var threadCount = Math.Max(processingGroupInfo.ConcurrencyLevel, 1);
+                    m_TaskScheduler = new QueuedTaskScheduler(threadCount);
+                    m_TaskFactories = new Dictionary<int, TaskFactory>();
+                }
+
+                private TaskFactory getTaskFactory(int priority)
+                {
+                    if(priority<0)
+                        throw new ArgumentException("priority should be >0","priority");
+                    lock (m_TaskFactories)
+                    {
+                        TaskFactory factory;
+                        if (!m_TaskFactories.TryGetValue(priority, out factory))
+                        {
+                            var scheduler = m_TaskScheduler.ActivateNewQueue(priority);
+                            factory=new TaskFactory(scheduler);
+                            m_TaskFactories.Add(priority,factory);
+                        }
+                        return factory;
+                    }
                 }
 
                 public void SetProcessingGroup(IProcessingGroup processingGroup)
@@ -56,13 +80,41 @@ namespace Inceptum.Messaging
                     }
                 }
 
+
+
                 public void Dispose()
                 {
-                    if (ProcessingGroup != null)
-                    {
-                        ProcessingGroup.Dispose();
-                        ProcessingGroup = null;
-                    }
+                    if (ProcessingGroup == null) 
+                        return;
+                    ProcessingGroup.Dispose();
+                    ProcessingGroup = null;
+                }
+
+
+                public void Send(string destination, BinaryMessage message, int ttl)
+                {
+                    ProcessingGroup.Send(destination,message, ttl);
+                }
+
+                public RequestHandle SendRequest(string destination, BinaryMessage message, Action<BinaryMessage> callback)
+                {
+                    return ProcessingGroup.SendRequest(destination, message, callback);
+                }
+
+                public IDisposable RegisterHandler(string destination, Func<BinaryMessage, BinaryMessage> handler, string messageType)
+                {
+                    return ProcessingGroup.RegisterHandler(destination, handler, messageType);
+                }
+
+                public IDisposable Subscribe(string destination, Action<BinaryMessage, Action<bool>> callback, string messageType,int priority)
+                {
+                    var taskFactory = getTaskFactory(priority);
+                    return ProcessingGroup.Subscribe(destination, (message, ack) => taskFactory.StartNew(() => callback(message, ack)), messageType);
+                }
+
+                public Destination CreateTemporaryDestination()
+                {
+                    return ProcessingGroup.CreateTemporaryDestination();
                 }
             }
 
@@ -79,6 +131,7 @@ namespace Inceptum.Messaging
                 m_TransportInfo = transportInfo;
             }
 
+            
             public IEnumerable<string> KnownIds
             {
                 get { return m_KnownIds.ToArray(); }
@@ -95,7 +148,7 @@ namespace Inceptum.Messaging
             }
 
             [MethodImpl(MethodImplOptions.Synchronized)]
-            public IProcessingGroup GetProcessingGroup(string transportId, string name, Action onFailure)
+            public IPrioritisedProcessingGroup GetProcessingGroup(string transportId, string name, Action onFailure)
             {
                 addId(transportId);
                 var transport = Transport ?? (Transport = m_Factory.Create(m_TransportInfo, processTransportFailure));
@@ -107,8 +160,11 @@ namespace Inceptum.Messaging
 
                     if (processingGroup == null)
                     {
+                        ProcessingGroupInfo processingGroupInfo;
+                        if (!m_TransportInfo.ProcessingGroups.TryGetValue(name, out processingGroupInfo))
+                            processingGroupInfo = new ProcessingGroupInfo { ConcurrencyLevel = 1 };
 
-                        processingGroup = new ProcessingGroupWrapper(transportId, name);
+                        processingGroup = new ProcessingGroupWrapper(transportId, name, processingGroupInfo);
                         processingGroup.SetProcessingGroup(transport.CreateProcessingGroup(() => processProcessingGroupFailure(processingGroup)));
                         m_ProcessingGroups.Add(processingGroup);
                     }
@@ -116,7 +172,7 @@ namespace Inceptum.Messaging
 
                 if (onFailure != null)
                     processingGroup.OnFailure += onFailure;
-                return processingGroup.ProcessingGroup;
+                return processingGroup;
             }
 
             [MethodImpl(MethodImplOptions.Synchronized)]
@@ -205,7 +261,7 @@ namespace Inceptum.Messaging
 
         public event TransportEventHandler TransportEvents;
 
-        public IProcessingGroup GetProcessingGroup(string transportId, string name, Action onFailure = null)
+        public IPrioritisedProcessingGroup GetProcessingGroup(string transportId, string name, Action onFailure = null)
         {
             ResolvedTransport transport = resolveTransport(transportId);
 

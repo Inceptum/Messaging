@@ -1,7 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Inceptum.Messaging
 {
+    public class ProcessingGroupInfo
+    {
+        public int ConcurrencyLevel { get; set; } 
+    }
     public class TransportInfo
     {
         public TransportInfo(string broker, string login, string password, string jailStrategyName, string messaging="Sonic")
@@ -14,12 +19,16 @@ namespace Inceptum.Messaging
             Password = password;
             JailStrategyName = jailStrategyName;
             Messaging = messaging;
+            ProcessingGroups=new Dictionary<string, ProcessingGroupInfo>();
         }
 
         public string Broker { get; private set; }
         public string Login { get; private set; }
         public string Password { get; private set; }
         public string JailStrategyName { get; private set; }
+        public Dictionary<string, ProcessingGroupInfo> ProcessingGroups { get;  set; }
+
+
 
         public JailStrategy JailStrategy { get; internal set; }
 
