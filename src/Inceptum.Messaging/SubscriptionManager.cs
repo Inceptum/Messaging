@@ -9,6 +9,11 @@ using Inceptum.Messaging.Transports;
 
 namespace Inceptum.Messaging
 {
+    internal class Subscription
+    {
+        
+    }
+
     internal class SubscriptionManager:IDisposable
     {
         private readonly ITransportManager m_TransportManager;
@@ -52,8 +57,9 @@ namespace Inceptum.Messaging
                             m_Logger.InfoFormat("Subscription for endpoint {0} failure detected. Attempting subscribe again.", endpoint);
                             doSubscribe(0);
                         });
+                    //TODO[KN]: pass priority from consuming code
                     var subscription = procGroup.Subscribe(endpoint.Destination.Subscribe, (message, ack) => callback(message, createDeferredAcknowledge(ack)),
-                        messageType);
+                        messageType,0);
                     var brokenSubscription = subscriptionHandler.Disposable;
                     subscriptionHandler.Disposable = subscription;
                     try
