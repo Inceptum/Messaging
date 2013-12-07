@@ -38,7 +38,7 @@ namespace Inceptum.Messaging
             m_Resubscriber = new SchedulingBackgroundWorker("Resubscription", () => processResubscription());
         }
 
-        public IDisposable Subscribe(Endpoint endpoint, CallbackDelegate<BinaryMessage> callback, string messageType, string processingGroup )
+        public IDisposable Subscribe(Endpoint endpoint, CallbackDelegate<BinaryMessage> callback, string messageType, string processingGroup, int priority)
         {
             var subscriptionHandler = new MultipleAssignmentDisposable();
             Action<int> doSubscribe = null;
@@ -57,9 +57,8 @@ namespace Inceptum.Messaging
                             m_Logger.InfoFormat("Subscription for endpoint {0} failure detected. Attempting subscribe again.", endpoint);
                             doSubscribe(0);
                         });
-                    //TODO[KN]: pass priority from consuming code
                     var subscription = procGroup.Subscribe(endpoint.Destination.Subscribe, (message, ack) => callback(message, createDeferredAcknowledge(ack)),
-                        messageType,0);
+                        messageType,priority);
                     var brokenSubscription = subscriptionHandler.Disposable;
                     subscriptionHandler.Disposable = subscription;
                     try
