@@ -41,6 +41,18 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inceptum.Messaging.RabbitMq
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inceptum.Messaging.Tests", "Inceptum.Messaging.Tests\Inceptum.Messaging.Tests.csproj", "{E09A2ABA-52D4-40CC-8121-D85A59782BF8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inceptum.Messaging.Weblogic", "Inceptum.Messaging.Weblogic\Inceptum.Messaging.Weblogic.csproj", "{94823DB9-64E3-4B55-9F60-68DCDC92B20E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Weblogic", "Weblogic", "{10ECEE0C-92FA-4FB7-A5DB-64E421259564}"
+	ProjectSection(SolutionItems) = preProject
+		libs\Weblogic\WebLogic.Messaging.dll = libs\Weblogic\WebLogic.Messaging.dll
+		libs\Weblogic\WebLogic.Messaging.pdb = libs\Weblogic\WebLogic.Messaging.pdb
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inceptum.Messaging.Weblogic.Tests", "Inceptum.Messaging.Weblogic.Tests\Inceptum.Messaging.Weblogic.Tests.csproj", "{A96EB3A6-323E-42D5-9068-BD2861D1027C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inceptum.Messaging.Sonic.Tests", "Inceptum.Messaging.Sonic.Tests\Inceptum.Messaging.Sonic.Tests.csproj", "{79E8C884-24F1-4394-B6DB-C009EDA96B57}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -75,11 +87,24 @@ Global
 		{E09A2ABA-52D4-40CC-8121-D85A59782BF8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E09A2ABA-52D4-40CC-8121-D85A59782BF8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E09A2ABA-52D4-40CC-8121-D85A59782BF8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{94823DB9-64E3-4B55-9F60-68DCDC92B20E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{94823DB9-64E3-4B55-9F60-68DCDC92B20E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{94823DB9-64E3-4B55-9F60-68DCDC92B20E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{94823DB9-64E3-4B55-9F60-68DCDC92B20E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A96EB3A6-323E-42D5-9068-BD2861D1027C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A96EB3A6-323E-42D5-9068-BD2861D1027C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A96EB3A6-323E-42D5-9068-BD2861D1027C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A96EB3A6-323E-42D5-9068-BD2861D1027C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{79E8C884-24F1-4394-B6DB-C009EDA96B57}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{79E8C884-24F1-4394-B6DB-C009EDA96B57}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{79E8C884-24F1-4394-B6DB-C009EDA96B57}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{79E8C884-24F1-4394-B6DB-C009EDA96B57}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{1A217BA9-A72E-416E-BF63-1203AECB5DF5} = {73D7DA3F-5B5C-47CC-A6EF-98D713F13833}
+		{10ECEE0C-92FA-4FB7-A5DB-64E421259564} = {73D7DA3F-5B5C-47CC-A6EF-98D713F13833}
 	EndGlobalSection
 EndGlobal

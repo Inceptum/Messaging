@@ -4,23 +4,21 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
-using Castle.Core.Logging;
 using Castle.MicroKernel.Registration;
 using Castle.MicroKernel.Resolvers.SpecializedResolvers;
 using Castle.Windsor;
 using Inceptum.Messaging.Castle;
 using Inceptum.Messaging.Contract;
-using Inceptum.Messaging.Serialization;
 using Inceptum.Messaging.Sonic;
 using NUnit.Framework;
 using Rhino.Mocks;
 using Sonic.Jms;
 using Connection = Sonic.Jms.Ext.Connection;
 using ConnectionFactory = Sonic.Jms.Ext.ConnectionFactory;
-using QueueSession = Sonic.Jms.Ext.QueueSession;
 using QueueConnectionFactory = Sonic.Jms.Cf.Impl.QueueConnectionFactory;
-namespace Inceptum.Messaging.Tests
+using QueueSession = Sonic.Jms.Ext.QueueSession;
+
+namespace Inceptum.Messaging.Sonic.Tests
 {
     internal class FakeStringSerializer : IMessageSerializer<string>
     {
