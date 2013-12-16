@@ -83,7 +83,7 @@ namespace Inceptum.DataBus.Messaging
             var subscribing = new MultipleAssignmentDisposable();
         	
 			subscribing.Disposable = Scheduler
-        		.TaskPool
+                .Default
         		.Schedule((() =>
         		           	{
         		           		if (subscribtion.IsDisposing || subscribtion.IsDisposed)
