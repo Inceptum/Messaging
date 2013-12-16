@@ -15,7 +15,7 @@ namespace Inceptum.DataBus.Tests
         {
             IWindsorContainer container = new WindsorContainer();
             container.AddFacility<ChannelRegistrationFacility>();
-            container.Register(AllTypes.FromAssembly(GetType().Assembly).BasedOn(typeof (IFeedProvider<,>)).WithService.FromInterface());
+            container.Register(Classes.FromAssembly(GetType().Assembly).BasedOn(typeof (IFeedProvider<,>)).WithService.FromInterface());
             var bus = container.Resolve<IDataBus>();
             Assert.IsNotNull(bus, "Facility have not registered DataBus as component");
             IObservable<int> myChannelFeed = bus.Channel<int>("Channel1").Feed(10);
@@ -28,7 +28,7 @@ namespace Inceptum.DataBus.Tests
         {
             IWindsorContainer container = new WindsorContainer();
             container.AddFacility<ChannelRegistrationFacility>();
-            container.Register(AllTypes.FromAssembly(GetType().Assembly).BasedOn(typeof (IFeedProvider<,>)).WithService.FromInterface());
+            container.Register(Classes.FromAssembly(GetType().Assembly).BasedOn(typeof(IFeedProvider<,>)).WithService.FromInterface());
             var bus = container.Resolve<IDataBus>();
             Assert.IsNotNull(bus, "Facility have not registered DataBus as component");
             IObservable<int> myChannelFeed = bus.Channel<int>("Channel_With_Name").Feed(10);
@@ -41,7 +41,7 @@ namespace Inceptum.DataBus.Tests
         {
             IWindsorContainer container = new WindsorContainer();
             container.AddFacility<ChannelRegistrationFacility>();
-            container.Register(AllTypes.FromAssembly(GetType().Assembly).BasedOn(typeof (IFeedProvider<,>)).WithService.FromInterface());
+            container.Register(Classes.FromAssembly(GetType().Assembly).BasedOn(typeof(IFeedProvider<,>)).WithService.FromInterface());
             var bus = container.Resolve<IDataBus>();
             Assert.IsNotNull(bus, "Facility have not registered DataBus as component");
             IObservable<int> myOtherChannelFeed = bus.Channel<int>("ChannelWithDependency").Feed("10");
@@ -53,7 +53,7 @@ namespace Inceptum.DataBus.Tests
         {
             IWindsorContainer container = new WindsorContainer();
             container.AddFacility<ChannelRegistrationFacility>();
-            container.Register(AllTypes.FromAssembly(GetType().Assembly).BasedOn(typeof (IFeedProvider<,>)).WithService.FromInterface());
+            container.Register(Classes.FromAssembly(GetType().Assembly).BasedOn(typeof(IFeedProvider<,>)).WithService.FromInterface());
             var bus = container.Resolve<IDataBus>();
             Assert.IsNotNull(bus, "Facility have not registered DataBus as component");
             IObservable<int> myOtherChannelFeed = bus.Channel<int>("FeedWithExplicitlyNamedDependencyChannel").Feed("10");
@@ -65,7 +65,7 @@ namespace Inceptum.DataBus.Tests
 		{
 			IWindsorContainer container = new WindsorContainer();
 			container.AddFacility<ChannelRegistrationFacility>();
-			container.Register(AllTypes.FromAssembly(GetType().Assembly).BasedOn(typeof(IFeedProvider<,>)).WithService.FromInterface());
+            container.Register(Classes.FromAssembly(GetType().Assembly).BasedOn(typeof(IFeedProvider<,>)).WithService.FromInterface());
 			var bus = container.Resolve<IDataBus>();
 			Assert.IsNotNull(bus, "Facility have not registered DataBus as component");
 			IObservable<int> myOtherChannelFeed = bus.Channel<int>().Feed(5);
@@ -77,7 +77,7 @@ namespace Inceptum.DataBus.Tests
 		{
 			IWindsorContainer container = new WindsorContainer();
 			container.AddFacility<ChannelRegistrationFacility>();
-			container.Register(AllTypes.FromAssembly(GetType().Assembly).BasedOn(typeof(IFeedProvider<,>)).WithService.FromInterface());
+            container.Register(Classes.FromAssembly(GetType().Assembly).BasedOn(typeof(IFeedProvider<,>)).WithService.FromInterface());
 			var bus = container.Resolve<IDataBus>();
 			Assert.IsNotNull(bus, "Facility have not registered DataBus as component");
 			IObservable<long> myOtherChannelFeed = bus.Channel<long>().Feed(5L);
@@ -89,7 +89,7 @@ namespace Inceptum.DataBus.Tests
 		{
 			IWindsorContainer container = new WindsorContainer();
 			container.AddFacility<ChannelRegistrationFacility>();
-			container.Register(AllTypes.FromAssembly(GetType().Assembly).BasedOn(typeof(IFeedProvider<,>)).WithService.FromInterface());
+            container.Register(Classes.FromAssembly(GetType().Assembly).BasedOn(typeof(IFeedProvider<,>)).WithService.FromInterface());
 			var bus = container.Resolve<IDataBus>();
 			Assert.IsNotNull(bus, "Facility have not registered DataBus as component");
 			IObservable<DateTime> myOtherChannelFeed = bus.Channel<DateTime>().Feed(5);

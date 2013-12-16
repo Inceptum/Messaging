@@ -68,7 +68,7 @@ namespace Inceptum.DataBus.Messaging
             var hb = lastHb;
 
             var errorMessage = string.Format("Heartbeats for context {0} were lost", context);
-            return Scheduler.ThreadPool.Schedule(
+            return Scheduler.Default.Schedule(
                 DateTime.Now.AddMilliseconds(heartBeatInterval * Tolerance),
                 (() =>
                 {
