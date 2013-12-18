@@ -117,7 +117,8 @@ namespace Inceptum.DataBus.Messaging
             {
                 Destination = endpoint.Destination + ".hb",
                 SharedDestination = false,
-                TransportId = endpoint.TransportId
+                TransportId = endpoint.TransportId,
+                SerializationFormat = endpoint.SerializationFormat
             };
         }
 
