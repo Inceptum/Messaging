@@ -53,8 +53,6 @@ namespace Inceptum.DataBus.Tests.Messaging
             }
         }
 
-
-
         [Test(Description = "Test of internal logic - observable should be deffered with notfication on subscription finished.")]
         public void SubscribtionFinishedCallbackTest()
         {

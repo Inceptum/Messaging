@@ -5,7 +5,6 @@ using System.Linq;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading;
-using DataBusTests;
 using Inceptum.DataBus;
 using NUnit.Framework;
 using Rhino.Mocks;
