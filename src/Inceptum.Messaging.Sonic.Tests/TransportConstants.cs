@@ -1,4 +1,4 @@
-﻿namespace Inceptum.Messaging.Tests
+﻿namespace Inceptum.Messaging.Sonic.Tests
 {
     public class TransportConstants
     {

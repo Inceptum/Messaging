@@ -58,21 +58,6 @@
     <Reference Include="Rhino.Mocks">
       <HintPath>..\packages\RhinoMocks.3.6.1\lib\net\Rhino.Mocks.dll</HintPath>
     </Reference>
-    <Reference Include="Sonic.Client">
-      <HintPath>..\libs\Sonic\Sonic.Client.dll</HintPath>
-    </Reference>
-    <Reference Include="Sonic.Client.Jms.Impl">
-      <HintPath>..\libs\Sonic\Sonic.Client.Jms.Impl.dll</HintPath>
-    </Reference>
-    <Reference Include="Sonic.Jms">
-      <HintPath>..\libs\Sonic\Sonic.Jms.dll</HintPath>
-    </Reference>
-    <Reference Include="Sonic.Jms.Cf.Impl">
-      <HintPath>..\libs\Sonic\Sonic.Jms.Cf.Impl.dll</HintPath>
-    </Reference>
-    <Reference Include="Sonic.Security">
-      <HintPath>..\libs\Sonic\Sonic.Security.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
@@ -96,10 +81,8 @@
     <Compile Include="InMemoryTransportTests.cs" />
     <Compile Include="InvestigationTests.cs" />
     <Compile Include="MessagingEngineTests.cs" />
-    <Compile Include="MessagingEngineTests.SonicDependent.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SerializationManagerTests.cs" />
-    <Compile Include="TransportConstants.cs" />
     <Compile Include="TransportManagerTests.cs" />
   </ItemGroup>
   <ItemGroup>
