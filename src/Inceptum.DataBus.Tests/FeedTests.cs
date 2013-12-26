@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading;
-using DataBusTests;
- 
 using NUnit.Framework;
 using Rhino.Mocks;
 

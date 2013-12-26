@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading;
-using Inceptum.DataBus;
 
-namespace DataBusTests
+namespace Inceptum.DataBus.Tests
 {
     public class MyFeedProvider : IFeedProvider<string, int>
     {

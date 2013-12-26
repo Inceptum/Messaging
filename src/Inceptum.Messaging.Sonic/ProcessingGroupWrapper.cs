@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Globalization;
-using System.Runtime.CompilerServices;
 using Inceptum.Messaging.Transports;
 using Sonic.Jms;
 using Destination = Inceptum.Messaging.Contract.Destination;
@@ -9,12 +8,12 @@ namespace Inceptum.Messaging.Sonic
 {
     internal class ProcessingGroupWrapper : IProcessingGroup
     {
-        private static QueueConnection m_Connection;
-        private static string m_JailedTag;
+        private readonly QueueConnection m_Connection;
+        private readonly string m_JailedTag;
         private readonly MessageFormat m_MessageFormat;
-        private IProcessingGroup m_Instance;
-        private bool m_IsQueueGroup;
-
+        private volatile IProcessingGroup m_Instance;
+        private volatile bool m_IsQueueGroup;
+        private readonly object m_SyncRoot = new object();
 
         public ProcessingGroupWrapper(QueueConnection connection, string jailedTag, MessageFormat messageFormat)
         {
@@ -23,10 +22,19 @@ namespace Inceptum.Messaging.Sonic
             m_Connection = connection;
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
         public void Dispose()
         {
-            if (m_Instance != null) m_Instance.Dispose();
+            if (m_Instance != null)
+            {
+                lock (m_SyncRoot)
+                {
+                    if (m_Instance != null)
+                    {
+                        m_Instance.Dispose();
+                        m_Instance = null;
+                    }
+                }
+            }
         }
 
         public IDisposable Subscribe(string destination, Action<BinaryMessage, Action<bool>> callback, string messageType)
@@ -53,34 +61,36 @@ namespace Inceptum.Messaging.Sonic
             return m_Instance.RegisterHandler(destination, handler, messageType);
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
         private void ensureProcessingGroupIsCreated(string destination)
         {
             if (m_Instance != null)
             {
                 if (m_IsQueueGroup != isQueue(destination))
-                    throw new InvalidOperationException(
-                        string.Format("Can not process  {0} {1} as it is already used for {2} processing. Sonic does not support processing topic and queue in same thread",
-                            m_IsQueueGroup ? "Topic" : "Queue", destination, m_IsQueueGroup ? "Queue" : "Topic"));
+                    throw new InvalidOperationException(string.Format("Can not process {0} {1} as it is already used for {2} processing. Sonic does not support processing topic and queue in same thread", m_IsQueueGroup ? "Topic" : "Queue", destination, m_IsQueueGroup ? "Queue" : "Topic"));
                 return;
             }
-            m_IsQueueGroup = isQueue(destination);
-            if (m_IsQueueGroup)
-                m_Instance = new QueueProcessingGroup(m_Connection, m_JailedTag, m_MessageFormat);
-            else
-                m_Instance = new TopicProcessingGroup(m_Connection, m_JailedTag, m_MessageFormat);
+
+            lock (m_SyncRoot)
+            {
+                if (m_Instance == null)
+                {
+                    m_IsQueueGroup = isQueue(destination);
+                    if (m_IsQueueGroup)
+                        m_Instance = new QueueProcessingGroup(m_Connection, m_JailedTag, m_MessageFormat);
+                    else
+                        m_Instance = new TopicProcessingGroup(m_Connection, m_JailedTag, m_MessageFormat);
+                }
+            }
         }
 
         private bool isQueue(string destination)
         {
-            if (destination.StartsWith("queue://", true,
-                CultureInfo.InvariantCulture))
+            if (destination.StartsWith("queue://", true, CultureInfo.InvariantCulture))
             {
                 return true;
             }
 
-            if (destination.StartsWith("topic://", true,
-                CultureInfo.InvariantCulture))
+            if (destination.StartsWith("topic://", true, CultureInfo.InvariantCulture))
             {
                 return false;
             }

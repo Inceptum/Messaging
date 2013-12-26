@@ -20,7 +20,7 @@ namespace Inceptum.DataBus
 
         public IDisposable InitResubscription(Action doSubscribe, Exception exception)
         {
-            return Scheduler.TaskPool.Schedule(TimeSpan.FromMilliseconds(_retryPeriod), doSubscribe);
+            return Scheduler.Default.Schedule(TimeSpan.FromMilliseconds(_retryPeriod), doSubscribe);
         }
     }
 }

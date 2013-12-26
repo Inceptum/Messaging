@@ -178,13 +178,17 @@ namespace Inceptum.Messaging
             [MethodImpl(MethodImplOptions.Synchronized)]
             private void processTransportFailure()
             {
+                ProcessingGroupWrapper[] processingGroupWrappers;
                 lock (m_ProcessingGroups)
                 {
-                    foreach (var processinGroup in m_ProcessingGroups)
-                    {
-                        processProcessingGroupFailure(processinGroup);
-                    }
+                    processingGroupWrappers = m_ProcessingGroups.ToArray();
                 }
+
+                foreach (var processingGroup in processingGroupWrappers)
+                {
+                    processProcessingGroupFailure(processingGroup);
+                }
+
                 m_ProcessTransportFailure();
             }
 
