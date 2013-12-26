@@ -41,7 +41,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
 
         private const string TEST_QUEUE = "test.queue";
         private const string TEST_EXCHANGE = "test.exchange";
-        private const string HOST = "sr-tls01-s01.test-s02.uniservers.ru";
+        private const string HOST = "localhost";
         private IConnection m_Connection;
         private IModel m_Channel;
         private ConnectionFactory m_Factory;
