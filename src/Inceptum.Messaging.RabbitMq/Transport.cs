@@ -13,10 +13,28 @@ namespace Inceptum.Messaging.RabbitMq
         private readonly ConnectionFactory m_Factory;
         private readonly List<ProcessingGroup> m_ProcessingGroups = new List<ProcessingGroup>();
         readonly ManualResetEvent m_IsDisposed=new ManualResetEvent(false);
-        public Transport(string host, string username, string password)
+        public Transport(string broker, string username, string password)
         {
-            if (host == null) throw new ArgumentNullException("host");
-            m_Factory = new ConnectionFactory { HostName = host,UserName = username,Password = password};
+            if (broker == null) throw new ArgumentNullException("broker");
+            var f = new ConnectionFactory() { };
+
+            Uri uri = null;
+            f.UserName = username;
+            f.Password = password;
+
+            if (Uri.TryCreate(broker, UriKind.Absolute, out uri))
+            {
+                f.Uri = broker;
+            }
+            else
+            {
+                f.HostName = broker;
+            }
+
+            m_Factory = f;
+
+ 
+
         }
  
         public void Dispose()
