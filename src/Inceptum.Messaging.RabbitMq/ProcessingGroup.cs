@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Reactive.Disposables;
@@ -58,6 +59,7 @@ namespace Inceptum.Messaging.RabbitMq
         private void send(PublicationAddress destination, BinaryMessage message, Action<IBasicProperties> tuneMessage = null)
         {
             var properties = m_Model.CreateBasicProperties();
+            properties.Headers = new Hashtable();
             properties.DeliveryMode = 2;//persistent
             if (message.Type != null)
                 properties.Type = message.Type;

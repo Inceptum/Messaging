@@ -50,7 +50,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
         [TestFixtureSetUp]
         public void TestFixtureSetUp()
         {
-            m_Factory = new ConnectionFactory {HostName = HOST, UserName = "guest", Password = "guest"};
+            m_Factory = new ConnectionFactory { HostName = HOST, UserName = "guest", Password = "guest" };
             using (IConnection connection = m_Factory.CreateConnection())
             using (IModel channel = connection.CreateModel())
             {
