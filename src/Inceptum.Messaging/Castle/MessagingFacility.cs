@@ -68,6 +68,7 @@ namespace Inceptum.Messaging.Castle
         public MessagingFacility WithConfiguration(IMessagingConfiguration configuration)
         {
             AddInitStep((kernel) => MessagingConfiguration=configuration);
+            return this;
         }
 
         public MessagingFacility(IDictionary<string, TransportInfo> transports, IDictionary<string, JailStrategy> jailStrategies = null)
