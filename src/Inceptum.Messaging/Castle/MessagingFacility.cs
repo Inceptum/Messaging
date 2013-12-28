@@ -75,7 +75,7 @@ namespace Inceptum.Messaging.Castle
         
         public MessagingFacility WithConfiguration(IMessagingConfiguration configuration)
         {
-            AddInitStep((kernel) => MessagingConfiguration=configuration);
+            MessagingConfiguration=configuration;
             return this;
         }
 
