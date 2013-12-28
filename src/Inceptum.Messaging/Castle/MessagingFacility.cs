@@ -63,6 +63,12 @@ namespace Inceptum.Messaging.Castle
             return this;
         }
 
+        public MessagingFacility WithTransportFactory<T>() where T : ITransportFactory, new()
+        {
+            m_TransportFactories.Add(Activator.CreateInstance<T>());
+            return this;
+        }
+
         public MessagingFacility WithTransport(string name, TransportInfo transport)
         {
             if (m_IsExplicitConfigurationProvided)
