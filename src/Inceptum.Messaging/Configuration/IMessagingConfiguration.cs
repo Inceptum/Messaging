@@ -5,7 +5,7 @@ namespace Inceptum.Messaging.Configuration
 {
     public interface IMessagingConfiguration
     {
-        Dictionary<string, TransportInfo> GetTransports();
-        Dictionary<string, Endpoint> GetEndpoints();
+        IDictionary<string, TransportInfo> GetTransports();
+        IDictionary<string, Endpoint> GetEndpoints();
     }
 }

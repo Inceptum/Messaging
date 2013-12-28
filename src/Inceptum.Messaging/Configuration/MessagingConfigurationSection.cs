@@ -28,7 +28,7 @@ namespace Inceptum.Messaging.Configuration
             get { return (EndpointsCollection) base["endpoints"]; }
         }
 
-        public Dictionary<string, TransportInfo> GetTransports()
+        public IDictionary<string, TransportInfo> GetTransports()
         {
             return Transports.Cast<TransportConfigurationElement>()
                              .ToDictionary(tce => tce.Name,
@@ -37,7 +37,7 @@ namespace Inceptum.Messaging.Configuration
                                                              tce.Messaging));
         }
 
-        public Dictionary<string, Endpoint> GetEndpoints()
+        public IDictionary<string, Endpoint> GetEndpoints()
         {
             return Endpoints.Cast<EndpointConfigurationElement>().ToDictionary(ece => ece.Name, ece => new Endpoint(ece.TransportId, ece.Destination, ece.SharedDestination, ece.SerializationFormat));
         }
