@@ -15,6 +15,28 @@ using Inceptum.Messaging.Serialization;
 
 namespace Inceptum.Messaging.Castle
 {
+
+
+    public class MessagingConfiguration : IMessagingConfiguration
+    {
+        public MessagingConfiguration()
+        {
+            Transports = new Dictionary<string, TransportInfo>();
+            Endpoints = new Dictionary<string, Endpoint>();
+        }
+
+        public IDictionary<string, TransportInfo> Transports { get; set; }
+        public IDictionary<string, Endpoint> Endpoints { get; set; }
+        public IDictionary<string, TransportInfo> GetTransports()
+        {
+            return Transports;
+        }
+
+        public IDictionary<string, Endpoint> GetEndpoints()
+        {
+            return Endpoints;
+        }
+    }
     public class MessagingFacility : AbstractFacility
     {
         private IDictionary<string, TransportInfo> m_Transports;
@@ -23,6 +45,7 @@ namespace Inceptum.Messaging.Castle
         private readonly List<IHandler> m_SerializerFactoryWaitList = new List<IHandler>();
         private readonly List<IHandler> m_MessageHandlerWaitList = new List<IHandler>();
         private IMessagingEngine m_MessagingEngine;
+        private readonly List<Action<IKernel>> m_InitSteps = new List<Action<IKernel>>();
 
         public IDictionary<string, TransportInfo> Transports
         {
@@ -36,16 +59,26 @@ namespace Inceptum.Messaging.Castle
             set { m_JailStrategies = value; }
         }
 
-        public IMessagingConfiguration MessagingConfiguration { get; set; }
+        private IMessagingConfiguration MessagingConfiguration { get; set; }
 
         public MessagingFacility()
         {
         }
 
+        public MessagingFacility WithConfiguration(IMessagingConfiguration configuration)
+        {
+            AddInitStep((kernel) => MessagingConfiguration=configuration);
+        }
+
         public MessagingFacility(IDictionary<string, TransportInfo> transports, IDictionary<string, JailStrategy> jailStrategies = null)
         {
-            m_Transports = transports;
+            Transports = transports;
             m_JailStrategies = jailStrategies;
+        }
+
+        public void AddInitStep(Action<IKernel> step)
+        {
+            m_InitSteps.Add(step);
         }
 
         protected override void Init()
@@ -56,10 +89,12 @@ namespace Inceptum.Messaging.Castle
             if (messagingConfiguration != null && transports != null)
                 throw new Exception("Messaging facility can be configured via transports parameter or via MessagingConfiguration property, not both.");
 
-            Kernel.Register(
-                Component.For<IMessagingEngine>().ImplementedBy<MessagingEngine>()
-                );
-            
+            foreach (var initStep in m_InitSteps)
+            {
+                initStep(Kernel);
+            }
+
+
             if (messagingConfiguration != null)
             {
                 transports = messagingConfiguration.GetTransports();
@@ -73,15 +108,19 @@ namespace Inceptum.Messaging.Castle
                 Kernel.Resolver.AddSubResolver(endpointResolver);
             }
 
-            if (transports != null)
-            {
-                Kernel.Register(Component.For<ITransportResolver>().ImplementedBy<TransportResolver>().DependsOn(new { transports, jailStrategies = m_JailStrategies }));
-            }
+            m_MessagingEngine = new MessagingEngine(new TransportResolver(transports ?? new Dictionary<string, TransportInfo>(), m_JailStrategies));
 
-
-            m_MessagingEngine = Kernel.Resolve<IMessagingEngine>();
+            Kernel.Register(
+                 Component.For<IMessagingEngine>().Instance(m_MessagingEngine)
+                );
             Kernel.ComponentRegistered += onComponentRegistered;
             Kernel.ComponentModelCreated += ProcessModel;
+        }
+
+        protected override void Dispose()
+        {
+            m_MessagingEngine.Dispose();
+            base.Dispose();
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]

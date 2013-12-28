@@ -49,7 +49,7 @@ namespace Inceptum.Messaging.Tests.Castle
             {
                 container.Kernel.Resolver.AddSubResolver(new ArrayResolver(container.Kernel));
                 container.AddFacility<MessagingFacility>(m => m.MessagingConfiguration = m_MessagingConfiguration);
-                var transportResolver = container.Resolve<ITransportResolver>();
+                var transportResolver = (container.Resolve<IMessagingEngine>() as MessagingEngine).TransportManager.TransportResolver;
                 Assert.That(transportResolver.GetTransport("transport-id-1"), Is.Not.Null.And.EqualTo(m_Transport1));
                 Assert.That(transportResolver.GetTransport("transport-id-2"), Is.Not.Null.And.EqualTo(m_Transport2));
 
@@ -72,7 +72,7 @@ namespace Inceptum.Messaging.Tests.Castle
                             {"transport-id-1", m_Transport1},
                             {"transport-id-2", m_Transport2},
                         });
-                var transportResolver = container.Resolve<ITransportResolver>();
+                var transportResolver = (container.Resolve<IMessagingEngine>() as MessagingEngine).TransportManager.TransportResolver;
                 Assert.That(transportResolver.GetTransport("transport-id-1"), Is.Not.Null.And.EqualTo(m_Transport1));
                 Assert.That(transportResolver.GetTransport("transport-id-2"), Is.Not.Null.And.EqualTo(m_Transport2));
             }
@@ -89,7 +89,7 @@ namespace Inceptum.Messaging.Tests.Castle
                         {"transport-id-1", m_Transport1},
                         {"transport-id-2", m_Transport2},
                     }));
-                var transportResolver = container.Resolve<ITransportResolver>();
+                var transportResolver = (container.Resolve<IMessagingEngine>() as MessagingEngine).TransportManager.TransportResolver;
                 Assert.That(transportResolver.GetTransport("transport-id-1"), Is.Not.Null.And.EqualTo(m_Transport1));
                 Assert.That(transportResolver.GetTransport("transport-id-2"), Is.Not.Null.And.EqualTo(m_Transport2));
             }

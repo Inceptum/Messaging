@@ -15,26 +15,42 @@ namespace Inceptum.Messaging.Castle
     public class MessageHandlerActivator : DefaultComponentActivator 
     {
         private const long FAILED_COMMAND_RETRY_DELAY = 60000;
-        private readonly IMessagingEngine m_MessagingEngine;
+        private IMessagingEngine m_MessagingEngine;
         private readonly string[] m_Endpoints;
         readonly Dictionary<Type, Func<object, CommandHandlingResult>> m_Handlers = new Dictionary<Type, Func<object, CommandHandlingResult>>();
         private CompositeDisposable m_Subscriptions;
+        private object m_Lock=new object();
 
         public MessageHandlerActivator(ComponentModel model, IKernelInternal kernel, ComponentInstanceDelegate onCreation, ComponentInstanceDelegate onDestruction) : base(model, kernel, onCreation, onDestruction)
         {
             m_Endpoints=model.ExtendedProperties["MessageHandlerFor"] as string[];
-            m_MessagingEngine = Kernel.Resolve<IMessagingEngine>();
-
+         
         }
 
-      
+        private IMessagingEngine MessagingEngine
+        {
+            get
+            {
+                if (m_MessagingEngine == null)
+                {
+                    lock (m_Lock)
+                    {
+                        if (m_MessagingEngine == null)
+                            m_MessagingEngine = Kernel.Resolve<IMessagingEngine>();
+
+                    }
+                }
+                return m_MessagingEngine;
+            }
+        }
+
         public override object Create(CreationContext context, Burden burden)
         {
             var component = base.Create(context, burden);
             var types = wire(component).ToArray();
             m_Subscriptions = new CompositeDisposable(
                 m_Endpoints.Select(endpoint =>
-                    m_MessagingEngine.Subscribe(
+                    MessagingEngine.Subscribe(
                         (Endpoint) Kernel.Resolver.Resolve(context, context.Handler, Model, new DependencyModel(endpoint,typeof(Endpoint),false)) ,
                         dispatch,
                         (type, acknowledge) =>
