@@ -56,13 +56,12 @@ namespace Inceptum.Messaging
         public MessagingEngine(ITransportResolver transportResolver, params ITransportFactory[] transportFactories)
             : this(new TransportManager(transportResolver, transportFactories))
         {
-        } 
-        
-        public MessagingEngine(ITransportResolver transportResolver)
-            : this(new TransportManager(transportResolver))
-        {
         }
 
+        internal TransportManager TransportManager
+        {
+            get { return m_TransportManager; }
+        }
 
         public ISerializationManager SerializationManager
         {

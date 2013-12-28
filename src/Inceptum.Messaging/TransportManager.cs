@@ -246,6 +246,11 @@ namespace Inceptum.Messaging
             m_TransportResolver = transportResolver;
         }
 
+        public ITransportResolver TransportResolver
+        {
+            get { return m_TransportResolver; }
+        }
+
         #region IDisposable Members
 
         public void Dispose()
