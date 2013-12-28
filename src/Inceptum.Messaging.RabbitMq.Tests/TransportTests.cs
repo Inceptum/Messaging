@@ -264,7 +264,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
         }
 
         [Test]
-        public void UnknownMessageTypHandlereWaitingDoesNotPreventTransportDisposeTest()
+        public void UnknownMessageTypeHandlerWaitingDoesNotPreventTransportDisposeTest()
         {
             var received = new ManualResetEvent(false);
             Thread connectionThread = null;
@@ -280,6 +280,8 @@ namespace Inceptum.Messaging.RabbitMq.Tests
                 Assert.That(received.WaitOne(100), Is.True, "Message was not delivered");
                 processingGroup.Send(TEST_EXCHANGE, new BinaryMessage {Bytes = new byte[] {0x0, 0x1, 0x2}, Type = "type2"}, 0);
             }
+
+            Thread.Sleep(200);
             Assert.That(connectionThread.ThreadState, Is.EqualTo(ThreadState.Stopped), "Processing thread is still active in spite of transport dispose");
         }
 
