@@ -66,12 +66,8 @@ namespace Inceptum.Messaging.Tests.Castle
             using (IWindsorContainer container = new WindsorContainer())
             {
                 container.Kernel.Resolver.AddSubResolver(new ArrayResolver(container.Kernel));
-                container.AddFacility<MessagingFacility>(
-                    m => m.Transports = new Dictionary<string, TransportInfo>()
-                        {
-                            {"transport-id-1", m_Transport1},
-                            {"transport-id-2", m_Transport2},
-                        });
+                container.AddFacility<MessagingFacility>(f => f.WithTransport("transport-id-1", m_Transport1)
+                                                               .WithTransport("transport-id-2", m_Transport2));
                 var transportResolver = (container.Resolve<IMessagingEngine>() as MessagingEngine).TransportManager.TransportResolver;
                 Assert.That(transportResolver.GetTransport("transport-id-1"), Is.Not.Null.And.EqualTo(m_Transport1));
                 Assert.That(transportResolver.GetTransport("transport-id-2"), Is.Not.Null.And.EqualTo(m_Transport2));
@@ -84,11 +80,7 @@ namespace Inceptum.Messaging.Tests.Castle
             using (IWindsorContainer container = new WindsorContainer())
             {
                 container.Kernel.Resolver.AddSubResolver(new ArrayResolver(container.Kernel));
-                container.AddFacility(new MessagingFacility(new Dictionary<string, TransportInfo>()
-                    {
-                        {"transport-id-1", m_Transport1},
-                        {"transport-id-2", m_Transport2},
-                    }));
+                container.AddFacility<MessagingFacility>(f => f.WithTransport("transport-id-1", m_Transport1).WithTransport("transport-id-2", m_Transport2));
                 var transportResolver = (container.Resolve<IMessagingEngine>() as MessagingEngine).TransportManager.TransportResolver;
                 Assert.That(transportResolver.GetTransport("transport-id-1"), Is.Not.Null.And.EqualTo(m_Transport1));
                 Assert.That(transportResolver.GetTransport("transport-id-2"), Is.Not.Null.And.EqualTo(m_Transport2));
