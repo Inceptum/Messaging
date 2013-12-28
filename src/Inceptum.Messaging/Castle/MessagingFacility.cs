@@ -92,17 +92,17 @@ namespace Inceptum.Messaging.Castle
 
         protected override void Init()
         {
+          foreach (var initStep in m_InitSteps)
+            {
+                initStep(Kernel);
+            }
             var messagingConfiguration = MessagingConfiguration;
             var transports = m_Transports;
 
             if (messagingConfiguration != null && transports != null)
                 throw new Exception("Messaging facility can be configured via transports parameter or via MessagingConfiguration property, not both.");
 
-            foreach (var initStep in m_InitSteps)
-            {
-                initStep(Kernel);
-            }
-
+  
 
             if (messagingConfiguration != null)
             {
