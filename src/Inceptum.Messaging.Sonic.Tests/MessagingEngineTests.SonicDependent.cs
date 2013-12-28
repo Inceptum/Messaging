@@ -341,7 +341,6 @@ namespace Inceptum.Messaging.Sonic.Tests
             using (IWindsorContainer container = new WindsorContainer())
             {
                 container.Kernel.Resolver.AddSubResolver(new ArrayResolver(container.Kernel));
-                container.Register(Component.For<ITransportFactory>().ImplementedBy<SonicTransportFactory>());
                 container.AddFacility(new MessagingFacility(
                                           new Dictionary<string, TransportInfo>
                                               {
@@ -351,7 +350,7 @@ namespace Inceptum.Messaging.Sonic.Tests
                                                                         TransportConstants.USERNAME,
                                                                         TransportConstants.PASSWORD, "MachineName")
                                                       }
-                                              }));
+                                              }).WithTransportFactory(new SonicTransportFactory()));
                 var factory = MockRepository.GenerateMock<ISerializerFactory>();
                 factory.Expect(f => f.SerializationFormat).Return("fake");
                 factory.Expect(f => f.Create<string>()).Return(new FakeStringSerializer());

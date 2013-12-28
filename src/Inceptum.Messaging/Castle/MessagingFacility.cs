@@ -46,6 +46,7 @@ namespace Inceptum.Messaging.Castle
         private readonly List<IHandler> m_MessageHandlerWaitList = new List<IHandler>();
         private IMessagingEngine m_MessagingEngine;
         private readonly List<Action<IKernel>> m_InitSteps = new List<Action<IKernel>>();
+        private List<ITransportFactory> m_TransportFactories=new List<ITransportFactory>();
 
         public IDictionary<string, TransportInfo> Transports
         {
@@ -65,6 +66,13 @@ namespace Inceptum.Messaging.Castle
         {
         }
 
+        public MessagingFacility WithTransportFactory(ITransportFactory factory)
+        {
+            m_TransportFactories.Add(factory);
+            return this;
+        }
+       
+        
         public MessagingFacility WithConfiguration(IMessagingConfiguration configuration)
         {
             AddInitStep((kernel) => MessagingConfiguration=configuration);
@@ -109,7 +117,7 @@ namespace Inceptum.Messaging.Castle
                 Kernel.Resolver.AddSubResolver(endpointResolver);
             }
 
-            m_MessagingEngine = new MessagingEngine(new TransportResolver(transports ?? new Dictionary<string, TransportInfo>(), m_JailStrategies));
+            m_MessagingEngine = new MessagingEngine(new TransportResolver(transports ?? new Dictionary<string, TransportInfo>(), m_JailStrategies), m_TransportFactories.ToArray());
 
             Kernel.Register(
                  Component.For<IMessagingEngine>().Instance(m_MessagingEngine)
