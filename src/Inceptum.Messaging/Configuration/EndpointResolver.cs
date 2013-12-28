@@ -11,9 +11,8 @@ namespace Inceptum.Messaging.Configuration
     public class EndpointResolver : IEndpointProvider, ISubDependencyResolver
     {
         private readonly Dictionary<string, Endpoint> m_Endpoints;
-        public EndpointResolver(Dictionary<string, Endpoint> endpoints)
+        public EndpointResolver(IDictionary<string, Endpoint> endpoints)
         {
-            m_Endpoints = endpoints;
             m_Endpoints = new Dictionary<string, Endpoint>(endpoints, StringComparer.InvariantCultureIgnoreCase);
         }
 
