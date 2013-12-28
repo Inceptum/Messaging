@@ -140,12 +140,12 @@ namespace Inceptum.Messaging.Tests.Castle
             m_Endpoints = endpoints;
         }
 
-        public Dictionary<string, TransportInfo> GetTransports()
+        public IDictionary<string, TransportInfo> GetTransports()
         {
             return m_TransportInfos;
         }
 
-        public Dictionary<string, Endpoint> GetEndpoints()
+        public IDictionary<string, Endpoint> GetEndpoints()
         {
             return m_Endpoints;
         }
