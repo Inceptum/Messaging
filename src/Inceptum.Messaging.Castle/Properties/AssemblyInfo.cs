@@ -4,5 +4,4 @@ using System.Runtime.InteropServices;
 
  
 [assembly: AssemblyTitle("Inceptum.Messaging.Castle")]
-[assembly: AssemblyDescription("")]
 [assembly: ComVisible(false)]
