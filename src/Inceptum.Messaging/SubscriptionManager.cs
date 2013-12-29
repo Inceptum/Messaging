@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Disposables;
-using Castle.Core.Logging;
 using Inceptum.Core.Utils;
 using Inceptum.Messaging.Contract;
 using Inceptum.Messaging.Transports;
+using NLog;
 
 namespace Inceptum.Messaging
 {
@@ -21,14 +21,9 @@ namespace Inceptum.Messaging
         readonly List<Tuple<DateTime, Action>> m_ResubscriptionSchedule = new List<Tuple<DateTime, Action>>();
         private readonly SchedulingBackgroundWorker m_DeferredAcknowledger;
         private readonly SchedulingBackgroundWorker m_Resubscriber;
-        private ILogger m_Logger = NullLogger.Instance;
+        readonly Logger m_Logger = LogManager.GetCurrentClassLogger();
         private int m_ResubscriptionTimeout;
-
-        public ILogger Logger
-        {
-            get { return m_Logger; }
-            set { m_Logger = value??NullLogger.Instance; }
-        }
+ 
 
         public SubscriptionManager(ITransportManager transportManager, int resubscriptionTimeout=60000)
         {
@@ -47,14 +42,14 @@ namespace Inceptum.Messaging
                 if (subscriptionHandler.IsDisposed)
                     return;
                 if (attemptNumber > 0)
-                    m_Logger.InfoFormat("Resubscribing for endpoint {0}. Attempt# {1}", endpoint, attemptNumber);
+                    m_Logger.Info("Resubscribing for endpoint {0}. Attempt# {1}", endpoint, attemptNumber);
                 else
-                    m_Logger.InfoFormat("Subscribing for endpoint {0}", endpoint);
+                    m_Logger.Info("Subscribing for endpoint {0}", endpoint);
                 try
                 {
                     var procGroup = m_TransportManager.GetProcessingGroup(endpoint.TransportId, processingGroup??endpoint.Destination.ToString(),
                         () => {
-                            m_Logger.InfoFormat("Subscription for endpoint {0} failure detected. Attempting subscribe again.", endpoint);
+                            m_Logger.Info("Subscription for endpoint {0} failure detected. Attempting subscribe again.", endpoint);
                             doSubscribe(0);
                         });
                     var subscription = procGroup.Subscribe(endpoint.Destination.Subscribe, (message, ack) => callback(message, createDeferredAcknowledge(ack)),
@@ -66,11 +61,11 @@ namespace Inceptum.Messaging
                         if (attemptNumber > 0)
                             brokenSubscription.Dispose();
                     }catch{}
-                    m_Logger.InfoFormat("Subscribed for endpoint {0}", endpoint);
+                    m_Logger.Info("Subscribed for endpoint {0}", endpoint);
                 }
                 catch (Exception e)
                 {
-                    m_Logger.ErrorFormat(e, "Failed to subscribe for endpoint {0}. Attempt# {1}. Will retry in {2}ms", endpoint, attemptNumber,m_ResubscriptionTimeout);
+                    m_Logger.ErrorException(string.Format("Failed to subscribe for endpoint {0}. Attempt# {1}. Will retry in {2}ms", endpoint, attemptNumber,m_ResubscriptionTimeout),e);
                     scheduleSubscription(doSubscribe, attemptNumber + 1);
                 }
             };
