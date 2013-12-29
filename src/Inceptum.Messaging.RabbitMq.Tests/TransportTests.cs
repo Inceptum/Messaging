@@ -7,6 +7,7 @@ using Castle.Core.Logging;
 using Inceptum.Messaging.Contract;
 using Inceptum.Messaging.Serialization;
 using Inceptum.Messaging.Transports;
+using NLog;
 using NUnit.Framework;
 using RabbitMQ.Client;
 using ThreadState = System.Threading.ThreadState;
@@ -319,13 +320,10 @@ namespace Inceptum.Messaging.RabbitMq.Tests
         [Ignore]
         public void EndToEndRabbitResubscriptionTest()
         {
-            
+
             var messagingEngine = new MessagingEngine(
                 new TransportResolver(new Dictionary<string, TransportInfo> {{"test", new TransportInfo(HOST, "guest", "guest", null, "RabbitMq")}}),
-                new RabbitMqTransportFactory())
-            {
-                Logger = new ConsoleLoggerWithTime()
-            };
+                new RabbitMqTransportFactory());
 
             using (messagingEngine)
             {

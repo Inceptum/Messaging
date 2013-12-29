@@ -196,7 +196,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
                 .Return(processingGroup);
             return new SubscriptionManager(transportManager,1000)
             {
-                Logger = new ConsoleLoggerWithTime()
+                //Logger = new ConsoleLoggerWithTime()
             };
         }
     }

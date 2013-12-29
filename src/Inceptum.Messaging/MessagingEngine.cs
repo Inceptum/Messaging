@@ -5,12 +5,12 @@ using System.Linq;
 using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Threading;
-using Castle.Core.Logging;
 using Inceptum.Core.Utils;
 using Inceptum.Messaging.Contract;
 using Inceptum.Messaging.InMemory;
 using Inceptum.Messaging.Serialization;
 using Inceptum.Messaging.Transports;
+using NLog;
 
 namespace Inceptum.Messaging
 {
@@ -24,8 +24,8 @@ namespace Inceptum.Messaging
         private readonly List<IDisposable> m_MessagingHandles = new List<IDisposable>();
         private readonly TransportManager m_TransportManager;
 
-        //TODO: verify logging. I've added param but never tested
-        private ILogger m_Logger = NullLogger.Instance;
+        Logger m_Logger = LogManager.GetCurrentClassLogger();
+
         readonly ConcurrentDictionary<Type, string> m_MessageTypeMapping = new ConcurrentDictionary<Type, string>();
         private readonly SchedulingBackgroundWorker m_RequestTimeoutManager;
         readonly Dictionary<RequestHandle, Action<Exception>> m_ActualRequests = new Dictionary<RequestHandle, Action<Exception>>();
@@ -49,8 +49,11 @@ namespace Inceptum.Messaging
 
         }
 
-
-
+        internal Logger Logger
+        {
+            get { return m_Logger; }
+            set { m_Logger = value; }
+        }
 
 
         public MessagingEngine(ITransportResolver transportResolver, params ITransportFactory[] transportFactories)
@@ -67,16 +70,7 @@ namespace Inceptum.Messaging
         {
             get { return m_SerializationManager; }
         }
-
-        public ILogger Logger
-        {
-            get { return m_Logger; }
-            set
-            {
-                m_Logger = value;
-                m_SubscriptionManager.Logger = value;
-            }
-        }
+ 
 
         #region IMessagingEngine Members
 
@@ -100,7 +94,7 @@ namespace Inceptum.Messaging
                                                         }
                                                         catch (Exception ex)
                                                         {
-                                                            Logger.WarnFormat(ex, "transport events handler failed");
+                                                            m_Logger.WarnException("transport events handler failed",ex);
                                                         }
                                                     };
             m_TransportManager.TransportEvents += safeHandler;
@@ -143,7 +137,7 @@ namespace Inceptum.Messaging
                 }
                 catch (Exception e)
                 {
-					Logger.ErrorFormat(e, "Failed to send message. Transport: {0}, Queue: {1}", endpoint.TransportId, endpoint.Destination);
+                    m_Logger.ErrorException(string.Format("Failed to send message. Transport: {0}, Queue: {1}", endpoint.TransportId, endpoint.Destination),e);
                     throw;
                 }
             }
@@ -172,7 +166,7 @@ namespace Inceptum.Messaging
                 }
                 catch (Exception e)
                 {
-                    Logger.ErrorFormat(e, "Failed to subscribe. Transport: {0}, Queue: {1}",  endpoint.TransportId, endpoint.Destination);
+                    m_Logger.ErrorException(string.Format( "Failed to subscribe. Transport: {0}, Queue: {1}",  endpoint.TransportId, endpoint.Destination),e);
                     throw;
                 }
             }
@@ -228,8 +222,8 @@ namespace Inceptum.Messaging
                                 }
                                 catch (Exception e)
                                 {
-                                    Logger.ErrorFormat(e, "Failed to handle message of unknown type. Transport: {0}, Queue {1}, Message Type: {2}",
-                                   endpoint.TransportId, endpoint.Destination, m.Type);
+                                    m_Logger.ErrorException(string.Format("Failed to handle message of unknown type. Transport: {0}, Queue {1}, Message Type: {2}",
+                                   endpoint.TransportId, endpoint.Destination, m.Type),e);
                                 }
                                 return;
                             }
@@ -238,7 +232,7 @@ namespace Inceptum.Messaging
                 }
                 catch (Exception e)
                 {
-                    Logger.ErrorFormat(e, "Failed to subscribe. Transport: {0}, Queue: {1}", endpoint.TransportId, endpoint.Destination);
+                     m_Logger.ErrorException(string.Format("Failed to subscribe. Transport: {0}, Queue: {1}", endpoint.TransportId, endpoint.Destination),e);
                     throw;
                 }
             }
@@ -355,8 +349,8 @@ namespace Inceptum.Messaging
                 }
                 catch (Exception e)
                 {
-                    Logger.ErrorFormat(e, "Failed to register handler. Transport: {0}, Destination: {1}",  endpoint.TransportId,
-                                       endpoint.Destination);
+                     m_Logger.ErrorException(string.Format( "Failed to register handler. Transport: {0}, Destination: {1}",  endpoint.TransportId,
+                                       endpoint.Destination),e);
                     throw;
                 }
             }
@@ -410,7 +404,7 @@ namespace Inceptum.Messaging
                 }
                 catch
                 {
-                    Logger.InfoFormat("Scheduling register handler attempt in 1 minute. Transport: {0}, Queue: {1}",
+                    m_Logger.Info("Scheduling register handler attempt in 1 minute. Transport: {0}, Queue: {1}",
                                        endpoint.TransportId, endpoint.Destination);
                 	handle.Disposable = Scheduler.ThreadPool.Schedule(DateTimeOffset.Now.AddMinutes(1),
                 	                                                  () =>
@@ -453,20 +447,20 @@ namespace Inceptum.Messaging
                 	                                            		try
                 	                                            		{
                 	                                            			subscription.Dispose();
-                	                                            			Disposable.Create(() => Logger.InfoFormat("Handler was unregistered. Transport: {0}, Queue: {1}", endpoint.TransportId, endpoint.Destination));
+                	                                            			Disposable.Create(() => m_Logger.Info("Handler was unregistered. Transport: {0}, Queue: {1}", endpoint.TransportId, endpoint.Destination));
                 	                                            		}
                 	                                            		catch (Exception e)
                 	                                            		{
-                	                                            			Logger.WarnFormat(e, "Failed to unregister handler. Transport: {0}, Queue: {1}", endpoint.TransportId, endpoint.Destination);
+                	                                            			 m_Logger.WarnException(string.Format("Failed to unregister handler. Transport: {0}, Queue: {1}", endpoint.TransportId, endpoint.Destination),e);
                 	                                            		}
                 	                                            	});
 
-                    Logger.InfoFormat("Handler was successfully registered. Transport: {0}, Queue: {1}",  endpoint.TransportId, endpoint.Destination);
+                    m_Logger.Info("Handler was successfully registered. Transport: {0}, Queue: {1}",  endpoint.TransportId, endpoint.Destination);
                     return messagingHandle;
                 }
                 catch (Exception e)
                 {
-                    Logger.ErrorFormat(e, "Failed to register handler. Transport: {0}, Queue: {1}",  endpoint.TransportId, endpoint.Destination);
+                     m_Logger.ErrorException(string.Format("Failed to register handler. Transport: {0}, Queue: {1}",  endpoint.TransportId, endpoint.Destination),e);
                     throw;
                 }
             }
@@ -503,7 +497,7 @@ namespace Inceptum.Messaging
             return createMessagingHandle(() =>
             {
                 subscription.Dispose();
-                Logger.InfoFormat("Unsubscribed from endpoint {0}", endpoint);
+                m_Logger.Info("Unsubscribed from endpoint {0}", endpoint);
             });
         }
 
@@ -540,8 +534,8 @@ namespace Inceptum.Messaging
             }
             catch (Exception e)
             {
-                Logger.ErrorFormat(e, "Failed to deserialize message. Transport: {0}, Destination: {1}, Message Type: {2}",
-                                   endpoint.TransportId, endpoint.Destination, type.Name);
+                m_Logger.ErrorException(string.Format("Failed to deserialize message. Transport: {0}, Destination: {1}, Message Type: {2}",
+                                   endpoint.TransportId, endpoint.Destination, type.Name),e);
                 //TODO: need to unack without requeue
                 ack(DEFAULT_UNACK_DELAY, false);
             }
@@ -552,8 +546,8 @@ namespace Inceptum.Messaging
             }
             catch (Exception e)
             {
-                Logger.ErrorFormat(e, "Failed to handle message. Transport: {0}, Destination: {1}, Message Type: {2}",
-                                   endpoint.TransportId, endpoint.Destination, type.Name);
+                 m_Logger.ErrorException(string.Format("Failed to handle message. Transport: {0}, Destination: {1}, Message Type: {2}",
+                                   endpoint.TransportId, endpoint.Destination, type.Name),e);
                 ack(DEFAULT_UNACK_DELAY, false);
             }
         }
