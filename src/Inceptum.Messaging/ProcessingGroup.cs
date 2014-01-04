@@ -1,5 +1,9 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reactive.Disposables;
+using System.Threading;
 using System.Threading.Tasks;
 using Inceptum.Messaging.Transports;
 using Inceptum.Messaging.Utils;
@@ -10,7 +14,10 @@ namespace Inceptum.Messaging
     {
         private readonly QueuedTaskScheduler m_TaskScheduler;
         private readonly Dictionary<int,TaskFactory> m_TaskFactories=new Dictionary<int, TaskFactory>();
+        private volatile bool m_IsDisposing;
         public string Name { get; private set; }
+        private long m_TasksInProgress = 0;
+        readonly ManualResetEvent m_DoesNotHaveTasksInProgress=new ManualResetEvent(true);
 
         public ProcessingGroup(string name, ProcessingGroupInfo processingGroupInfo)
         {
@@ -19,6 +26,7 @@ namespace Inceptum.Messaging
             var threadCount = Math.Max(processingGroupInfo.ConcurrencyLevel, 1);
             //TODO:name threads by processing group name
             m_TaskScheduler = new QueuedTaskScheduler(threadCount);
+
             m_TaskFactories = new Dictionary<int, TaskFactory>();
         }
 
@@ -41,12 +49,33 @@ namespace Inceptum.Messaging
   
         public IDisposable Subscribe(IMessagingSession messagingSession,string destination, Action<BinaryMessage, Action<bool>> callback, string messageType,int priority)
         {
+            if(m_IsDisposing)
+                throw new ObjectDisposedException("ProcessingGroup "+Name);
             var taskFactory = getTaskFactory(priority);
-            return messagingSession.Subscribe(destination, (message, ack) => taskFactory.StartNew(() => callback(message, ack)), messageType);
+            var subscription=new SingleAssignmentDisposable();
+            subscription.Disposable = messagingSession.Subscribe(destination, (message, ack) =>
+            {
+                Interlocked.Increment(ref m_TasksInProgress);
+                taskFactory.StartNew(() =>
+                {
+                    //if subscription is disposed unack message immediately
+                    if (subscription.IsDisposed)
+                    {
+                        ack(false);
+                    }
+                    else
+                        callback(message, ack);
+                    Interlocked.Decrement(ref m_TasksInProgress);
+                });
+            }, messageType);
+            return subscription;
         }
 
         public void Dispose()
         {
+            m_IsDisposing=true;
+            while (Interlocked.Read(ref m_TasksInProgress)>0)
+                Thread.Sleep(100);
             m_TaskScheduler.Dispose();
         }
     }

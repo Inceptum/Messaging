@@ -25,7 +25,7 @@ namespace Inceptum.Messaging
         private readonly int m_ResubscriptionTimeout;
         readonly Dictionary<string, ProcessingGroup> m_ProcessingGroups=new Dictionary<string, ProcessingGroup>();
         readonly Dictionary<string, ProcessingGroupInfo> m_ProcessingGroupInfos = new Dictionary<string, ProcessingGroupInfo>();
- 
+        private volatile bool m_IsDisposing;
 
         public SubscriptionManager(ITransportManager transportManager, Dictionary<string, ProcessingGroupInfo> processingGroups=null, int resubscriptionTimeout=60000)
         {
@@ -38,6 +38,8 @@ namespace Inceptum.Messaging
 
         public IDisposable Subscribe(Endpoint endpoint, CallbackDelegate<BinaryMessage> callback, string messageType, string processingGroup, int priority)
         {
+            if (m_IsDisposing)
+                throw new ObjectDisposedException("SubscriptionManager");
             //TODO: meaningful but still unique name
             //processingGroup = processingGroup ?? Guid.NewGuid().ToString();
             processingGroup = processingGroup ?? endpoint.Destination.Subscribe;
@@ -161,9 +163,15 @@ namespace Inceptum.Messaging
 
         public void Dispose()
         {
+            m_IsDisposing = true;
             processDeferredAcknowledgements(true);
             m_DeferredAcknowledger.Dispose();
             m_Resubscriber.Dispose();
+
+            foreach (var processingGroup in m_ProcessingGroups.Values)
+            {
+                processingGroup.Dispose();
+            }
         }
     }
 }

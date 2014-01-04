@@ -164,6 +164,37 @@ namespace Inceptum.Messaging.Tests
                   Assert.That((acked - processed).TotalMilliseconds, Is.GreaterThan(1000), "Message was acknowledged earlier than scheduled time ");
               }
           }
+
+
+        [Test]
+        public void MessagesStuckedInProcessingGroupAfterUnsubscriptionShouldBeUnacked()
+        {
+            bool? normallyProcessedMessageAck = null;
+            bool? stuckedInQueueMessageAck = null;
+            var finishProcessing=new ManualResetEvent(false);
+            Action<BinaryMessage, Action<bool>> callback = null;
+            using (var subscriptionManager = createSubscriptionManagerWithMockedDependencies(action => callback = action))
+            {
+                IDisposable subscription=null ;
+                subscription = subscriptionManager.Subscribe(new Endpoint("test", "test", false, "fake"), (message, acknowledge) =>
+                {
+                    acknowledge(0,true);
+                    finishProcessing.WaitOne();
+
+                    //dispose subscription in first message processing to ensure first message processing starts before unsubscription 
+                    subscription.Dispose();
+                }, null, "SingleThread", 0);
+                  
+
+                callback(new BinaryMessage { Bytes = new byte[]{1}, Type = typeof(string).Name }, b => normallyProcessedMessageAck=b);
+               
+                finishProcessing.Set();
+                callback(new BinaryMessage { Bytes = new byte[]{2}, Type = typeof(string).Name }, b => stuckedInQueueMessageAck=b);
+            }
+            Assert.That(normallyProcessedMessageAck,Is.True,"Normaly processed message was not acked");
+            Assert.That(stuckedInQueueMessageAck, Is.False, "Stucked message was not unacked");
+        }
+
           [Test]
           public void DeferredAcknowledgementShouldBePerfomedOnDisposeTest()
           {
@@ -183,8 +214,6 @@ namespace Inceptum.Messaging.Tests
                       Console.WriteLine(DateTime.Now.ToString("HH:mm:ss.ffff") + " acknowledged"); 
                   
                   });
-
-//                  subscription.Dispose();
               }
 
               Assert.That(acknowledged,Is.True,"Message was not acknowledged on engine dispose");
@@ -298,7 +327,11 @@ namespace Inceptum.Messaging.Tests
                 .IgnoreArguments()
                 .WhenCalled(invocation => setOnFail((Action)invocation.Arguments[2]))
                 .Return(processingGroup);
-            return new SubscriptionManager(transportManager,null,1000)
+            return new SubscriptionManager(transportManager,new Dictionary<string, ProcessingGroupInfo>
+            {
+                {"SingleThread",new ProcessingGroupInfo(){ConcurrencyLevel = 1}},
+                {"MultiThread",new ProcessingGroupInfo(){ConcurrencyLevel = 3}}
+            },1000)
             {
                 //Logger = new ConsoleLoggerWithTime()
             };
