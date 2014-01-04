@@ -60,9 +60,7 @@ namespace Inceptum.Messaging
                 {
                     //if subscription is disposed unack message immediately
                     if (subscription.IsDisposed)
-                    {
                         ack(false);
-                    }
                     else
                         callback(message, ack);
                     Interlocked.Decrement(ref m_TasksInProgress);

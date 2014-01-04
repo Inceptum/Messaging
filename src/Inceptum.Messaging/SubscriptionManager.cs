@@ -164,7 +164,6 @@ namespace Inceptum.Messaging
         public void Dispose()
         {
             m_IsDisposing = true;
-            processDeferredAcknowledgements(true);
             m_DeferredAcknowledger.Dispose();
             m_Resubscriber.Dispose();
 
@@ -172,6 +171,7 @@ namespace Inceptum.Messaging
             {
                 processingGroup.Dispose();
             }
+            processDeferredAcknowledgements(true);
         }
     }
 }
