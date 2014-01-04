@@ -15,35 +15,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
     [TestFixture]
     public class SubscriptionManagerTests
     {
-        [Test]
-        /*[Timeout(5000)]*/
-        public void UnknownMessageTest()
-        {
-            const string TEST_QUEUE = "test.queue";
-            const string TEST_EXCHANGE = "test.exchange";
-            ITransportResolver transportResolver = new TransportResolver(new Dictionary<string, TransportInfo>()
-            {
-                {"main", new TransportInfo("sr-tls01-s01.test-s02.uniservers.ru", "guest", "guest", "None", "RabbitMq")}
-            });
-            var eq = new Endpoint("main", TEST_QUEUE, true, "json");
-            var ee = new Endpoint("main", TEST_EXCHANGE, true, "json");
-
-            using (var me = new MessagingEngine(transportResolver, new RabbitMqTransportFactory()))
-            {
-                me.Send("string value", ee);
-            }
-
-            using (var me = new MessagingEngine(transportResolver, new RabbitMqTransportFactory()))
-            {
-                me.Subscribe<int>(eq, Console.WriteLine);
-                me.Subscribe<double>(eq, Console.WriteLine);
-                me.Subscribe<string>(eq, s => Console.WriteLine(s));
-            }
-            Thread.Sleep(200);
-        }
-
-
-        [Test]
+          [Test]
           public void DeferredAcknowledgementTest()
           {
               Action<BinaryMessage, Action<bool>> callback=null;
