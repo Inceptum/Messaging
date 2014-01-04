@@ -95,7 +95,7 @@
     <Compile Include="InMemory\InMemoryTransportFactory.cs" />
     <Compile Include="ISerializerFactory.cs" />
     <Compile Include="ITransportFactory.cs" />
-    <Compile Include="ProcessingGroupWrapper.cs" />
+    <Compile Include="ProcessingGroup.cs" />
     <Compile Include="ResolvedTransport.cs" />
     <Compile Include="Serialization\JsonSerializer.cs" />
     <Compile Include="Serialization\JsonSerializerFactory.cs" />

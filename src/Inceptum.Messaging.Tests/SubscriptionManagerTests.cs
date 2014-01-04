@@ -26,7 +26,7 @@ namespace Inceptum.Messaging.Tests
                     }));
             var subscriptionManager = new SubscriptionManager(transportManager);
 
-            var processingGroup = transportManager.GetProcessingGroup("transport-1", "pg"); var usedThreads = new List<int>();
+            var session = transportManager.GetMessagingSession("transport-1", "pg"); var usedThreads = new List<int>();
             var subscription = subscriptionManager.Subscribe(new Endpoint { Destination = "queue", TransportId = "transport-1" },
                 (message, action) =>
                 {
@@ -39,7 +39,7 @@ namespace Inceptum.Messaging.Tests
                 }, null, "pg", 0);
             using (subscription)
             {
-                Enumerable.Range(1, 20).ForEach(i => processingGroup.Send("queue", new BinaryMessage(), 0));
+                Enumerable.Range(1, 20).ForEach(i => session.Send("queue", new BinaryMessage(), 0));
                 Thread.Sleep(1200);
             }
             Assert.That(usedThreads.Count(), Is.EqualTo(20), "not all messages were processed");
@@ -61,7 +61,7 @@ namespace Inceptum.Messaging.Tests
                 }
             });
 
-            var processingGroup = transportManager.GetProcessingGroup("transport-1", "pg");
+            var processingGroup = transportManager.GetMessagingSession("transport-1", "pg");
             var usedThreads = new List<int>();
             var subscription = subscriptionManager.Subscribe(new Endpoint { Destination = "queue", TransportId = "transport-1" },
                 (message, action) =>
@@ -98,7 +98,7 @@ namespace Inceptum.Messaging.Tests
                 }
             });
 
-            var processingGroup = transportManager.GetProcessingGroup("transport-1", "pg");
+            var processingGroup = transportManager.GetMessagingSession("transport-1", "pg");
             var usedThreads = new List<int>();
             var processedMessages = new List<int>();
             CallbackDelegate<BinaryMessage> callback = (message, action) =>
@@ -285,7 +285,7 @@ namespace Inceptum.Messaging.Tests
             if (onSubscribe == null)
                 onSubscribe = () => { };
             var transportManager = MockRepository.GenerateMock<ITransportManager>();
-            var processingGroup = MockRepository.GenerateMock<IProcessingGroup>();
+            var processingGroup = MockRepository.GenerateMock<IMessagingSession>();
             processingGroup.Expect(p => p.Subscribe("test", null, null))
                            .IgnoreArguments()
                            .WhenCalled(invocation =>
@@ -294,7 +294,7 @@ namespace Inceptum.Messaging.Tests
                                onSubscribe();
                            })
                            .Return(MockRepository.GenerateMock<IDisposable>());
-            transportManager.Expect(t => t.GetProcessingGroup(null,null, null))
+            transportManager.Expect(t => t.GetMessagingSession(null,null, null))
                 .IgnoreArguments()
                 .WhenCalled(invocation => setOnFail((Action)invocation.Arguments[2]))
                 .Return(processingGroup);

@@ -8,12 +8,12 @@ using RabbitMQ.Client.Exceptions;
 
 namespace Inceptum.Messaging.RabbitMq
 {
-    internal class Transport : ITransport
+    internal class RabbitMqTransport : ITransport
     {
         private readonly ConnectionFactory m_Factory;
-        private readonly List<ProcessingGroup> m_ProcessingGroups = new List<ProcessingGroup>();
+        private readonly List<RabbitMqSession> m_Sessions = new List<RabbitMqSession>();
         readonly ManualResetEvent m_IsDisposed=new ManualResetEvent(false);
-        public Transport(string broker, string username, string password)
+        public RabbitMqTransport(string broker, string username, string password)
         {
             if (broker == null) throw new ArgumentNullException("broker");
             var f = new ConnectionFactory() { };
@@ -40,30 +40,30 @@ namespace Inceptum.Messaging.RabbitMq
         public void Dispose()
         {
             m_IsDisposed.Set();
-            ProcessingGroup[] processingGroups;
-            lock (m_ProcessingGroups)
+            RabbitMqSession[] sessions;
+            lock (m_Sessions)
             {
-                processingGroups = m_ProcessingGroups.ToArray();
+                sessions = m_Sessions.ToArray();
             }
-            foreach (var processingGroup in processingGroups)
+            foreach (var session in sessions)
             {
-                processingGroup.Dispose();
+                session.Dispose();
             }
 
         }
 
-        public IProcessingGroup CreateProcessingGroup(Action onFailure)
+        public IMessagingSession CreateSession(Action onFailure)
         {
             if(m_IsDisposed.WaitOne(0))
                 throw new ObjectDisposedException("Transport is disposed");
 
             var connection = m_Factory.CreateConnection();
-            var processingGroup = new ProcessingGroup(connection);
+            var session = new RabbitMqSession(connection);
             connection.ConnectionShutdown += (connection1, reason) =>
                 {
-                    lock (m_ProcessingGroups)
+                    lock (m_Sessions)
                     {
-                        m_ProcessingGroups.Remove(processingGroup);
+                        m_Sessions.Remove(session);
                     }
                     
 
@@ -72,11 +72,11 @@ namespace Inceptum.Messaging.RabbitMq
                     //TODO: log
                 };
 
-            lock (m_ProcessingGroups)
+            lock (m_Sessions)
             {
-                m_ProcessingGroups.Add(processingGroup);
+                m_Sessions.Add(session);
             }
-            return processingGroup;
+            return session;
         }
 
         public bool VerifyDestination(Destination destination, EndpointUsage usage, bool configureIfRequired, out string error)

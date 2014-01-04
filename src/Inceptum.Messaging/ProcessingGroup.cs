@@ -7,16 +7,16 @@ using Inceptum.Messaging.Utils;
 
 namespace Inceptum.Messaging
 {
-    internal class EngineProcessingGroup : IDisposable 
+    internal class ProcessingGroup : IDisposable 
     {
         private readonly QueuedTaskScheduler m_TaskScheduler;
         private readonly Dictionary<int,TaskFactory> m_TaskFactories=new Dictionary<int, TaskFactory>();
         public string TransportId { get; private set; }
         public string Name { get; private set; }
 
-        public EngineProcessingGroup(string transportId, string name, ProcessingGroupInfo processingGroupInfo)
+        public ProcessingGroup(string transportId, string name, ProcessingGroupInfo processingGroupInfo)
         {
-            //TODO: 0 concurrency level  should be threated as same thread. Need to arrange prioritization (meaningless for same thread case)
+            //TODO: 0 concurrency level  should be treated as same thread. Need to arrange prioritization (meaningless for same thread case)
             TransportId = transportId;
             Name = name;
             var threadCount = Math.Max(processingGroupInfo.ConcurrencyLevel, 1);
@@ -41,10 +41,10 @@ namespace Inceptum.Messaging
             }
         }
   
-        public IDisposable Subscribe(IProcessingGroup processingGroup,string destination, Action<BinaryMessage, Action<bool>> callback, string messageType,int priority)
+        public IDisposable Subscribe(IMessagingSession messagingSession,string destination, Action<BinaryMessage, Action<bool>> callback, string messageType,int priority)
         {
             var taskFactory = getTaskFactory(priority);
-            return processingGroup.Subscribe(destination, (message, ack) => taskFactory.StartNew(() => callback(message, ack)), messageType);
+            return messagingSession.Subscribe(destination, (message, ack) => taskFactory.StartNew(() => callback(message, ack)), messageType);
         }
 
         public void Dispose()

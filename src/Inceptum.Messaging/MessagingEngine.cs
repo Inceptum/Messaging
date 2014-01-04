@@ -81,7 +81,7 @@ namespace Inceptum.Messaging
 
         public Destination CreateTemporaryDestination(string transportId,string processingGroup)
         {
-            return m_TransportManager.GetProcessingGroup(transportId,processingGroup).CreateTemporaryDestination();
+            return m_TransportManager.GetMessagingSession(transportId,processingGroup).CreateTemporaryDestination();
         }
 
         public IDisposable SubscribeOnTransportEvents(TransportEventHandler handler)
@@ -132,7 +132,7 @@ namespace Inceptum.Messaging
             {
                 try
                 {
-                    var procGroup = m_TransportManager.GetProcessingGroup(endpoint.TransportId, processingGroup);
+                    var procGroup = m_TransportManager.GetMessagingSession(endpoint.TransportId, processingGroup);
                     procGroup.Send(endpoint.Destination.Publish, message, ttl);
                 }
                 catch (Exception e)
@@ -318,7 +318,7 @@ namespace Inceptum.Messaging
             {
                 try
                 {
-                    var procGroup = m_TransportManager.GetProcessingGroup(endpoint.TransportId,processingGroup??endpoint.Destination.ToString());
+                    var procGroup = m_TransportManager.GetMessagingSession(endpoint.TransportId,processingGroup??endpoint.Destination.ToString());
                     RequestHandle requestHandle = procGroup.SendRequest(endpoint.Destination.Publish, serializeMessage(endpoint.SerializationFormat, request),
                                                                      message =>
                                                                      {
@@ -430,7 +430,7 @@ namespace Inceptum.Messaging
             {
                 try
                 {
-                    var procGroup = m_TransportManager.GetProcessingGroup(endpoint.TransportId, processingGroup??endpoint.Destination.ToString());
+                    var procGroup = m_TransportManager.GetMessagingSession(endpoint.TransportId, processingGroup??endpoint.Destination.ToString());
                     var subscription = procGroup.RegisterHandler(endpoint.Destination.Subscribe,
                 	                                                     requestMessage =>
                 	                                                     	{

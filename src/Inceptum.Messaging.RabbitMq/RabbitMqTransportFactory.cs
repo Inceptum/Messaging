@@ -14,7 +14,7 @@ namespace Inceptum.Messaging.RabbitMq
 
         public ITransport Create(TransportInfo transportInfo, Action onFailure)
         {
-            return new Transport(transportInfo.Broker,transportInfo.Login,transportInfo.Password);
+            return new RabbitMqTransport(transportInfo.Broker,transportInfo.Login,transportInfo.Password);
         }
     }
 }
