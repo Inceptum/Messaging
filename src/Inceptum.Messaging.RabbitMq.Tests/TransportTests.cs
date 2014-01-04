@@ -82,7 +82,30 @@ namespace Inceptum.Messaging.RabbitMq.Tests
                 channel.QueueBind(TEST_QUEUE, TEST_EXCHANGE, "");
             }
         }
+        [Test]
+        public void UnknownMessageTest()
+        {
+ 
+            ITransportResolver transportResolver = new TransportResolver(new Dictionary<string, TransportInfo>()
+            {
+                {"main", new TransportInfo(HOST, "guest", "guest", "None", "RabbitMq")}
+            });
+            var eq = new Endpoint("main", TEST_QUEUE, true, "json");
+            var ee = new Endpoint("main", TEST_EXCHANGE, true, "json");
 
+            using (var me = new MessagingEngine(transportResolver, new RabbitMqTransportFactory()))
+            {
+                me.Send("string value", ee);
+            }
+
+            using (var me = new MessagingEngine(transportResolver, new RabbitMqTransportFactory()))
+            {
+                me.Subscribe<int>(eq, Console.WriteLine);
+                me.Subscribe<double>(eq, Console.WriteLine);
+                me.Subscribe<string>(eq, Console.WriteLine);
+            }
+            Thread.Sleep(200);
+        }
 
         [Test]
         public void SendTest()
