@@ -191,7 +191,7 @@ namespace Inceptum.Messaging.Tests
                 finishProcessing.Set();
                 callback(new BinaryMessage { Bytes = new byte[]{2}, Type = typeof(string).Name }, b => stuckedInQueueMessageAck=b);
             }
-            Assert.That(normallyProcessedMessageAck,Is.True,"Normaly processed message was not acked");
+            Assert.That(normallyProcessedMessageAck,Is.True,"Normally processed message was not acked");
             Assert.That(stuckedInQueueMessageAck, Is.False, "Stucked message was not unacked");
         }
 
