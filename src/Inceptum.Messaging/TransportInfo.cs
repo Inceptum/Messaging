@@ -9,7 +9,7 @@ namespace Inceptum.Messaging
     }
     public class TransportInfo
     {
-        public TransportInfo(string broker, string login, string password, string jailStrategyName, string messaging="Sonic")
+        public TransportInfo(string broker, string login, string password, string jailStrategyName, string messaging="InMemory")
         {
             if (string.IsNullOrEmpty((broker ?? "").Trim())) throw new ArgumentException("broker should be not empty string", "broker");
             if (string.IsNullOrEmpty((login ?? "").Trim())) throw new ArgumentException("login should be not empty string", "login");
