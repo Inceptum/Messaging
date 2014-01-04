@@ -4,9 +4,9 @@ using QueueSession = Sonic.Jms.Ext.QueueSession;
 
 namespace Inceptum.Messaging.Sonic
 {
-    internal class QueueProcessingGroup : ProcessingGroupBase<QueueSession>
+    internal class QueueSonicSession : SonicSessionBase<QueueSession>
     {
-        public QueueProcessingGroup(QueueConnection connection, string jailedTag, MessageFormat messageFormat)
+        public QueueSonicSession(QueueConnection connection, string jailedTag, MessageFormat messageFormat)
             : base(connection, jailedTag, messageFormat)
         {
         }

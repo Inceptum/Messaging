@@ -412,8 +412,8 @@ namespace Inceptum.Messaging.Sonic.Tests
                 engine.SubscribeOnTransportEvents((transportid, @event) => failureWasReportedCount++);
 
                 //need for transportManager to start tracking transport failures for these ids
-                transportManager.GetProcessingGroup(TransportConstants.TRANSPORT_ID1, "test");
-                transportManager.GetProcessingGroup(TransportConstants.TRANSPORT_ID2, "test");
+                transportManager.GetMessagingSession(TransportConstants.TRANSPORT_ID1, "test");
+                transportManager.GetMessagingSession(TransportConstants.TRANSPORT_ID2, "test");
 
                 transportManager.ProcessTransportFailure(
                     new TransportInfo(TransportConstants.BROKER,
@@ -443,7 +443,7 @@ namespace Inceptum.Messaging.Sonic.Tests
                     start.WaitOne();
                     try
                     {
-                        var transport = transportManager.GetProcessingGroup(TransportConstants.TRANSPORT_ID1,"test");
+                        var transport = transportManager.GetMessagingSession(TransportConstants.TRANSPORT_ID1,"test");
                         Console.WriteLine(treadNum+". "+transport);
                         Interlocked.Increment(ref attemptCount);
                     }

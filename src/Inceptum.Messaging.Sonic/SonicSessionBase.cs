@@ -12,7 +12,7 @@ using Session = Sonic.Jms.Ext.Session;
 
 namespace Inceptum.Messaging.Sonic
 {
-    internal abstract class ProcessingGroupBase<TSession> : IProcessingGroup where TSession : class, Session
+    internal abstract class SonicSessionBase<TSession> : IMessagingSession where TSession : class, Session
     {
         private readonly QueueConnection m_Connection;
         private readonly string m_JailedTag;
@@ -20,7 +20,7 @@ namespace Inceptum.Messaging.Sonic
         private readonly CompositeDisposable m_Subscriptions = new CompositeDisposable();
         private TSession m_Session;
 
-        protected ProcessingGroupBase(QueueConnection connection, string jailedTag, MessageFormat messageFormat)
+        protected SonicSessionBase(QueueConnection connection, string jailedTag, MessageFormat messageFormat)
         {
             m_JailedTag = jailedTag;
             m_MessageFormat = messageFormat;

@@ -32,7 +32,7 @@ namespace Inceptum.Messaging.InMemory
     internal class InMemoryTransport : ITransport
     {
         readonly Dictionary<string,Subject<BinaryMessage>> m_Topics=new Dictionary<string, Subject<BinaryMessage>>();
-        readonly List<InMemoryProcessingGroup> m_ProcessingGroups = new List<InMemoryProcessingGroup>();
+        readonly List<InMemorySession> m_Sessions = new List<InMemorySession>();
 
 
         public Subject<BinaryMessage> this[string name]
@@ -76,24 +76,24 @@ namespace Inceptum.Messaging.InMemory
         }
         public void Dispose()
         {
-            lock (m_ProcessingGroups)
+            lock (m_Sessions)
             {
-                foreach (var processingGroup in m_ProcessingGroups)
+                foreach (var session in m_Sessions)
                 {
-                    processingGroup.Dispose();
+                    session.Dispose();
                 }
-                m_ProcessingGroups.Clear();
+                m_Sessions.Clear();
             }
             
         }
 
-        public IProcessingGroup CreateProcessingGroup(Action onFailure)
+        public IMessagingSession CreateSession(Action onFailure)
         {
-            var processingGroup = new InMemoryProcessingGroup(this);
-            lock (m_ProcessingGroups)
+            var session = new InMemorySession(this);
+            lock (m_Sessions)
             {
-                m_ProcessingGroups.Add(processingGroup);
-                return processingGroup;
+                m_Sessions.Add(session);
+                return session;
             }
         }
 
@@ -106,14 +106,14 @@ namespace Inceptum.Messaging.InMemory
 
      
  
-    internal class InMemoryProcessingGroup : IProcessingGroup
+    internal class InMemorySession : IMessagingSession
     {
         private readonly InMemoryTransport m_Transport;
         readonly EventLoopScheduler m_Scheduler=new EventLoopScheduler(ts => new Thread(ts){Name = "inmemory transport"});
         readonly CompositeDisposable m_Subscriptions=new CompositeDisposable();
         private bool m_IsDisposed=false;
 
-        public InMemoryProcessingGroup(InMemoryTransport queues)
+        public InMemorySession(InMemoryTransport queues)
         {
             m_Transport = queues;
         }

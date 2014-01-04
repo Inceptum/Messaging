@@ -26,7 +26,7 @@ namespace Inceptum.Messaging.Weblogic
 
         public ITransport Create(TransportInfo transportInfo, Action onFailure)
         {
-            return new Transport(transportInfo, onFailure, m_CustomHeaders, m_CustomSelectors);
+            return new WeblogicTransport(transportInfo, onFailure, m_CustomHeaders, m_CustomSelectors);
         }
     }
 

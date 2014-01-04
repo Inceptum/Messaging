@@ -67,10 +67,10 @@
     </Compile>
     <Compile Include="Consumer.cs" />
     <Compile Include="SharedConsumer.cs" />
-    <Compile Include="ProcessingGroup.cs" />
+    <Compile Include="RabbitMqSession.cs" />
     <Compile Include="RabbitMqTransportFactory.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Transport.cs" />
+    <Compile Include="RabbitMqTransport.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Inceptum.Messaging\Inceptum.Messaging.csproj">

@@ -23,7 +23,7 @@ namespace Inceptum.Messaging
         private readonly SchedulingBackgroundWorker m_Resubscriber;
         readonly Logger m_Logger = LogManager.GetCurrentClassLogger();
         private int m_ResubscriptionTimeout;
-        readonly Dictionary<string, EngineProcessingGroup> m_ProcessingGroups=new Dictionary<string, EngineProcessingGroup>();
+        readonly Dictionary<string, ProcessingGroup> m_ProcessingGroups=new Dictionary<string, ProcessingGroup>();
         readonly Dictionary<string, ProcessingGroupInfo> m_ProcessingGroupInfos = new Dictionary<string, ProcessingGroupInfo>();
  
 
@@ -54,7 +54,7 @@ namespace Inceptum.Messaging
                     m_Logger.Info("Subscribing for endpoint {0}", endpoint);
                 try
                 {
-                    EngineProcessingGroup group;
+                    ProcessingGroup group;
                     lock (m_ProcessingGroups)
                     {
                         if (!m_ProcessingGroups.TryGetValue(processingGroup, out group))
@@ -62,14 +62,14 @@ namespace Inceptum.Messaging
                             ProcessingGroupInfo info;
                             if(!m_ProcessingGroupInfos.TryGetValue(processingGroup, out info))
                                 info = new ProcessingGroupInfo { ConcurrencyLevel = 1 };
-                            group=new EngineProcessingGroup(null,processingGroup,info);
+                            group=new ProcessingGroup(null,processingGroup,info);
                             m_ProcessingGroups.Add(processingGroup,group);
                         }
                     }
 
 
                     //TODO:store and manage dispose of PG (one messaging pg per engine pg and transport pair)
-                    var procGroup = m_TransportManager.GetProcessingGroup(endpoint.TransportId, processingGroup??endpoint.Destination.ToString(),
+                    var procGroup = m_TransportManager.GetMessagingSession(endpoint.TransportId, processingGroup??endpoint.Destination.ToString(),
                         () => {
                             m_Logger.Info("Subscription for endpoint {0} failure detected. Attempting subscribe again.", endpoint);
                             doSubscribe(0);

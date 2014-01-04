@@ -9,14 +9,14 @@ using RabbitMQ.Client;
 
 namespace Inceptum.Messaging.RabbitMq
 {
-    internal class ProcessingGroup : IProcessingGroup
+    internal class RabbitMqSession : IMessagingSession
     {
         private readonly IConnection m_Connection;
         private readonly IModel m_Model;
         private readonly CompositeDisposable m_Subscriptions = new CompositeDisposable();
 
 
-        public ProcessingGroup(IConnection connection)
+        public RabbitMqSession(IConnection connection)
         {
             m_Connection = connection;
             m_Model = m_Connection.CreateModel();

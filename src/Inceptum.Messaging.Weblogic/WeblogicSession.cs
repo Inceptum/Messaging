@@ -12,7 +12,7 @@ using System.Text;
 
 namespace Inceptum.Messaging.Weblogic
 {
-    internal class ProcessingGroup : IProcessingGroup
+    internal class WeblogicSession : IMessagingSession
     {
         private readonly IConnection m_Connection;
         private readonly string m_JailedTag;
@@ -22,7 +22,7 @@ namespace Inceptum.Messaging.Weblogic
         private readonly CompositeDisposable m_Subscriptions = new CompositeDisposable();
         private ISession m_Session;
 
-        internal ProcessingGroup(IConnection connection, string jailedTag, IDictionary<string, string> customHeaders = null, IDictionary<string, string> customSelectors = null)
+        internal WeblogicSession(IConnection connection, string jailedTag, IDictionary<string, string> customHeaders = null, IDictionary<string, string> customSelectors = null)
         {
             if (connection == null) throw new ArgumentNullException("connection");
             m_Connection = connection;
