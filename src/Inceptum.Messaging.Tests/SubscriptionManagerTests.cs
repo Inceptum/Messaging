@@ -196,7 +196,7 @@ namespace Inceptum.Messaging.Tests
         }
 
           [Test]
-          public void DeferredAcknowledgementShouldBePerfomedOnDisposeTest()
+          public void DeferredAcknowledgementShouldBePerformedOnDisposeTest()
           {
               Action<BinaryMessage, Action<bool>> callback=null;
               bool acknowledged = false;
