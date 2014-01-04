@@ -22,7 +22,7 @@ namespace Inceptum.Messaging
         private readonly SchedulingBackgroundWorker m_DeferredAcknowledger;
         private readonly SchedulingBackgroundWorker m_Resubscriber;
         readonly Logger m_Logger = LogManager.GetCurrentClassLogger();
-        private int m_ResubscriptionTimeout;
+        private readonly int m_ResubscriptionTimeout;
         readonly Dictionary<string, ProcessingGroup> m_ProcessingGroups=new Dictionary<string, ProcessingGroup>();
         readonly Dictionary<string, ProcessingGroupInfo> m_ProcessingGroupInfos = new Dictionary<string, ProcessingGroupInfo>();
  
@@ -32,7 +32,6 @@ namespace Inceptum.Messaging
             m_ProcessingGroupInfos = processingGroups ?? new Dictionary<string, ProcessingGroupInfo>();
             m_TransportManager = transportManager;
             m_ResubscriptionTimeout = resubscriptionTimeout;
-            //TODO:name threads by processing group name
             m_DeferredAcknowledger = new SchedulingBackgroundWorker("DeferredAcknowledgement", () => processDeferredAcknowledgements());
             m_Resubscriber = new SchedulingBackgroundWorker("Resubscription", () => processResubscription());
         }
@@ -61,8 +60,8 @@ namespace Inceptum.Messaging
                         {
                             ProcessingGroupInfo info;
                             if(!m_ProcessingGroupInfos.TryGetValue(processingGroup, out info))
-                                info = new ProcessingGroupInfo { ConcurrencyLevel = 1 };
-                            group=new ProcessingGroup(null,processingGroup,info);
+                                info = new ProcessingGroupInfo { ConcurrencyLevel = 0 };
+                            group=new ProcessingGroup(processingGroup,info);
                             m_ProcessingGroups.Add(processingGroup,group);
                         }
                     }

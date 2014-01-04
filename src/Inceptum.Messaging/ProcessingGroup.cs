@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Inceptum.Messaging.Contract;
 using Inceptum.Messaging.Transports;
 using Inceptum.Messaging.Utils;
 
@@ -11,15 +10,14 @@ namespace Inceptum.Messaging
     {
         private readonly QueuedTaskScheduler m_TaskScheduler;
         private readonly Dictionary<int,TaskFactory> m_TaskFactories=new Dictionary<int, TaskFactory>();
-        public string TransportId { get; private set; }
         public string Name { get; private set; }
 
-        public ProcessingGroup(string transportId, string name, ProcessingGroupInfo processingGroupInfo)
+        public ProcessingGroup(string name, ProcessingGroupInfo processingGroupInfo)
         {
             //TODO: 0 concurrency level  should be treated as same thread. Need to arrange prioritization (meaningless for same thread case)
-            TransportId = transportId;
             Name = name;
             var threadCount = Math.Max(processingGroupInfo.ConcurrencyLevel, 1);
+            //TODO:name threads by processing group name
             m_TaskScheduler = new QueuedTaskScheduler(threadCount);
             m_TaskFactories = new Dictionary<int, TaskFactory>();
         }

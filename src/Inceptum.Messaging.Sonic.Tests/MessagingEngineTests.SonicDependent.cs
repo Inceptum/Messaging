@@ -366,7 +366,7 @@ namespace Inceptum.Messaging.Sonic.Tests
 
 
         [Test]
-        public void SendToOverflowenQueueFailureTest()
+        public void SendToOverflownQueueFailureTest()
         {
 
            
