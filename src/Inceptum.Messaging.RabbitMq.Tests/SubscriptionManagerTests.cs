@@ -181,7 +181,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
             if (onSubscribe == null)
                 onSubscribe = () => { };
             var transportManager = MockRepository.GenerateMock<ITransportManager>();
-            var processingGroup = MockRepository.GenerateMock<IPrioritisedProcessingGroup>();
+            var processingGroup = MockRepository.GenerateMock<IPrioritizedProcessingGroup>();
             processingGroup.Expect(p => p.Subscribe("test", null, null,0))
                            .IgnoreArguments()
                            .WhenCalled(invocation =>

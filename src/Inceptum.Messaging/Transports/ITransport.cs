@@ -19,7 +19,7 @@ namespace Inceptum.Messaging.Transports
         Destination CreateTemporaryDestination();
     }
 
-    public interface IPrioritisedProcessingGroup : IDisposable
+    public interface IPrioritizedProcessingGroup : IDisposable
     {
         void Send(string destination, BinaryMessage message, int ttl);
         RequestHandle SendRequest(string destination, BinaryMessage message, Action<BinaryMessage> callback);
