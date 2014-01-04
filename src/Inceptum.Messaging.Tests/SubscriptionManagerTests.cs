@@ -209,16 +209,14 @@ namespace Inceptum.Messaging.Tests
                           Console.WriteLine(DateTime.Now.ToString("HH:mm:ss.ffff") + " received");
                       }, null, "ProcessingGroup", 0);
                   
-                  callback(new BinaryMessage { Bytes = new byte[0], Type = typeof(string).Name }, b => { acknowledged=true; 
-                      
+                  callback(new BinaryMessage { Bytes = new byte[0], Type = typeof(string).Name }, b => {
+                      acknowledged=true; 
                       Console.WriteLine(DateTime.Now.ToString("HH:mm:ss.ffff") + " acknowledged"); 
-                  
                   });
               }
 
               Assert.That(acknowledged,Is.True,"Message was not acknowledged on engine dispose");
               Console.WriteLine(acknowledged+" "+Thread.CurrentThread.ManagedThreadId);
-              //Thread.Sleep(100000);
           }
 
 
