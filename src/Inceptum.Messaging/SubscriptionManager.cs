@@ -29,7 +29,7 @@ namespace Inceptum.Messaging
         {
             m_TransportManager = transportManager;
             m_ResubscriptionTimeout = resubscriptionTimeout;
-            m_DeferredAcknowledger = new SchedulingBackgroundWorker("DeferredAcknowledgement", () => processDefferredAcknowledgements());
+            m_DeferredAcknowledger = new SchedulingBackgroundWorker("DeferredAcknowledgement", () => processDeferredAcknowledgements());
             m_Resubscriber = new SchedulingBackgroundWorker("Resubscription", () => processResubscription());
         }
 
@@ -73,13 +73,6 @@ namespace Inceptum.Messaging
             doSubscribe(0);
             
             return subscriptionHandler;
-
-/*
-
-            var processingGroup = m_TransportManager.GetProcessingGroup(endpoint.TransportId, endpoint.Destination);
-            IDisposable subscription = processingGroup.Subscribe(endpoint.Destination, (message, ack) => callback(message, createDeferredAcknowledge(ack)), messageType);
-            return subscription;
-*/
         }
 
         private void scheduleSubscription(Action<int> subscribe, int attemptCount)
@@ -92,7 +85,7 @@ namespace Inceptum.Messaging
         }
 
 
-        private void processDefferredAcknowledgements(bool all = false)
+        private void processDeferredAcknowledgements(bool all = false)
         {
             Tuple<DateTime, Action>[] ready;
             lock (m_DeferredAcknowledgements)
@@ -147,7 +140,7 @@ namespace Inceptum.Messaging
 
         public void Dispose()
         {
-            processDefferredAcknowledgements(true);
+            processDeferredAcknowledgements(true);
             m_DeferredAcknowledger.Dispose();
             m_Resubscriber.Dispose();
         }
