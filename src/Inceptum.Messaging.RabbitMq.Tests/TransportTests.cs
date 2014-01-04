@@ -102,9 +102,9 @@ namespace Inceptum.Messaging.RabbitMq.Tests
             {
                 me.Subscribe<int>(eq, Console.WriteLine);
                 me.Subscribe<double>(eq, Console.WriteLine);
-                me.Subscribe<string>(eq, Console.WriteLine);
+               // me.Subscribe<string>(eq, Console.WriteLine);
             }
-            Thread.Sleep(200);
+            Thread.Sleep(1200);
         }
 
         [Test]
