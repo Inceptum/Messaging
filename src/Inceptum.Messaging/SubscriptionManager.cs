@@ -23,18 +23,25 @@ namespace Inceptum.Messaging
         private readonly SchedulingBackgroundWorker m_Resubscriber;
         readonly Logger m_Logger = LogManager.GetCurrentClassLogger();
         private int m_ResubscriptionTimeout;
+        readonly Dictionary<string, EngineProcessingGroup> m_ProcessingGroups=new Dictionary<string, EngineProcessingGroup>();
+        readonly Dictionary<string, ProcessingGroupInfo> m_ProcessingGroupInfos = new Dictionary<string, ProcessingGroupInfo>();
  
 
-        public SubscriptionManager(ITransportManager transportManager, int resubscriptionTimeout=60000)
+        public SubscriptionManager(ITransportManager transportManager, Dictionary<string, ProcessingGroupInfo> processingGroups=null, int resubscriptionTimeout=60000)
         {
+            m_ProcessingGroupInfos = processingGroups ?? new Dictionary<string, ProcessingGroupInfo>();
             m_TransportManager = transportManager;
             m_ResubscriptionTimeout = resubscriptionTimeout;
+            //TODO:name threads by processing group name
             m_DeferredAcknowledger = new SchedulingBackgroundWorker("DeferredAcknowledgement", () => processDeferredAcknowledgements());
             m_Resubscriber = new SchedulingBackgroundWorker("Resubscription", () => processResubscription());
         }
 
         public IDisposable Subscribe(Endpoint endpoint, CallbackDelegate<BinaryMessage> callback, string messageType, string processingGroup, int priority)
         {
+            //TODO: meaningful but still unique name
+            //processingGroup = processingGroup ?? Guid.NewGuid().ToString();
+            processingGroup = processingGroup ?? endpoint.Destination.Subscribe;
             var subscriptionHandler = new MultipleAssignmentDisposable();
             Action<int> doSubscribe = null;
             doSubscribe = attemptNumber =>
@@ -47,13 +54,29 @@ namespace Inceptum.Messaging
                     m_Logger.Info("Subscribing for endpoint {0}", endpoint);
                 try
                 {
+                    EngineProcessingGroup group;
+                    lock (m_ProcessingGroups)
+                    {
+                        if (!m_ProcessingGroups.TryGetValue(processingGroup, out group))
+                        {
+                            ProcessingGroupInfo info;
+                            if(!m_ProcessingGroupInfos.TryGetValue(processingGroup, out info))
+                                info = new ProcessingGroupInfo { ConcurrencyLevel = 1 };
+                            group=new EngineProcessingGroup(null,processingGroup,info);
+                            m_ProcessingGroups.Add(processingGroup,group);
+                        }
+                    }
+
+
+                    //TODO:store and manage dispose of PG (one messaging pg per engine pg and transport pair)
                     var procGroup = m_TransportManager.GetProcessingGroup(endpoint.TransportId, processingGroup??endpoint.Destination.ToString(),
                         () => {
                             m_Logger.Info("Subscription for endpoint {0} failure detected. Attempting subscribe again.", endpoint);
                             doSubscribe(0);
                         });
-                    var subscription = procGroup.Subscribe(endpoint.Destination.Subscribe, (message, ack) => callback(message, createDeferredAcknowledge(ack)),
-                        messageType,priority);
+
+
+                    var subscription = group.Subscribe(procGroup,endpoint.Destination.Subscribe, (message, ack) => callback(message, createDeferredAcknowledge(ack)),messageType,priority);
                     var brokenSubscription = subscriptionHandler.Disposable;
                     subscriptionHandler.Disposable = subscription;
                     try
@@ -94,7 +117,6 @@ namespace Inceptum.Messaging
                                 ? m_DeferredAcknowledgements.ToArray()
                                 : m_DeferredAcknowledgements.Where(r => r.Item1 <= DateTime.Now).ToArray();
             }
-
             Array.ForEach(ready, r => r.Item2());
 
             lock (m_DeferredAcknowledgements)

@@ -39,7 +39,7 @@ namespace Inceptum.Messaging
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public IPrioritizedProcessingGroup GetProcessingGroup(string transportId, string name, Action onFailure)
+        public IProcessingGroup GetProcessingGroup(string transportId, string name, Action onFailure)
         {
             addId(transportId);
             var transport = Transport ?? (Transport = m_Factory.Create(m_TransportInfo, processTransportFailure));
@@ -51,11 +51,7 @@ namespace Inceptum.Messaging
 
                 if (processingGroup == null)
                 {
-                    ProcessingGroupInfo processingGroupInfo;
-                    if (!m_TransportInfo.ProcessingGroups.TryGetValue(name, out processingGroupInfo))
-                        processingGroupInfo = new ProcessingGroupInfo { ConcurrencyLevel = 1 };
-
-                    processingGroup = new ProcessingGroupWrapper(transportId, name, processingGroupInfo);
+                    processingGroup = new ProcessingGroupWrapper(transportId, name);
                     processingGroup.SetProcessingGroup(transport.CreateProcessingGroup(() => processProcessingGroupFailure(processingGroup)));
                     m_ProcessingGroups.Add(processingGroup);
                 }
@@ -105,9 +101,9 @@ namespace Inceptum.Messaging
                 processingGroupWrappers = m_ProcessingGroups.ToArray();
             }
 
-            foreach (var processinGroupWrapper in processingGroupWrappers)
+            foreach (var processingGroupWrapper in processingGroupWrappers)
             {
-                processinGroupWrapper.Dispose();
+                processingGroupWrapper.Dispose();
             }
 
             Transport.Dispose();
@@ -121,5 +117,77 @@ namespace Inceptum.Messaging
             return transport.VerifyDestination(destination, usage, configureIfRequired, out error);
         }
 
+    }
+
+    internal class ProcessingGroupWrapper:IProcessingGroup
+    {
+        public string TransportId { get; private set; }
+        public string Name { get; private set; }
+        private IProcessingGroup ProcessingGroup { get; set; }
+        public event Action OnFailure;
+
+
+        public ProcessingGroupWrapper(string transportId, string name)
+        {
+            TransportId = transportId;
+            Name = name;
+        }
+        public void SetProcessingGroup(IProcessingGroup processingGroup)
+        {
+            ProcessingGroup = processingGroup;
+        }
+
+        public void ReportFailure()
+        {
+            if (OnFailure == null)
+                return;
+
+            foreach (var handler in OnFailure.GetInvocationList())
+            {
+                try
+                {
+                    handler.DynamicInvoke();
+                }
+                catch (Exception)
+                {
+                    //TODO: log
+                }
+            }
+        }
+
+
+
+        public void Dispose()
+        {
+            if (ProcessingGroup == null)
+                return;
+            ProcessingGroup.Dispose();
+            ProcessingGroup = null;
+        }
+
+        public void Send(string destination, BinaryMessage message, int ttl)
+        {
+            ProcessingGroup.Send(destination, message, ttl);
+        }
+
+        public RequestHandle SendRequest(string destination, BinaryMessage message, Action<BinaryMessage> callback)
+        {
+            return ProcessingGroup.SendRequest(destination, message, callback);
+        }
+
+        public IDisposable RegisterHandler(string destination, Func<BinaryMessage, BinaryMessage> handler, string messageType)
+        {
+            return ProcessingGroup.RegisterHandler(destination, handler, messageType);
+        }
+
+        public IDisposable Subscribe(string destination, Action<BinaryMessage, Action<bool>> callback, string messageType)
+        {
+            return ProcessingGroup.Subscribe(destination,callback, messageType);
+        }
+
+        public Destination CreateTemporaryDestination()
+        {
+            return ProcessingGroup.CreateTemporaryDestination();
+        }
     }
 }

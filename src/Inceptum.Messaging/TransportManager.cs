@@ -12,7 +12,7 @@ namespace Inceptum.Messaging
     internal interface ITransportManager : IDisposable
     {
         event TransportEventHandler TransportEvents;
-        IPrioritizedProcessingGroup GetProcessingGroup(string transportId, string name, Action onFailure = null);
+        IProcessingGroup GetProcessingGroup(string transportId, string name, Action onFailure = null);
     }
 
     internal class TransportManager : ITransportManager
@@ -54,7 +54,7 @@ namespace Inceptum.Messaging
 
         public event TransportEventHandler TransportEvents;
 
-        public IPrioritizedProcessingGroup GetProcessingGroup(string transportId, string name, Action onFailure = null)
+        public IProcessingGroup GetProcessingGroup(string transportId, string name, Action onFailure = null)
         {
             ResolvedTransport transport = resolveTransport(transportId);
 
