@@ -48,6 +48,7 @@ namespace Inceptum.Messaging.Contract
 		IDisposable RegisterHandler<TRequest, TResponse>(Func<TRequest, TResponse> handler, Endpoint endpoint) where TResponse : class;
 
         bool VerifyEndpoint(Endpoint endpoint, EndpointUsage usage, bool configureIfRequired, out string error);
+        string GetStatistics();
     }
 
     [Flags]

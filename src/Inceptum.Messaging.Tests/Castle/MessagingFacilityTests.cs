@@ -109,6 +109,7 @@ namespace Inceptum.Messaging.Tests.Castle
                 Thread.Sleep(100);
                 
                 Assert.That(Handler.Handled, Is.EquivalentTo(new object[] { "test", 1, DateTime.MinValue }), "message was not handled");
+               
             }
         }
 

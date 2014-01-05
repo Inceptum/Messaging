@@ -17,7 +17,7 @@ namespace Inceptum.Messaging
         private volatile bool m_IsDisposing;
         public string Name { get; private set; }
         private long m_TasksInProgress = 0;
-        readonly ManualResetEvent m_DoesNotHaveTasksInProgress=new ManualResetEvent(true);
+        private long m_ReceivedMessages = 0;
 
         public ProcessingGroup(string name, ProcessingGroupInfo processingGroupInfo)
         {
@@ -28,6 +28,11 @@ namespace Inceptum.Messaging
             m_TaskScheduler = new QueuedTaskScheduler(threadCount);
 
             m_TaskFactories = new Dictionary<int, TaskFactory>();
+        }
+
+        public long ReceivedMessages
+        {
+            get { return Interlocked.Read(ref m_ReceivedMessages); }
         }
 
         private TaskFactory getTaskFactory(int priority)
@@ -62,7 +67,10 @@ namespace Inceptum.Messaging
                     if (subscription.IsDisposed)
                         ack(false);
                     else
+                    {
                         callback(message, ack);
+                        Interlocked.Increment(ref m_ReceivedMessages);
+                    }
                     Interlocked.Decrement(ref m_TasksInProgress);
                 });
             }, messageType);
