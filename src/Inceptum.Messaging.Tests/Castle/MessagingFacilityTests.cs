@@ -8,7 +8,9 @@ using Castle.Windsor;
 using Inceptum.Messaging.Castle;
 using Inceptum.Messaging.Configuration;
 using Inceptum.Messaging.Contract;
+using Inceptum.Messaging.InMemory;
 using NUnit.Framework;
+using Rhino.Mocks;
 
 namespace Inceptum.Messaging.Tests.Castle
 {
@@ -108,6 +110,35 @@ namespace Inceptum.Messaging.Tests.Castle
                 
                 Assert.That(Handler.Handled, Is.EquivalentTo(new object[] { "test", 1, DateTime.MinValue }), "message was not handled");
             }
+        }
+
+        [Test]
+        public void EndToEndTest()
+        {
+            using (IWindsorContainer container = new WindsorContainer())
+            {
+                container.Kernel.Resolver.AddSubResolver(new ArrayResolver(container.Kernel));
+                container.AddFacility<MessagingFacility>(f => f
+                    .WithTransport("TRANSPORT_ID1", new TransportInfo("BROKER", "USERNAME", "PASSWORD", "MachineName", "InMemory"))
+                    .WithTransportFactory(new InMemoryTransportFactory()));
+                var factory = MockRepository.GenerateMock<ISerializerFactory>();
+                factory.Expect(f => f.SerializationFormat).Return("fake");
+                factory.Expect(f => f.Create<string>()).Return(new FakeStringSerializer());
+                container.Register(Component.For<ISerializerFactory>().Instance(factory));
+                var engine = container.Resolve<IMessagingEngine>();
+                var ev = new ManualResetEvent(false);
+                var endpoint = new Endpoint("TRANSPORT_ID1", "destination", serializationFormat: "fake");
+                using (engine.Subscribe<string>(endpoint, s =>
+                {
+                    Console.WriteLine(s);
+                    ev.Set();
+                }))
+                {
+                    engine.Send("test", endpoint);
+                    Assert.That(ev.WaitOne(500), Is.True, "message was not received");
+                }
+            }
+
         }
     }
 

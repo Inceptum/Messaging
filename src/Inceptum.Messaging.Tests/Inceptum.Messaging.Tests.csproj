@@ -86,6 +86,7 @@
     <Compile Include="Castle\MessagingConfigurationDependsOnEndpointsTests.cs" />
     <Compile Include="Castle\MessagingFacilityTests.cs" />
     <Compile Include="Configuration\MessagingConfigurationSectionTests.cs" />
+    <Compile Include="FakeStringSerializer.cs" />
     <Compile Include="InMemoryTransportTests.cs" />
     <Compile Include="InvestigationTests.cs" />
     <Compile Include="MessagingEngineTests.cs" />
