@@ -18,6 +18,7 @@ namespace Inceptum.Messaging
         public string Name { get; private set; }
         private long m_TasksInProgress = 0;
         private long m_ReceivedMessages = 0;
+        private long m_SentMessages = 0;
 
         public ProcessingGroup(string name, ProcessingGroupInfo processingGroupInfo)
         {
@@ -33,6 +34,11 @@ namespace Inceptum.Messaging
         public long ReceivedMessages
         {
             get { return Interlocked.Read(ref m_ReceivedMessages); }
+        }
+
+        public long SentMessages
+        {
+            get { return Interlocked.Read(ref m_SentMessages); }
         }
 
         private TaskFactory getTaskFactory(int priority)
@@ -83,6 +89,12 @@ namespace Inceptum.Messaging
             while (Interlocked.Read(ref m_TasksInProgress)>0)
                 Thread.Sleep(100);
             m_TaskScheduler.Dispose();
+        }
+
+        public void Send(IMessagingSession messagingSession, string publish, BinaryMessage message, int ttl)
+        {
+            messagingSession.Send(publish,message,ttl);
+            Interlocked.Increment(ref m_SentMessages);
         }
     }
 }

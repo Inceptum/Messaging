@@ -13,7 +13,7 @@ using Rhino.Mocks;
 namespace Inceptum.Messaging.Tests
 {
     [TestFixture]
-    public class SubscriptionManagerTests
+    public class ProcessingGroupManagerTests
     {
 
         [Test]
@@ -24,10 +24,10 @@ namespace Inceptum.Messaging.Tests
                     {
                         {"transport-1", new TransportInfo("transport-1", "login1", "pwd1", "None", "InMemory")}
                     }));
-            var subscriptionManager = new SubscriptionManager(transportManager);
+            var processingGroupManager = new ProcessingGroupManager(transportManager);
 
             var session = transportManager.GetMessagingSession("transport-1", "pg"); var usedThreads = new List<int>();
-            var subscription = subscriptionManager.Subscribe(new Endpoint { Destination = "queue", TransportId = "transport-1" },
+            var subscription = processingGroupManager.Subscribe(new Endpoint { Destination = "queue", TransportId = "transport-1" },
                 (message, action) =>
                 {
                     lock (usedThreads)
@@ -54,7 +54,7 @@ namespace Inceptum.Messaging.Tests
                     {
                         {"transport-1", new TransportInfo("transport-1", "login1", "pwd1", "None", "InMemory")}
                     }));
-            var subscriptionManager = new SubscriptionManager(transportManager, new Dictionary<string, ProcessingGroupInfo>()
+            var processingGroupManager = new ProcessingGroupManager(transportManager, new Dictionary<string, ProcessingGroupInfo>()
             {
                 {
                     "pg", new ProcessingGroupInfo() {ConcurrencyLevel = 3}
@@ -63,7 +63,7 @@ namespace Inceptum.Messaging.Tests
 
             var processingGroup = transportManager.GetMessagingSession("transport-1", "pg");
             var usedThreads = new List<int>();
-            var subscription = subscriptionManager.Subscribe(new Endpoint { Destination = "queue", TransportId = "transport-1" },
+            var subscription = processingGroupManager.Subscribe(new Endpoint { Destination = "queue", TransportId = "transport-1" },
                 (message, action) =>
                 {
                     lock (usedThreads)
@@ -91,7 +91,7 @@ namespace Inceptum.Messaging.Tests
                     {
                         {"transport-1", new TransportInfo("transport-1", "login1", "pwd1", "None", "InMemory")}
                     }));
-            var subscriptionManager = new SubscriptionManager(transportManager, new Dictionary<string, ProcessingGroupInfo>()
+            var processingGroupManager = new ProcessingGroupManager(transportManager, new Dictionary<string, ProcessingGroupInfo>()
             {
                 {
                     "pg", new ProcessingGroupInfo() {ConcurrencyLevel = 3}
@@ -112,9 +112,9 @@ namespace Inceptum.Messaging.Tests
                 Thread.Sleep(50);
             };
 
-            var subscription0 = subscriptionManager.Subscribe(new Endpoint { Destination = "queue0", TransportId = "transport-1" }, callback, null, "pg", 0);
-            var subscription1 = subscriptionManager.Subscribe(new Endpoint { Destination = "queue1", TransportId = "transport-1" }, callback, null, "pg", 1);
-            var subscription2 = subscriptionManager.Subscribe(new Endpoint { Destination = "queue2", TransportId = "transport-1" }, callback, null, "pg", 2);
+            var subscription0 = processingGroupManager.Subscribe(new Endpoint { Destination = "queue0", TransportId = "transport-1" }, callback, null, "pg", 0);
+            var subscription1 = processingGroupManager.Subscribe(new Endpoint { Destination = "queue1", TransportId = "transport-1" }, callback, null, "pg", 1);
+            var subscription2 = processingGroupManager.Subscribe(new Endpoint { Destination = "queue2", TransportId = "transport-1" }, callback, null, "pg", 2);
 
             using (subscription0)
             using (subscription1)
@@ -142,12 +142,12 @@ namespace Inceptum.Messaging.Tests
           public void DeferredAcknowledgementTest()
           {
               Action<BinaryMessage, Action<bool>> callback=null;
-              using (var subscriptionManager = createSubscriptionManagerWithMockedDependencies(action => callback = action))
+              using (var processingGroupManager = createProcessingGroupManagerWithMockedDependencies(action => callback = action))
               {
 
                   DateTime processed = default(DateTime);
                   DateTime acked = default(DateTime);
-                  subscriptionManager.Subscribe(new Endpoint("test", "test", false, "fake"), (message, acknowledge) =>
+                  processingGroupManager.Subscribe(new Endpoint("test", "test", false, "fake"), (message, acknowledge) =>
                       {
                           processed = DateTime.Now;
                           acknowledge(1000, true);
@@ -173,10 +173,10 @@ namespace Inceptum.Messaging.Tests
             bool? stuckedInQueueMessageAck = null;
             var finishProcessing=new ManualResetEvent(false);
             Action<BinaryMessage, Action<bool>> callback = null;
-            using (var subscriptionManager = createSubscriptionManagerWithMockedDependencies(action => callback = action))
+            using (var processingGroupManager = createProcessingGroupManagerWithMockedDependencies(action => callback = action))
             {
                 IDisposable subscription=null ;
-                subscription = subscriptionManager.Subscribe(new Endpoint("test", "test", false, "fake"), (message, acknowledge) =>
+                subscription = processingGroupManager.Subscribe(new Endpoint("test", "test", false, "fake"), (message, acknowledge) =>
                 {
                     acknowledge(0,true);
                     finishProcessing.WaitOne();
@@ -201,9 +201,9 @@ namespace Inceptum.Messaging.Tests
               Action<BinaryMessage, Action<bool>> callback=null;
               bool acknowledged = false;
 
-              using (var subscriptionManager = createSubscriptionManagerWithMockedDependencies(action => callback = action))
+              using (var processingGroupManager = createProcessingGroupManagerWithMockedDependencies(action => callback = action))
               {
-                 var subscription= subscriptionManager.Subscribe(new Endpoint("test", "test", false, "fake"), (message, acknowledge) =>
+                 var subscription= processingGroupManager.Subscribe(new Endpoint("test", "test", false, "fake"), (message, acknowledge) =>
                       {
                           acknowledge(60000, true);
                           Console.WriteLine(DateTime.Now.ToString("HH:mm:ss.ffff") + " received");
@@ -239,9 +239,9 @@ namespace Inceptum.Messaging.Tests
                 subscribed.Set();
             };
 
-            using (var subscriptionManager = createSubscriptionManagerWithMockedDependencies(action => callback = action, action => emulateFail = action, onSubscribe ))
+            using (var processingGroupManager = createProcessingGroupManagerWithMockedDependencies(action => callback = action, action => emulateFail = action, onSubscribe ))
             {
-                var subscription =subscriptionManager.Subscribe(new Endpoint("test", "test", false, "fake"), (message, acknowledge) =>
+                var subscription =processingGroupManager.Subscribe(new Endpoint("test", "test", false, "fake"), (message, acknowledge) =>
                     {
                         acknowledge(0, true);
                         Console.WriteLine(DateTime.Now.ToString("HH:mm:ss.ffff") + " recieved");
@@ -285,9 +285,9 @@ namespace Inceptum.Messaging.Tests
                 Action<BinaryMessage, Action<bool>> callback = null;
                 long counter = messageCount;
                 var complete = new ManualResetEvent(false);
-                var subscriptionManager = createSubscriptionManagerWithMockedDependencies(action => callback = action);
+                var processingGroupManager = createProcessingGroupManagerWithMockedDependencies(action => callback = action);
                 Stopwatch sw = Stopwatch.StartNew();
-                subscriptionManager.Subscribe(new Endpoint("test", "test", false, "fake"), (message, acknowledge) =>
+                processingGroupManager.Subscribe(new Endpoint("test", "test", false, "fake"), (message, acknowledge) =>
                     {
                         Thread.Sleep(rnd.Next(1,10));
                         acknowledge(delay.Key, true);
@@ -300,14 +300,14 @@ namespace Inceptum.Messaging.Tests
                         });
                 complete.WaitOne();
                 Console.WriteLine("{0} ({1}ms delay extracted to narrow results): {2}ms ",delay.Value,delay.Key, sw.ElapsedMilliseconds-delay.Key);
-                Console.WriteLine(subscriptionManager.GetStatistics());
+                Console.WriteLine(processingGroupManager.GetStatistics());
             }
 
             
         }
 
 
-        private static SubscriptionManager createSubscriptionManagerWithMockedDependencies(Action<Action<BinaryMessage, Action<bool>>> setCallback, Action<Action> setOnFail = null, Action onSubscribe = null)
+        private static ProcessingGroupManager createProcessingGroupManagerWithMockedDependencies(Action<Action<BinaryMessage, Action<bool>>> setCallback, Action<Action> setOnFail = null, Action onSubscribe = null)
         {
 
             if (setOnFail == null)
@@ -315,8 +315,8 @@ namespace Inceptum.Messaging.Tests
             if (onSubscribe == null)
                 onSubscribe = () => { };
             var transportManager = MockRepository.GenerateMock<ITransportManager>();
-            var processingGroup = MockRepository.GenerateMock<IMessagingSession>();
-            processingGroup.Expect(p => p.Subscribe("test", null, null))
+            var session = MockRepository.GenerateMock<IMessagingSession>();
+            session.Expect(p => p.Subscribe("test", null, null))
                            .IgnoreArguments()
                            .WhenCalled(invocation =>
                            {
@@ -327,8 +327,8 @@ namespace Inceptum.Messaging.Tests
             transportManager.Expect(t => t.GetMessagingSession(null,null, null))
                 .IgnoreArguments()
                 .WhenCalled(invocation => setOnFail((Action)invocation.Arguments[2]))
-                .Return(processingGroup);
-            return new SubscriptionManager(transportManager,new Dictionary<string, ProcessingGroupInfo>
+                .Return(session);
+            return new ProcessingGroupManager(transportManager,new Dictionary<string, ProcessingGroupInfo>
             {
                 {"SingleThread",new ProcessingGroupInfo(){ConcurrencyLevel = 1}},
                 {"MultiThread",new ProcessingGroupInfo(){ConcurrencyLevel = 3}}

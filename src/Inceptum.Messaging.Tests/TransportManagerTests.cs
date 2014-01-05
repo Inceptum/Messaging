@@ -26,36 +26,14 @@ namespace Inceptum.Messaging.Tests
             public const string BROKER = "test";
         }
 
-        public static ITransportResolver MockTransportResolver()
+        private static ITransportResolver MockTransportResolver()
         {
             var resolver = MockRepository.GenerateMock<ITransportResolver>();
             resolver.Expect(r => r.GetTransport(TransportConstants.TRANSPORT_ID1)).Return(new TransportInfo(TransportConstants.BROKER, TransportConstants.USERNAME, TransportConstants.PASSWORD, "MachineName", "InMemory") );
             resolver.Expect(r => r.GetTransport(TransportConstants.TRANSPORT_ID2)).Return(new TransportInfo(TransportConstants.BROKER, TransportConstants.USERNAME, TransportConstants.PASSWORD, "MachineName", "InMemory") );
             return resolver;
         }
-        [Test]
-        public void TransportFailureHandlingTest()
-        {
-            var resolver = MockTransportResolver();
-            var transportManager = new TransportManager(resolver, new InMemoryTransportFactory());
-            using (var engine = new MessagingEngine(transportManager))
-            {
-                engine.SerializationManager.RegisterSerializer("fake", typeof(string), new FakeStringSerializer());
-                int failureWasReportedCount = 0;
-                engine.SubscribeOnTransportEvents((transportId, @event) => failureWasReportedCount++);
-
-                //need for transportManager to start tracking transport failures for these ids
-                transportManager.GetMessagingSession(TransportConstants.TRANSPORT_ID1, "test");
-                transportManager.GetMessagingSession(TransportConstants.TRANSPORT_ID2, "test");
-
-                transportManager.ProcessTransportFailure(
-                    new TransportInfo(TransportConstants.BROKER,
-                        TransportConstants.USERNAME,
-                        TransportConstants.PASSWORD, "MachineName", "InMemory"));
-                Assert.That(failureWasReportedCount, Is.GreaterThan(0), "Failure was not reported");
-                Assert.That(failureWasReportedCount, Is.EqualTo(2), "Failure was not reported for all ids");
-            }
-        }
+       
         [Test]
         public void ConcurrentTransportResolutionTest()
         {

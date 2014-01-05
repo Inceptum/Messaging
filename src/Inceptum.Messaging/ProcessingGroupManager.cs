@@ -10,12 +10,7 @@ using NLog;
 
 namespace Inceptum.Messaging
 {
-    internal class Subscription
-    {
-        
-    }
-
-    internal class SubscriptionManager:IDisposable
+    internal class ProcessingGroupManager:IDisposable
     {
         private readonly ITransportManager m_TransportManager;
         readonly List<Tuple<DateTime, Action>> m_DeferredAcknowledgements = new List<Tuple<DateTime, Action>>();
@@ -28,9 +23,9 @@ namespace Inceptum.Messaging
         readonly Dictionary<string, ProcessingGroupInfo> m_ProcessingGroupInfos = new Dictionary<string, ProcessingGroupInfo>();
         private volatile bool m_IsDisposing;
 
-        public SubscriptionManager(ITransportManager transportManager, Dictionary<string, ProcessingGroupInfo> processingGroups=null, int resubscriptionTimeout=60000)
+        public ProcessingGroupManager(ITransportManager transportManager, IDictionary<string, ProcessingGroupInfo> processingGroups=null, int resubscriptionTimeout=60000)
         {
-            m_ProcessingGroupInfos = processingGroups ?? new Dictionary<string, ProcessingGroupInfo>();
+            m_ProcessingGroupInfos = new Dictionary<string, ProcessingGroupInfo>(processingGroups ?? new Dictionary<string, ProcessingGroupInfo>());
             m_TransportManager = transportManager;
             m_ResubscriptionTimeout = resubscriptionTimeout;
             m_DeferredAcknowledger = new SchedulingBackgroundWorker("DeferredAcknowledgement", () => processDeferredAcknowledgements());
@@ -41,7 +36,7 @@ namespace Inceptum.Messaging
         {
             if (string.IsNullOrEmpty(processingGroup)) throw new ArgumentNullException("processingGroup","should be not empty string");
             if (m_IsDisposing)
-                throw new ObjectDisposedException("SubscriptionManager");
+                throw new ObjectDisposedException(GetType().Name);
             var subscriptionHandler = new MultipleAssignmentDisposable();
             Action<int> doSubscribe = null;
             doSubscribe = attemptNumber =>
@@ -54,29 +49,17 @@ namespace Inceptum.Messaging
                     m_Logger.Info("Subscribing for endpoint {0}", endpoint);
                 try
                 {
-                    ProcessingGroup group;
-                    lock (m_ProcessingGroups)
-                    {
-                        if (!m_ProcessingGroups.TryGetValue(processingGroup, out group))
-                        {
-                            ProcessingGroupInfo info;
-                            if(!m_ProcessingGroupInfos.TryGetValue(processingGroup, out info))
-                                info = new ProcessingGroupInfo { ConcurrencyLevel = 0 };
-                            group=new ProcessingGroup(processingGroup,info);
-                            m_ProcessingGroups.Add(processingGroup,group);
-                        }
-                    }
+                    var group = getProcessingGroup(processingGroup);
 
 
                     //TODO:store and manage dispose of PG (one messaging pg per engine pg and transport pair)
-                    var procGroup = m_TransportManager.GetMessagingSession(endpoint.TransportId, processingGroup??endpoint.Destination.ToString(),
-                        () => {
+                    var session = m_TransportManager.GetMessagingSession(endpoint.TransportId,group.Name,() => {
                             m_Logger.Info("Subscription for endpoint {0} failure detected. Attempting subscribe again.", endpoint);
                             doSubscribe(0);
                         });
 
 
-                    var subscription = group.Subscribe(procGroup,endpoint.Destination.Subscribe, (message, ack) => callback(message, createDeferredAcknowledge(ack)),messageType,priority);
+                    var subscription = group.Subscribe(session,endpoint.Destination.Subscribe, (message, ack) => callback(message, createDeferredAcknowledge(ack)),messageType,priority);
                     var brokenSubscription = subscriptionHandler.Disposable;
                     subscriptionHandler.Disposable = subscription;
                     try
@@ -97,6 +80,33 @@ namespace Inceptum.Messaging
             
             return subscriptionHandler;
         }
+
+        private ProcessingGroup getProcessingGroup(string processingGroup)
+        {
+            ProcessingGroup @group;
+            lock (m_ProcessingGroups)
+            {
+                if (!m_ProcessingGroups.TryGetValue(processingGroup, out @group))
+                {
+                    ProcessingGroupInfo info;
+                    if (!m_ProcessingGroupInfos.TryGetValue(processingGroup, out info))
+                        info = new ProcessingGroupInfo {ConcurrencyLevel = 0};
+                    @group = new ProcessingGroup(processingGroup, info);
+                    m_ProcessingGroups.Add(processingGroup, @group);
+                }
+            }
+            return @group;
+        }
+
+        public void Send(Endpoint endpoint, BinaryMessage message, int ttl, string processingGroup)
+        {
+            var group = getProcessingGroup(processingGroup);
+            var session = m_TransportManager.GetMessagingSession(endpoint.TransportId,group.Name);
+
+            group.Send(session,endpoint.Destination.Publish, message, ttl);
+
+        }
+
 
         private void scheduleSubscription(Action<int> subscribe, int attemptCount)
         {
@@ -166,7 +176,7 @@ namespace Inceptum.Messaging
             var stats=new StringBuilder();
             int length = m_ProcessingGroups.Keys.Max(k=>k.Length);
             m_ProcessingGroups.Aggregate(stats,
-                (builder, pair) => builder.AppendFormat("{0,-" + length + "}\tReceived:{1}"+Environment.NewLine, pair.Key, pair.Value.ReceivedMessages));
+                (builder, pair) => builder.AppendFormat("{0,-" + length + "}\t Sent:{1}\tReceived:{2}"+Environment.NewLine, pair.Key,pair.Value.SentMessages, pair.Value.ReceivedMessages));
             return stats.ToString();
         }
 
