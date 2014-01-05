@@ -133,10 +133,12 @@ namespace Inceptum.Messaging.Utils
 
         /// <summary>Initializes the scheduler.</summary>
         /// <param name="threadCount">The number of threads to create and use for processing work items.</param>
-        public QueuedTaskScheduler(int threadCount) : this(threadCount, string.Empty, false, ThreadPriority.Normal, ApartmentState.MTA, 0, null, null) { }
+        /// <param name="capacity">Queue capacity. 0 for unlimited queue</param>
+        public QueuedTaskScheduler(int threadCount,int capacity=0) : this(threadCount,capacity, string.Empty, false, ThreadPriority.Normal, ApartmentState.MTA, 0, null, null) { }
 
         /// <summary>Initializes the scheduler.</summary>
         /// <param name="threadCount">The number of threads to create and use for processing work items.</param>
+        /// <param name="capacity">Queue capacity. 0 for unlimited queue</param>
         /// <param name="threadName">The name to use for each of the created threads.</param>
         /// <param name="useForegroundThreads">A Boolean value that indicates whether to use foreground threads instead of background.</param>
         /// <param name="threadPriority">The priority to assign to each thread.</param>
@@ -146,6 +148,7 @@ namespace Inceptum.Messaging.Utils
         /// <param name="threadFinally">A finalization routine to run on each thread.</param>
         public QueuedTaskScheduler(
             int threadCount,
+            int capacity,
             string threadName = "",
             bool useForegroundThreads = false,
             ThreadPriority threadPriority = ThreadPriority.Normal,
@@ -160,8 +163,9 @@ namespace Inceptum.Messaging.Utils
             else if (threadCount == 0) _concurrencyLevel = Environment.ProcessorCount;
             else _concurrencyLevel = threadCount;
 
+            if (capacity < 0) throw new ArgumentOutOfRangeException("capacity");
             // Initialize the queue used for storing tasks
-            _blockingTaskQueue = new BlockingCollection<Task>();
+            _blockingTaskQueue = capacity == 0 ? new BlockingCollection<Task>() : new BlockingCollection<Task>(capacity);
 
             // Create all of the threads
             _threads = new Thread[threadCount];
@@ -172,7 +176,7 @@ namespace Inceptum.Messaging.Utils
                     Priority = threadPriority,
                     IsBackground = !useForegroundThreads,
                 };
-                if (threadName != null) _threads[i].Name = threadName + " (" + i + ")";
+                if (threadName != null) _threads[i].Name = threadName + " #" + i;
                 _threads[i].SetApartmentState(threadApartmentState);
             }
 

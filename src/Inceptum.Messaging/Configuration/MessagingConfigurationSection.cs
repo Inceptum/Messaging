@@ -54,7 +54,7 @@ namespace Inceptum.Messaging.Configuration
 
         public IDictionary<string, ProcessingGroupInfo> GetProcessingGroups()
         {
-            return ProcessingGroups.Cast<ProcessingGroupConfigurationElement>().ToDictionary(pge => pge.Name, pge => new ProcessingGroupInfo() { ConcurrencyLevel = pge.ConcurrencyLevel});
+            return ProcessingGroups.Cast<ProcessingGroupConfigurationElement>().ToDictionary(pge => pge.Name, pge => new ProcessingGroupInfo() { ConcurrencyLevel = pge.ConcurrencyLevel,QueueCapacity = pge.QueueCapacity});
         }
     }
 }

@@ -89,7 +89,7 @@ namespace Inceptum.Messaging
                 {
                     ProcessingGroupInfo info;
                     if (!m_ProcessingGroupInfos.TryGetValue(processingGroup, out info))
-                        info = new ProcessingGroupInfo {ConcurrencyLevel = 0};
+                        info = new ProcessingGroupInfo();
                     @group = new ProcessingGroup(processingGroup, info);
                     m_ProcessingGroups.Add(processingGroup, @group);
                 }

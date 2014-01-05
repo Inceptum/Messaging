@@ -21,9 +21,9 @@ namespace Inceptum.Messaging
         private readonly QueuedTaskScheduler m_TaskScheduler;
         private readonly Dictionary<int, TaskFactory> m_TaskFactories = new Dictionary<int, TaskFactory>();
 
-        public QueuedSchedulingStrategy(int threadCount)
+        public QueuedSchedulingStrategy(int threadCount,int capacity,string name)
         {
-            m_TaskScheduler = new QueuedTaskScheduler(threadCount);
+            m_TaskScheduler = new QueuedTaskScheduler(threadCount,capacity,name);
             m_TaskFactories = new Dictionary<int, TaskFactory>();
         }
 
@@ -71,7 +71,7 @@ namespace Inceptum.Messaging
         private long m_ReceivedMessages = 0;
         private long m_ProcessedMessages = 0;
         private long m_SentMessages = 0;
-        private int m_ConcurrencyLevel;
+        private readonly int m_ConcurrencyLevel;
 
         public ProcessingGroup(string name, ProcessingGroupInfo processingGroupInfo)
         {
@@ -80,7 +80,7 @@ namespace Inceptum.Messaging
 
             m_SchedulingStrategy = (m_ConcurrencyLevel == 0) 
                 ? (ISchedulingStrategy) new CurrentThreadSchedulingStrategy()
-                : (ISchedulingStrategy) new QueuedSchedulingStrategy(m_ConcurrencyLevel);
+                : (ISchedulingStrategy) new QueuedSchedulingStrategy(m_ConcurrencyLevel,processingGroupInfo.QueueCapacity,string.Format("ProcessingGroup '{0}' thread",Name));
         }
 
         public int ConcurrencyLevel
