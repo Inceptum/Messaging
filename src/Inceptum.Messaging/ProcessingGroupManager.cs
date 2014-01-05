@@ -52,7 +52,6 @@ namespace Inceptum.Messaging
                     var group = getProcessingGroup(processingGroup);
 
 
-                    //TODO:store and manage dispose of PG (one messaging pg per engine pg and transport pair)
                     var session = m_TransportManager.GetMessagingSession(endpoint.TransportId,group.Name,() => {
                             m_Logger.Info("Subscription for endpoint {0} failure detected. Attempting subscribe again.", endpoint);
                             doSubscribe(0);
@@ -176,7 +175,7 @@ namespace Inceptum.Messaging
             var stats=new StringBuilder();
             int length = m_ProcessingGroups.Keys.Max(k=>k.Length);
             m_ProcessingGroups.Aggregate(stats,
-                (builder, pair) => builder.AppendFormat("{0,-" + length + "}\t Sent:{1}\tReceived:{2}"+Environment.NewLine, pair.Key,pair.Value.SentMessages, pair.Value.ReceivedMessages));
+                (builder, pair) => builder.AppendFormat("{0,-" + length + "}\tConcurrencyLevel:{1:-10}\tSent:{2}\tReceived:{3}\tProcessed:{4}" + Environment.NewLine, pair.Key, pair.Value.ConcurrencyLevel == 0 ? "[current thread]" : pair.Value.ConcurrencyLevel.ToString(), pair.Value.SentMessages, pair.Value.ReceivedMessages, pair.Value.ProcessedMessages));
             return stats.ToString();
         }
 

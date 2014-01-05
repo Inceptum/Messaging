@@ -26,8 +26,8 @@ namespace Inceptum.Messaging.Tests.Castle
         [SetUp]
         public void SetUp()
         {
-            m_Endpoint1 = new Endpoint("transport-id-1", "destination-1",serializationFormat:"json");
-            m_Endpoint2 = new Endpoint("transport-id-2", "destination-2", serializationFormat: "json");
+            m_Endpoint1 = new Endpoint("transport-id-1", "first-destination",serializationFormat:"json");
+            m_Endpoint2 = new Endpoint("transport-id-2", "second-destination", serializationFormat: "json");
             m_Transport1 = new TransportInfo("transport-1", "login1", "pwd1", "None", "InMemory");
             m_Transport2 = new TransportInfo("transport-2", "login2", "pwd1", "None", "InMemory");
             m_MessagingConfiguration = new MockMessagingConfiguration(
@@ -109,7 +109,7 @@ namespace Inceptum.Messaging.Tests.Castle
                 Thread.Sleep(100);
                 
                 Assert.That(Handler.Handled, Is.EquivalentTo(new object[] { "test", 1, DateTime.MinValue }), "message was not handled");
-               
+                Console.WriteLine(engine.GetStatistics());
             }
         }
 
