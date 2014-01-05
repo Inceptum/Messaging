@@ -15,6 +15,15 @@ namespace Inceptum.Messaging.Tests
     [TestFixture]
     public class ProcessingGroupManagerTests
     {
+        [Test]
+        [ExpectedException(typeof(ArgumentException), ExpectedMessage = "Priority other then 0 is not applicable for processing group with zero concurrencyLevel (messages are processed on consuming thread)\r\nParameter name: priority")]
+        public void ProcessingGroupWithZeroConcurrencyDoesNotAcceptPriority()
+        {
+            using (var processingGroup = new ProcessingGroup("test", new ProcessingGroupInfo()))
+            {
+                processingGroup.Subscribe(MockRepository.GenerateMock<IMessagingSession>(), "dest", (message, action) => { }, null, 1);
+            }
+        }
 
         [Test]
         public void SameThreadSubscriptionTest()

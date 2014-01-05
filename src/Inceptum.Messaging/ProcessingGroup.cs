@@ -58,6 +58,9 @@ namespace Inceptum.Messaging
 
         public TaskFactory GetTaskFactory(int priority)
         {
+            if (priority != 0)
+                throw new ArgumentException("Priority other then 0 is not applicable for processing group with zero concurrencyLevel (messages are processed on consuming thread)", "priority");
+
             return new TaskFactory(new CurrentThreadTaskScheduler());
         }
     }
