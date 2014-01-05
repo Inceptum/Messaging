@@ -84,6 +84,8 @@
     <Compile Include="Configuration\MessagingConfigurationSection.cs" />
     <Compile Include="Configuration\NamedConfigurationElement.cs" />
     <Compile Include="Configuration\NamedConfigurationElementCollection.cs" />
+    <Compile Include="Configuration\ProcessingGroupConfigurationElement.cs" />
+    <Compile Include="Configuration\ProcessingGroupsCollection.cs" />
     <Compile Include="Configuration\TransportConfigurationElement.cs" />
     <Compile Include="Configuration\TransportsCollection.cs" />
     <Compile Include="Contract\Endpoint.cs" />
@@ -109,7 +111,7 @@
     <Compile Include="ProcessingException.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Serialization\SerializationManager.cs" />
-    <Compile Include="SubscriptionManager.cs" />
+    <Compile Include="ProcessingGroupManager.cs" />
     <Compile Include="Transports\BinaryMessage.cs" />
     <Compile Include="Transports\ITransport.cs" />
     <Compile Include="Transports\RequestHandle.cs" />

@@ -37,6 +37,11 @@ namespace Inceptum.Messaging.Tests.Configuration
                                      .And.Property("Destination").EqualTo((Destination)"queue1")
                                      .And.Property("SharedDestination").EqualTo(false)
                 );
+
+            var processingGroup1 = messagingConfiguration.GetProcessingGroups()["processingGroup1"];
+            Assert.That(processingGroup1, Is.Not.Null
+                                     .And.Property("ConcurrencyLevel").EqualTo(10)
+                );
         }
 
         [Test]
@@ -49,6 +54,7 @@ namespace Inceptum.Messaging.Tests.Configuration
             var transports = messagingConfiguration.GetTransports();
             Assert.IsEmpty(transports);
             CollectionAssert.IsEmpty(messagingConfiguration.GetEndpoints());
+            CollectionAssert.IsEmpty(messagingConfiguration.GetProcessingGroups());
         }
 
         [Test]

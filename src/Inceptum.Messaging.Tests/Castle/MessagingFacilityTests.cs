@@ -138,6 +138,8 @@ namespace Inceptum.Messaging.Tests.Castle
                     engine.Send("test", endpoint);
                     Assert.That(ev.WaitOne(500), Is.True, "message was not received");
                 }
+
+                Console.WriteLine(engine.GetStatistics());
             }
 
         }

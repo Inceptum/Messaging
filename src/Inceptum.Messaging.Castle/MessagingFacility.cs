@@ -23,10 +23,12 @@ namespace Inceptum.Messaging.Castle
         {
             Transports = new Dictionary<string, TransportInfo>();
             Endpoints = new Dictionary<string, Endpoint>();
+            ProcessingGroups=new Dictionary<string, ProcessingGroupInfo>();
         }
 
         public IDictionary<string, TransportInfo> Transports { get; set; }
         public IDictionary<string, Endpoint> Endpoints { get; set; }
+        public IDictionary<string, ProcessingGroupInfo> ProcessingGroups{ get; set; }
         public IDictionary<string, TransportInfo> GetTransports()
         {
             return Transports;
@@ -36,6 +38,13 @@ namespace Inceptum.Messaging.Castle
         {
             return Endpoints;
         }
+
+        public IDictionary<string, ProcessingGroupInfo> GetProcessingGroups()
+        {
+            return ProcessingGroups;
+        }
+
+
     }
     public class MessagingFacility : AbstractFacility
     {
@@ -76,6 +85,16 @@ namespace Inceptum.Messaging.Castle
             if (name == null) throw new ArgumentNullException("name");
             if (transport == null) throw new ArgumentNullException("transport");
             m_DefaultMessagingConfiguration.Transports.Add(name,transport);
+            return this;
+        }
+
+        public MessagingFacility WithProcessingGroup(string name, ProcessingGroupInfo processingGroup)
+        {
+            if (m_IsExplicitConfigurationProvided)
+                throw new InvalidOperationException("Can not add processing group to since configuration is provided explicitly");
+            if (name == null) throw new ArgumentNullException("name");
+            if (processingGroup == null) throw new ArgumentNullException("processingGroup");
+            m_DefaultMessagingConfiguration.ProcessingGroups.Add(name, processingGroup);
             return this;
         }
 
@@ -121,7 +140,6 @@ namespace Inceptum.Messaging.Castle
             {
                 initStep(Kernel);
             }
-            var transports = MessagingConfiguration.GetTransports();
 
             if (Kernel.HasComponent(typeof (IEndpointProvider)))
             {
@@ -137,7 +155,9 @@ namespace Inceptum.Messaging.Castle
             Kernel.Resolver.AddSubResolver(endpointResolver);
 
 
-            m_MessagingEngine = new MessagingEngine(new TransportResolver(transports ?? new Dictionary<string, TransportInfo>(), m_JailStrategies),
+            m_MessagingEngine = new MessagingEngine(
+                new TransportResolver(MessagingConfiguration.GetTransports() ?? new Dictionary<string, TransportInfo>(), m_JailStrategies),
+                MessagingConfiguration.GetProcessingGroups(),
                 m_TransportFactories.ToArray());
 
             Kernel.Register(

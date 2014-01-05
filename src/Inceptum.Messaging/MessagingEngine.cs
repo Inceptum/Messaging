@@ -30,29 +30,27 @@ namespace Inceptum.Messaging
         readonly Dictionary<RequestHandle, Action<Exception>> m_ActualRequests = new Dictionary<RequestHandle, Action<Exception>>();
         
 
-        private readonly SubscriptionManager m_SubscriptionManager;
+        private readonly ProcessingGroupManager m_ProcessingGroupManager;
 
+ 
 
-       
-        internal MessagingEngine(TransportManager transportManager)
+        public MessagingEngine(ITransportResolver transportResolver,IDictionary<string, ProcessingGroupInfo> processingGroups=null, params ITransportFactory[] transportFactories)
         {
-            if (transportManager == null) throw new ArgumentNullException("transportManager");
-            m_TransportManager = transportManager;
-            m_SubscriptionManager = new SubscriptionManager(m_TransportManager);
+            if (transportResolver == null) throw new ArgumentNullException("transportResolver");
+            m_TransportManager = new TransportManager(transportResolver, transportFactories);
+            m_ProcessingGroupManager = new ProcessingGroupManager(m_TransportManager,processingGroups);
             m_SerializationManager = new SerializationManager();
             m_RequestTimeoutManager = new SchedulingBackgroundWorker("RequestTimeoutManager", () => stopTimeoutedRequests());
             createMessagingHandle(() => stopTimeoutedRequests(true));
-
+        }
+        public MessagingEngine(ITransportResolver transportResolver, params ITransportFactory[] transportFactories)
+            : this(transportResolver,null, transportFactories)
+        {
         }
 
         public string GetStatistics()
         {
-            return m_SubscriptionManager.GetStatistics();
-        }
-
-        public MessagingEngine(ITransportResolver transportResolver, params ITransportFactory[] transportFactories)
-            : this(new TransportManager(transportResolver, transportFactories))
-        {
+            return m_ProcessingGroupManager.GetStatistics();
         }
 
         internal TransportManager TransportManager
@@ -133,8 +131,7 @@ namespace Inceptum.Messaging
             {
                 try
                 {
-                    var session = m_TransportManager.GetMessagingSession(endpoint.TransportId, getProcessingGroup(endpoint, processingGroup));
-                    session.Send(endpoint.Destination.Publish, message, ttl);
+                    m_ProcessingGroupManager.Send(endpoint, message, ttl, getProcessingGroup(endpoint, processingGroup));
                 }
                 catch (Exception e)
                 {
@@ -378,8 +375,6 @@ namespace Inceptum.Messaging
         {
             m_Logger.Debug("Disposing");
             m_Disposing.Set();
-            m_RequestTimeoutManager.Dispose();
-            m_SubscriptionManager.Dispose();
             m_RequestsTracker.WaitAll();
             lock (m_MessagingHandles)
             {
@@ -389,6 +384,8 @@ namespace Inceptum.Messaging
                     m_MessagingHandles.First().Dispose();
                 }
             }
+            m_RequestTimeoutManager.Dispose();
+            m_ProcessingGroupManager.Dispose();
             m_TransportManager.Dispose();
         }
 
@@ -493,7 +490,7 @@ namespace Inceptum.Messaging
 
         private IDisposable subscribe(Endpoint endpoint, CallbackDelegate<BinaryMessage> callback, string messageType, string processingGroup, int priority)
         {
-            var subscription = m_SubscriptionManager.Subscribe(endpoint, callback, messageType, getProcessingGroup(endpoint,processingGroup),priority);
+            var subscription = m_ProcessingGroupManager.Subscribe(endpoint, callback, messageType, getProcessingGroup(endpoint,processingGroup),priority);
 
             return createMessagingHandle(() =>
             {
