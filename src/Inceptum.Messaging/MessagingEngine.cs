@@ -7,7 +7,6 @@ using System.Reactive.Disposables;
 using System.Threading;
 using Inceptum.Core.Utils;
 using Inceptum.Messaging.Contract;
-using Inceptum.Messaging.InMemory;
 using Inceptum.Messaging.Serialization;
 using Inceptum.Messaging.Transports;
 using NLog;
@@ -17,27 +16,24 @@ namespace Inceptum.Messaging
     public class MessagingEngine : IMessagingEngine
     {
         private const int DEFAULT_UNACK_DELAY = 60000;
-        internal const int MESSAGE_DEFAULT_LIFESPAN = 0; // forever // 1800000; // milliseconds (30 minutes)
+        private const int MESSAGE_DEFAULT_LIFESPAN = 0; // forever // 1800000; // milliseconds (30 minutes)
         private readonly ManualResetEvent m_Disposing = new ManualResetEvent(false);
         private readonly CountingTracker m_RequestsTracker = new CountingTracker();
         private readonly ISerializationManager m_SerializationManager;
         private readonly List<IDisposable> m_MessagingHandles = new List<IDisposable>();
         private readonly TransportManager m_TransportManager;
 
-        Logger m_Logger = LogManager.GetCurrentClassLogger();
+        readonly Logger m_Logger = LogManager.GetCurrentClassLogger();
 
         readonly ConcurrentDictionary<Type, string> m_MessageTypeMapping = new ConcurrentDictionary<Type, string>();
         private readonly SchedulingBackgroundWorker m_RequestTimeoutManager;
         readonly Dictionary<RequestHandle, Action<Exception>> m_ActualRequests = new Dictionary<RequestHandle, Action<Exception>>();
         
 
-        private SubscriptionManager m_SubscriptionManager;
+        private readonly SubscriptionManager m_SubscriptionManager;
 
 
-        /// <summary>
-        /// ctor for tests
-        /// </summary>
-        /// <param name="transportManager"></param>
+       
         internal MessagingEngine(TransportManager transportManager)
         {
             if (transportManager == null) throw new ArgumentNullException("transportManager");
@@ -49,12 +45,10 @@ namespace Inceptum.Messaging
 
         }
 
-        internal Logger Logger
+        public string GetStatistics()
         {
-            get { return m_Logger; }
-            set { m_Logger = value; }
+            return m_SubscriptionManager.GetStatistics();
         }
-
 
         public MessagingEngine(ITransportResolver transportResolver, params ITransportFactory[] transportFactories)
             : this(new TransportManager(transportResolver, transportFactories))
@@ -81,7 +75,7 @@ namespace Inceptum.Messaging
 
         public Destination CreateTemporaryDestination(string transportId,string processingGroup)
         {
-            return m_TransportManager.GetMessagingSession(transportId,processingGroup).CreateTemporaryDestination();
+            return m_TransportManager.GetMessagingSession(transportId,processingGroup??"default").CreateTemporaryDestination();
         }
 
         public IDisposable SubscribeOnTransportEvents(TransportEventHandler handler)
@@ -103,13 +97,19 @@ namespace Inceptum.Messaging
 
         public void Send<TMessage>(TMessage message, Endpoint endpoint, string processingGroup = null)
         {
-            Send(message, endpoint, MESSAGE_DEFAULT_LIFESPAN);
+            Send(message, endpoint, MESSAGE_DEFAULT_LIFESPAN,processingGroup);
+        }
+
+        private static string getProcessingGroup(Endpoint endpoint, string processingGroup)
+        {
+            //by default on processing group per destination
+            return  processingGroup ?? endpoint.Destination.ToString();
         }
 
         public void Send<TMessage>(TMessage message, Endpoint endpoint, int ttl, string processingGroup = null)
         {
             var serializedMessage = serializeMessage(endpoint.SerializationFormat, message);
-            send(serializedMessage,endpoint,ttl, processingGroup??endpoint.Destination.ToString());
+            send(serializedMessage,endpoint,ttl, processingGroup);
         }
 
 
@@ -119,7 +119,7 @@ namespace Inceptum.Messaging
             var type = getMessageType(message.GetType());
             var bytes = m_SerializationManager.SerializeObject(endpoint.SerializationFormat, message);
             var serializedMessage = new BinaryMessage { Bytes = bytes, Type = type };
-            send(serializedMessage, endpoint, MESSAGE_DEFAULT_LIFESPAN, processingGroup??endpoint.Destination.ToString());
+            send(serializedMessage, endpoint, MESSAGE_DEFAULT_LIFESPAN, processingGroup);
         }
         
         private void send(BinaryMessage message, Endpoint endpoint, int ttl,string processingGroup)
@@ -127,13 +127,14 @@ namespace Inceptum.Messaging
             if (endpoint.Destination == null) throw new ArgumentException("Destination can not be null");
             if (m_Disposing.WaitOne(0))
                 throw new InvalidOperationException("Engine is disposing");
+            
 
             using (m_RequestsTracker.Track())
             {
                 try
                 {
-                    var procGroup = m_TransportManager.GetMessagingSession(endpoint.TransportId, processingGroup);
-                    procGroup.Send(endpoint.Destination.Publish, message, ttl);
+                    var session = m_TransportManager.GetMessagingSession(endpoint.TransportId, getProcessingGroup(endpoint, processingGroup));
+                    session.Send(endpoint.Destination.Publish, message, ttl);
                 }
                 catch (Exception e)
                 {
@@ -248,7 +249,7 @@ namespace Inceptum.Messaging
 
             using (m_RequestsTracker.Track())
             {
-                var responseRecieved = new ManualResetEvent(false);
+                var responseReceived = new ManualResetEvent(false);
                 TResponse response = default(TResponse);
                 Exception exception = null;
 
@@ -256,15 +257,15 @@ namespace Inceptum.Messaging
                                                              r =>
                                                                  {
                                                                      response = r;
-                                                                     responseRecieved.Set();
+                                                                     responseReceived.Set();
                                                                  },
                                                              ex =>
                                                                  {
                                                                      exception = ex;
-                                                                     responseRecieved.Set();
+                                                                     responseReceived.Set();
                                                                  },timeout))
                 {
-                    int waitResult = WaitHandle.WaitAny(new WaitHandle[] {m_Disposing, responseRecieved});
+                    int waitResult = WaitHandle.WaitAny(new WaitHandle[] {m_Disposing, responseReceived});
                     switch (waitResult)
                     {
                         case 1:
@@ -274,7 +275,7 @@ namespace Inceptum.Messaging
                                 throw exception;//StackTrace is replaced bat it is ok here.
                             throw new ProcessingException("Failed to process response", exception);
                         case 0:
-                            throw new ProcessingException("Request was cancelled due to engine dispose", exception);
+                            throw new ProcessingException("Request was canceled due to engine dispose", exception);
  
                         default:
                             throw new InvalidOperationException();
@@ -318,8 +319,8 @@ namespace Inceptum.Messaging
             {
                 try
                 {
-                    var procGroup = m_TransportManager.GetMessagingSession(endpoint.TransportId,processingGroup??endpoint.Destination.ToString());
-                    RequestHandle requestHandle = procGroup.SendRequest(endpoint.Destination.Publish, serializeMessage(endpoint.SerializationFormat, request),
+                    var session = m_TransportManager.GetMessagingSession(endpoint.TransportId, getProcessingGroup(endpoint, processingGroup));
+                    RequestHandle requestHandle = session.SendRequest(endpoint.Destination.Publish, serializeMessage(endpoint.SerializationFormat, request),
                                                                      message =>
                                                                      {
                                                                          try
@@ -360,9 +361,9 @@ namespace Inceptum.Messaging
 			where TResponse : class
 		{
 			var handle = new SerialDisposable();
-            IDisposable transportWatcher = SubscribeOnTransportEvents((trasnportId, @event) =>
+            IDisposable transportWatcher = SubscribeOnTransportEvents((transportId, @event) =>
 			                                                          	{
-			                                                          		if (trasnportId == endpoint.TransportId || @event != TransportEvents.Failure)
+			                                                          		if (transportId == endpoint.TransportId || @event != TransportEvents.Failure)
 			                                                          			return;
 			                                                          		registerHandlerWithRetry(handler, endpoint, handle);
 			                                                          	});
@@ -393,7 +394,7 @@ namespace Inceptum.Messaging
 
         #endregion
 
-        public void registerHandlerWithRetry<TRequest, TResponse>(Func<TRequest, TResponse> handler, Endpoint endpoint, SerialDisposable handle)
+        private void registerHandlerWithRetry<TRequest, TResponse>(Func<TRequest, TResponse> handler, Endpoint endpoint, SerialDisposable handle)
             where TResponse : class
         {
             lock (handle)
@@ -406,7 +407,7 @@ namespace Inceptum.Messaging
                 {
                     m_Logger.Info("Scheduling register handler attempt in 1 minute. Transport: {0}, Queue: {1}",
                                        endpoint.TransportId, endpoint.Destination);
-                	handle.Disposable = Scheduler.ThreadPool.Schedule(DateTimeOffset.Now.AddMinutes(1),
+                	handle.Disposable = Scheduler.Default.Schedule(DateTimeOffset.Now.AddMinutes(1),
                 	                                                  () =>
                 	                                                  	{
                 	                                                  		lock (handle)
@@ -430,8 +431,8 @@ namespace Inceptum.Messaging
             {
                 try
                 {
-                    var procGroup = m_TransportManager.GetMessagingSession(endpoint.TransportId, processingGroup??endpoint.Destination.ToString());
-                    var subscription = procGroup.RegisterHandler(endpoint.Destination.Subscribe,
+                    var session = m_TransportManager.GetMessagingSession(endpoint.TransportId, getProcessingGroup(endpoint, processingGroup));
+                    var subscription = session.RegisterHandler(endpoint.Destination.Subscribe,
                 	                                                     requestMessage =>
                 	                                                     	{
                                                                                 var message = m_SerializationManager.Deserialize<TRequest>(endpoint.SerializationFormat, requestMessage.Bytes); 
@@ -492,7 +493,7 @@ namespace Inceptum.Messaging
 
         private IDisposable subscribe(Endpoint endpoint, CallbackDelegate<BinaryMessage> callback, string messageType, string processingGroup, int priority)
         {
-            var subscription = m_SubscriptionManager.Subscribe(endpoint, callback, messageType, processingGroup,priority);
+            var subscription = m_SubscriptionManager.Subscribe(endpoint, callback, messageType, getProcessingGroup(endpoint,processingGroup),priority);
 
             return createMessagingHandle(() =>
             {

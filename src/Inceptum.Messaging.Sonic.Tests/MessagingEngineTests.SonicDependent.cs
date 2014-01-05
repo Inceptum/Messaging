@@ -333,7 +333,7 @@ namespace Inceptum.Messaging.Sonic.Tests
                     }
                 });
                 t.Start();
-                Assert.That(t.Join(2000), Is.True, "Exception was not thrown when queue is overflowed");
+                Assert.That(t.Join(2000), Is.True, "Exception was not thrown when queue is overflown");
                 Assert.That(exception, Is.Not.Null);
                 Console.WriteLine(exception);
             }

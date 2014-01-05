@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Disposables;
+using System.Text;
 using Inceptum.Core.Utils;
 using Inceptum.Messaging.Contract;
 using Inceptum.Messaging.Transports;
@@ -38,11 +39,9 @@ namespace Inceptum.Messaging
 
         public IDisposable Subscribe(Endpoint endpoint, CallbackDelegate<BinaryMessage> callback, string messageType, string processingGroup, int priority)
         {
+            if (string.IsNullOrEmpty(processingGroup)) throw new ArgumentNullException("processingGroup","should be not empty string");
             if (m_IsDisposing)
                 throw new ObjectDisposedException("SubscriptionManager");
-            //TODO: meaningful but still unique name
-            //processingGroup = processingGroup ?? Guid.NewGuid().ToString();
-            processingGroup = processingGroup ?? endpoint.Destination.Subscribe;
             var subscriptionHandler = new MultipleAssignmentDisposable();
             Action<int> doSubscribe = null;
             doSubscribe = attemptNumber =>
@@ -159,6 +158,16 @@ namespace Inceptum.Messaging
                     m_DeferredAcknowledger.Schedule(l);
                 }
             };
+        }
+
+
+        public string GetStatistics()
+        {
+            var stats=new StringBuilder();
+            int length = m_ProcessingGroups.Keys.Max(k=>k.Length);
+            m_ProcessingGroups.Aggregate(stats,
+                (builder, pair) => builder.AppendFormat("{0,-" + length + "}\tReceived:{1}"+Environment.NewLine, pair.Key, pair.Value.ReceivedMessages));
+            return stats.ToString();
         }
 
         public void Dispose()

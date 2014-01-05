@@ -271,10 +271,10 @@ namespace Inceptum.Messaging.Tests
         }
 
         [Test]
-        [Ignore("PerfofmanceTest")]
+        [Ignore("PerformanceTest")]
         public void DeferredAcknowledgementPerformanceTest()
         {
-            Random rnd = new Random();
+            var rnd = new Random();
             const int messageCount = 100;
             Console.WriteLine(messageCount+" messages");
             var delays = new Dictionary<long, string> { { 0, "immediate acknowledge" }, { 1, "deferred acknowledge" }, { 100, "deferred acknowledge" }, { 1000, "deferred acknowledge" } };
@@ -300,7 +300,10 @@ namespace Inceptum.Messaging.Tests
                         });
                 complete.WaitOne();
                 Console.WriteLine("{0} ({1}ms delay extracted to narrow results): {2}ms ",delay.Value,delay.Key, sw.ElapsedMilliseconds-delay.Key);
+                Console.WriteLine(subscriptionManager.GetStatistics());
             }
+
+            
         }
 
 
