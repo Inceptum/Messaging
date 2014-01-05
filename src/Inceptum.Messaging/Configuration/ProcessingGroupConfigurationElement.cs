@@ -10,5 +10,13 @@ namespace Inceptum.Messaging.Configuration
             get { return (int)this["concurrencyLevel"]; }
             set { this["concurrencyLevel"] = value; }
         }
+
+        [ConfigurationProperty("queueCapacity", IsRequired = false, IsKey = false, DefaultValue = 1024)]
+        public int QueueCapacity
+        {
+            get { return (int)this["queueCapacity"]; }
+            set { this["queueCapacity"] = value; }
+        }
+
     }
 }

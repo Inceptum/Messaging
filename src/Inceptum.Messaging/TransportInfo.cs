@@ -5,7 +5,14 @@ namespace Inceptum.Messaging
 {
     public class ProcessingGroupInfo
     {
-        public int ConcurrencyLevel { get; set; } 
+        public ProcessingGroupInfo()
+        {
+            ConcurrencyLevel = 0;
+            QueueCapacity = 1024;
+        }
+
+        public int ConcurrencyLevel { get; set; }
+        public int QueueCapacity { get; set; }
     }
     public class TransportInfo
     {

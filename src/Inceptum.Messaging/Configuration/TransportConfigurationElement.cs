@@ -33,7 +33,7 @@ namespace Inceptum.Messaging.Configuration
             set { this["jailStrategyName"] = value; }
         }
 
-        [ConfigurationProperty("messaging", IsRequired = false, IsKey = false, DefaultValue = "Sonic")]
+        [ConfigurationProperty("messaging", IsRequired = false, IsKey = false, DefaultValue = "InMemory")]
         public string Messaging
         {
             get { return (string) this["messaging"]; }

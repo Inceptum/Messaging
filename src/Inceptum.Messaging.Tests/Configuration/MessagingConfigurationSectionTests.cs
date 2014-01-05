@@ -27,7 +27,7 @@ namespace Inceptum.Messaging.Tests.Configuration
                                      .And.Property("Broker").EqualTo("localhost")
                                      .And.Property("Login").EqualTo("guest")
                                      .And.Property("Password").EqualTo("guest")
-                                     .And.Property("Messaging").EqualTo("Sonic")
+                                     .And.Property("Messaging").EqualTo("InMemory")
                                      .And.Property("JailStrategyName").EqualTo("None")
                 );
 
@@ -39,9 +39,8 @@ namespace Inceptum.Messaging.Tests.Configuration
                 );
 
             var processingGroup1 = messagingConfiguration.GetProcessingGroups()["processingGroup1"];
-            Assert.That(processingGroup1, Is.Not.Null
-                                     .And.Property("ConcurrencyLevel").EqualTo(10)
-                );
+            Assert.That(processingGroup1, Is.Not.Null.And.Property("ConcurrencyLevel").EqualTo(10));
+            Assert.That(processingGroup1, Is.Not.Null.And.Property("QueueCapacity").EqualTo(1024));
         }
 
         [Test]
@@ -95,6 +94,12 @@ namespace Inceptum.Messaging.Tests.Configuration
                                      .And.Property("Destination").EqualTo((Destination)"queue3")
                                      .And.Property("SharedDestination").EqualTo(false)
                 );
+
+
+            var processingGroup1 = messagingConfiguration.GetProcessingGroups()["processingGroup1"];
+            Assert.That(processingGroup1, Is.Not.Null.And.Property("ConcurrencyLevel").EqualTo(5));
+            Assert.That(processingGroup1, Is.Not.Null.And.Property("QueueCapacity").EqualTo(1000));
+
         }
     }
 }
