@@ -22,13 +22,17 @@ namespace Inceptum.Messaging
             m_TransportInfo = transportInfo;
         }
 
-            
+        internal MessagingSessionWrapper[] Sessions
+        {
+            get { return m_MessagingSessions.ToArray(); }
+        }
+
         public IEnumerable<string> KnownIds
         {
             get { return m_KnownIds.ToArray(); }
         }
 
-        private ITransport Transport { get; set; }
+        internal ITransport Transport { get; set; }
 
 
         private void addId(string transportId)
