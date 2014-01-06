@@ -52,7 +52,8 @@ namespace Inceptum.Messaging
                     var group = getProcessingGroup(processingGroup);
 
 
-                    var session = m_TransportManager.GetMessagingSession(endpoint.TransportId,group.Name,() => {
+                    var session = m_TransportManager.GetMessagingSession(endpoint.TransportId, getSessionName(group,priority), () =>
+                    {
                             m_Logger.Info("Subscription for endpoint {0} failure detected. Attempting subscribe again.", endpoint);
                             doSubscribe(0);
                         });
@@ -80,19 +81,26 @@ namespace Inceptum.Messaging
             return subscriptionHandler;
         }
 
+        private string getSessionName(ProcessingGroup processingGroup, int priority)
+        {
+            if (processingGroup.ConcurrencyLevel == 0)
+                return processingGroup.Name;
+            return string.Format("{0} priority{1}", processingGroup.Name, priority);
+        }
+
         private ProcessingGroup getProcessingGroup(string processingGroup)
         {
             ProcessingGroup @group;
             lock (m_ProcessingGroups)
             {
-                if (!m_ProcessingGroups.TryGetValue(processingGroup, out @group))
-                {
-                    ProcessingGroupInfo info;
-                    if (!m_ProcessingGroupInfos.TryGetValue(processingGroup, out info))
-                        info = new ProcessingGroupInfo();
-                    @group = new ProcessingGroup(processingGroup, info);
-                    m_ProcessingGroups.Add(processingGroup, @group);
-                }
+                if (m_ProcessingGroups.TryGetValue(processingGroup, out @group)) 
+                    return @group;
+
+                ProcessingGroupInfo info;
+                if (!m_ProcessingGroupInfos.TryGetValue(processingGroup, out info))
+                    info = new ProcessingGroupInfo();
+                @group = new ProcessingGroup(processingGroup, info);
+                m_ProcessingGroups.Add(processingGroup, @group);
             }
             return @group;
         }
@@ -100,7 +108,7 @@ namespace Inceptum.Messaging
         public void Send(Endpoint endpoint, BinaryMessage message, int ttl, string processingGroup)
         {
             var group = getProcessingGroup(processingGroup);
-            var session = m_TransportManager.GetMessagingSession(endpoint.TransportId,group.Name);
+            var session = m_TransportManager.GetMessagingSession(endpoint.TransportId, getSessionName(group, 0));
 
             group.Send(session,endpoint.Destination.Publish, message, ttl);
 

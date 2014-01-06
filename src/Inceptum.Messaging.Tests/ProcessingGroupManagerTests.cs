@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using Castle.Core.Internal;
 using Inceptum.Messaging.Contract;
+using Inceptum.Messaging.InMemory;
 using Inceptum.Messaging.Transports;
 using NUnit.Framework;
 using Rhino.Mocks;
@@ -103,11 +104,10 @@ namespace Inceptum.Messaging.Tests
             var processingGroupManager = new ProcessingGroupManager(transportManager, new Dictionary<string, ProcessingGroupInfo>()
             {
                 {
-                    "pg", new ProcessingGroupInfo() {ConcurrencyLevel = 3}
+                    "pg", new ProcessingGroupInfo {ConcurrencyLevel = 3}
                 }
             });
 
-            var processingGroup = transportManager.GetMessagingSession("transport-1", "pg");
             var usedThreads = new List<int>();
             var processedMessages = new List<int>();
             CallbackDelegate<BinaryMessage> callback = (message, action) =>
@@ -131,9 +131,11 @@ namespace Inceptum.Messaging.Tests
             {
 
                 Enumerable.Range(1, 20)
-                    .ForEach(i => processingGroup.Send("queue" + i % 3, new BinaryMessage { Bytes = Encoding.UTF8.GetBytes((i % 3).ToString()) }, 0));
+                    .ForEach(i =>processingGroupManager.Send(new Endpoint { Destination = "queue" + i % 3, TransportId = "transport-1" }, new BinaryMessage { Bytes = Encoding.UTF8.GetBytes((i % 3).ToString()) }, 0,"pg"));
 
                 Thread.Sleep(1200);
+                ResolvedTransport transport = transportManager.ResolveTransport("transport-1");
+                Assert.That(transport.Sessions.Select(s => s.Name).OrderBy(s => s), Is.EqualTo(new[] { "pg priority0", "pg priority1", "pg priority2" }),"Wrong sessions were created. Expectation: one session per [processingGroup,priority] pair ");
             }
             Assert.That(usedThreads.Count(), Is.EqualTo(20), "not all messages were processed");
             Assert.That(usedThreads.Distinct().Count(), Is.EqualTo(3), "wrong number of threads was used for message processing");

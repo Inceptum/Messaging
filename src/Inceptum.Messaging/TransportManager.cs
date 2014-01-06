@@ -56,7 +56,7 @@ namespace Inceptum.Messaging
 
         public IMessagingSession GetMessagingSession(string transportId, string name, Action onFailure = null)
         {
-            ResolvedTransport transport = resolveTransport(transportId);
+            ResolvedTransport transport = ResolveTransport(transportId);
 
             try
             {
@@ -68,7 +68,7 @@ namespace Inceptum.Messaging
             }
         }
 
-        private ResolvedTransport resolveTransport(string transportId)
+        internal ResolvedTransport ResolveTransport(string transportId)
         {
             if (m_IsDisposed.WaitOne(0))
                 throw new ObjectDisposedException(string.Format("Can not create transport {0}. TransportManager instance is disposed", transportId));
@@ -123,7 +123,7 @@ namespace Inceptum.Messaging
 
         public bool VerifyDestination(string transportId, Destination destination, EndpointUsage usage, bool configureIfRequired,out string error)
         {
-            ResolvedTransport transport = resolveTransport(transportId);
+            ResolvedTransport transport = ResolveTransport(transportId);
 
             try
             {
