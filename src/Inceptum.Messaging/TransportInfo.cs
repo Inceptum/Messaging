@@ -26,14 +26,12 @@ namespace Inceptum.Messaging
             Password = password;
             JailStrategyName = jailStrategyName;
             Messaging = messaging;
-            ProcessingGroups=new Dictionary<string, ProcessingGroupInfo>();
         }
 
         public string Broker { get; private set; }
         public string Login { get; private set; }
         public string Password { get; private set; }
         public string JailStrategyName { get; private set; }
-        public Dictionary<string, ProcessingGroupInfo> ProcessingGroups { get;  set; }
 
 
 
