@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
+using Inceptum.Messaging.Contract;
 using Inceptum.Messaging.InMemory;
 using NUnit.Framework;
 using Rhino.Mocks;
@@ -16,6 +18,8 @@ namespace Inceptum.Messaging.Tests
     {
         private abstract class TransportConstants
         {
+            public const string QUEUE1="queue1";
+            public const string QUEUE2="queue2";
             public const string TRANSPORT_ID1 = "tr1";
             public const string TRANSPORT_ID2 = "tr2";
             public const string USERNAME = "test";
@@ -53,6 +57,48 @@ namespace Inceptum.Messaging.Tests
                 Assert.That(failureWasReportedCount, Is.EqualTo(2), "Failure was not reported for all ids");
             }
         }
+
+        [Test]
+        public void ByDefaultEachDestinationIsSubscribedOnDedicatedThreadTest()
+        {
+            ITransportResolver resolver = MockTransportResolver();
+            using (var engine = new MessagingEngine(resolver, new InMemoryTransportFactory()))
+            {
+                engine.SerializationManager.RegisterSerializer("fake", typeof(string), new FakeStringSerializer());
+
+                var queue1MessagesThreadIds = new List<int>();
+                var queue2MessagesThreadIds = new List<int>();
+                var messagesCounter = 0;
+                var allMessagesAreRecieved=new ManualResetEvent(false);
+                using (engine.Subscribe<string>(new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE1, serializationFormat: "fake"), s =>
+                {
+                    queue1MessagesThreadIds.Add(Thread.CurrentThread.ManagedThreadId);
+                    Console.WriteLine(Thread.CurrentThread.ManagedThreadId);
+                    if (Interlocked.Increment(ref messagesCounter) == 6) allMessagesAreRecieved.Set();
+                }))
+                using (engine.Subscribe<string>(new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE2, serializationFormat: "fake"), s =>
+                {
+                    queue2MessagesThreadIds.Add(Thread.CurrentThread.ManagedThreadId);
+                    Console.WriteLine(Thread.CurrentThread.ManagedThreadId);
+                    if (Interlocked.Increment(ref messagesCounter) == 6) allMessagesAreRecieved.Set();
+                }))
+                {
+                    engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE1, serializationFormat: "fake"));
+                    engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE2, serializationFormat: "fake"));
+                    engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE1, serializationFormat: "fake"));
+                    engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE2, serializationFormat: "fake"));
+                    engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE1, serializationFormat: "fake"));
+                    engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE2, serializationFormat: "fake"));
+                    allMessagesAreRecieved.WaitOne(1000);
+                }
+                Assert.That(queue1MessagesThreadIds.Distinct().Any(), Is.True, "Messages were not processed");
+                Assert.That(queue2MessagesThreadIds.Distinct().Any(), Is.True, "Messages were not processed");
+                Assert.That(queue1MessagesThreadIds.Distinct().Count(), Is.EqualTo(1), "Messages from one subscription were processed in more then 1 thread");
+                Assert.That(queue2MessagesThreadIds.Distinct().Count(), Is.EqualTo(1), "Messages from one subscription were processed in more then 1 thread");
+                Assert.That(queue1MessagesThreadIds.First() != queue2MessagesThreadIds.First(), Is.True, "Messages from different subscriptions were processed one thread");
+            }
+        }
+
     }
 
     // ReSharper restore InconsistentNaming
