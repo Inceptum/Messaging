@@ -206,6 +206,7 @@ namespace Inceptum.Messaging.RabbitMq
 
             try
             {
+                m_Connection.Close();
                 m_Connection.Dispose();
             }
             catch (Exception e)

@@ -83,6 +83,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
             }
         }
         [Test]
+        [Ignore]
         public void UnknownMessageTest()
         {
  
@@ -147,7 +148,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
                 var delivered = new ManualResetEvent(false);
                 IMessagingSession messagingSession = transport.CreateSession(null);
                 messagingSession.Subscribe(TEST_QUEUE, (message, acknowledge) => delivered.Set(), typeof(byte[]).Name);
-                Assert.That(delivered.WaitOne(1000), Is.False, "Message was returned to queue");
+                Assert.That(delivered.WaitOne(500), Is.False, "Message was returned to queue");
             }
         }
         [Test]
@@ -305,7 +306,6 @@ namespace Inceptum.Messaging.RabbitMq.Tests
                 messagingSession.Send(TEST_EXCHANGE, new BinaryMessage {Bytes = new byte[] {0x0, 0x1, 0x2}, Type = "type2"}, 0);
             }
 
-            Thread.Sleep(200);
             Assert.That(connectionThread.ThreadState, Is.EqualTo(ThreadState.Stopped), "Processing thread is still active in spite of transport dispose");
         }
 

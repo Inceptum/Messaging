@@ -273,39 +273,7 @@ namespace Inceptum.Messaging.Sonic.Tests
         }
 
 
-        [Test]
-        public void EachDestinationIsSubscribedOnDedicatedThreadTest()
-        {
-            ITransportResolver resolver = MockTransportResolver();
-            using(var engine = new MessagingEngine(resolver, new SonicTransportFactory())){
-                engine.SerializationManager.RegisterSerializer("fake", typeof(string), new FakeStringSerializer());
-
-                var queue1MessagesThreadIds = new List<int>();
-                var queue2MessagesThreadIds = new List<int>();
-                using (engine.Subscribe<string>(new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE1, serializationFormat: "fake"), s => queue1MessagesThreadIds.Add(Thread.CurrentThread.ManagedThreadId)))
-                using (engine.Subscribe<string>(new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE2, serializationFormat: "fake"), s => queue2MessagesThreadIds.Add(Thread.CurrentThread.ManagedThreadId)))
-                {
-                    engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE1, serializationFormat: "fake"));
-                    engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE2, serializationFormat: "fake"));
-                    engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE1, serializationFormat: "fake"));
-                    engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE2, serializationFormat: "fake"));
-                    engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE1, serializationFormat: "fake"));
-                    engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE2, serializationFormat: "fake"));
-                    Thread.Sleep(1000);
-                }
-                Assert.That(queue1MessagesThreadIds.Distinct().Any(), Is.True, "Messages were not processed");
-                Assert.That(queue2MessagesThreadIds.Distinct().Any(), Is.True, "Messages were not processed");
-                Assert.That(queue1MessagesThreadIds.Distinct().Count(), Is.EqualTo(1), "Messages from one subscription were processed in more then 1 thread");
-                Assert.That(queue2MessagesThreadIds.Distinct().Count(), Is.EqualTo(1), "Messages from one subscription were processed in more then 1 thread");
-                Assert.That(queue1MessagesThreadIds.First() != queue2MessagesThreadIds.First(), Is.True, "Messages from different subscriptions were processed one thread");
-            }
-        }
-
-       
-
-
-
-
+      
         [Test]
         public void SendToOverflownQueueFailureTest()
         {
