@@ -49,7 +49,7 @@ namespace Inceptum.Messaging.Configuration
 
         public IDictionary<string, Endpoint> GetEndpoints()
         {
-            return Endpoints.Cast<EndpointConfigurationElement>().ToDictionary(ece => ece.Name, ece => new Endpoint(ece.TransportId, ece.Destination, ece.SharedDestination, ece.SerializationFormat));
+            return Endpoints.Cast<EndpointConfigurationElement>().ToDictionary(ece => ece.Name, ece => ece.ToEndpoint());
         }
 
         public IDictionary<string, ProcessingGroupInfo> GetProcessingGroups()
