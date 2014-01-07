@@ -101,5 +101,19 @@ namespace Inceptum.Messaging.Tests.Configuration
             Assert.That(processingGroup1, Is.Not.Null.And.Property("QueueCapacity").EqualTo(1000));
 
         }
+
+        [Test]
+        public void ReadDestionationElementTest()
+        {
+            var configuration = ConfigurationManager.OpenExeConfiguration(new Uri(GetType().Assembly.CodeBase).LocalPath);
+            var messagingConfiguration = configuration.GetSection("one-transport-messaging") as IMessagingConfiguration;
+            Assert.IsNotNull(messagingConfiguration);
+            
+             var endpoint1 = messagingConfiguration.GetEndpoints()["endpoint4"];
+            Assert.That(endpoint1, Is.Not.Null
+                                     .And.Property("TransportId").EqualTo("main")
+                                     .And.Property("Destination").EqualTo(new Destination() { Publish = "exchange1", Subscribe = "queue4" })
+                                     .And.Property("SharedDestination").EqualTo(true));
+        }
     }
 }
