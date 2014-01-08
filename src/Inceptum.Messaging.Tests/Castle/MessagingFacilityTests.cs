@@ -114,6 +114,21 @@ namespace Inceptum.Messaging.Tests.Castle
         }
 
         [Test]
+        public void AsHandlerAndWithEndpointTest()
+        {
+            using (IWindsorContainer container = new WindsorContainer())
+            {
+                container.Kernel.Resolver.AddSubResolver(new ArrayResolver(container.Kernel));
+                container.AddFacility<LoggingFacility>(f => f.LogUsing(LoggerImplementation.Console))
+                    .AddFacility<MessagingFacility>(f => f.WithConfiguration(m_MessagingConfiguration))
+                    .Register(Component.For<Handler>().WithEndpoints(new { someEndpoint = "endpoint-2" }).AsMessageHandler("endpoint-1"));
+                var handler= container.Resolve<Handler>();
+                Assert.That(handler.SomeEndpoint,Is.Not.Null);
+                Assert.That(handler.SomeEndpoint.Destination.Subscribe, Is.EqualTo("second-destination"));
+            }
+        }
+
+        [Test]
         public void EndToEndTest()
         {
             using (IWindsorContainer container = new WindsorContainer())
@@ -147,7 +162,19 @@ namespace Inceptum.Messaging.Tests.Castle
 
     public class Handler
     {
+        public Endpoint SomeEndpoint { get; set; }
         readonly static List<object> m_Handled = new List<object>();
+
+        public Handler()
+        {
+        }
+
+
+        public Handler(Endpoint someEndpoint)
+        {
+            SomeEndpoint = someEndpoint;
+        }
+
         public void Handle(string message)
         {
             m_Handled.Add(message);
