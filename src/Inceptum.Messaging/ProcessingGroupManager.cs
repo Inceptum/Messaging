@@ -50,9 +50,9 @@ namespace Inceptum.Messaging
                 try
                 {
                     var group = getProcessingGroup(processingGroup);
+                    var sessionName = getSessionName(@group,priority);
 
-
-                    var session = m_TransportManager.GetMessagingSession(endpoint.TransportId, getSessionName(group,priority), () =>
+                    var session = m_TransportManager.GetMessagingSession(endpoint.TransportId, sessionName, () =>
                     {
                             m_Logger.Info("Subscription for endpoint {0} failure detected. Attempting subscribe again.", endpoint);
                             doSubscribe(0);
@@ -67,7 +67,7 @@ namespace Inceptum.Messaging
                         if (attemptNumber > 0)
                             brokenSubscription.Dispose();
                     }catch{}
-                    m_Logger.Info("Subscribed for endpoint {0}", endpoint);
+                    m_Logger.Info("Subscribed for endpoint {0} in processingGroup '{1}' using session {2}", endpoint,group.Name,sessionName);
                 }
                 catch (Exception e)
                 {
