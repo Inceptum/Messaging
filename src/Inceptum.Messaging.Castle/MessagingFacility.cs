@@ -119,7 +119,7 @@ namespace Inceptum.Messaging.Castle
         public MessagingFacility WithConfigurationFromContainer()
         {
             m_IsExplicitConfigurationProvided = true;
-            AddPreInitStep(kernel => WithConfiguration(kernel.Resolve<IMessagingConfiguration>()) );
+            AddInitStep(kernel => WithConfiguration(kernel.Resolve<IMessagingConfiguration>()) );
             return this;
         }
 
@@ -143,7 +143,7 @@ namespace Inceptum.Messaging.Castle
             return this;
         }
 
-        public void AddPreInitStep(Action<IKernel> step)
+        public void AddInitStep(Action<IKernel> step)
         {
             m_InitPreSteps.Add(step);
         }
