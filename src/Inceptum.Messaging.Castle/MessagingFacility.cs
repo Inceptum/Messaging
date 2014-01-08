@@ -4,6 +4,7 @@ using System.Configuration;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Castle.Core;
+using Castle.Core.Internal;
 using Castle.MicroKernel;
 using Castle.MicroKernel.Context;
 using Castle.MicroKernel.Facilities;
@@ -53,11 +54,13 @@ namespace Inceptum.Messaging.Castle
         private readonly List<IHandler> m_SerializerFactoryWaitList = new List<IHandler>();
         private readonly List<IHandler> m_MessageHandlerWaitList = new List<IHandler>();
         private IMessagingEngine m_MessagingEngine;
-        private readonly List<Action<IKernel>> m_InitSteps = new List<Action<IKernel>>();
+        private readonly List<Action<IKernel>> m_InitPreSteps = new List<Action<IKernel>>();
+        private readonly List<Action<IKernel>> m_InitPostSteps = new List<Action<IKernel>>();
         private readonly List<ITransportFactory> m_TransportFactories=new List<ITransportFactory>();
         private bool m_IsExplicitConfigurationProvided = false;
         private MessagingConfiguration m_DefaultMessagingConfiguration=new MessagingConfiguration();
-       
+        private IEndpointProvider m_EndpointProvider;
+
 
         private IMessagingConfiguration MessagingConfiguration { get; set; }
 
@@ -116,7 +119,19 @@ namespace Inceptum.Messaging.Castle
         public MessagingFacility WithConfigurationFromContainer()
         {
             m_IsExplicitConfigurationProvided = true;
-            AddInitStep(kernel => WithConfiguration(kernel.Resolve<IMessagingConfiguration>()) );
+            AddPreInitStep(kernel => WithConfiguration(kernel.Resolve<IMessagingConfiguration>()) );
+            return this;
+        }
+
+        public MessagingFacility VerifyEndpoints(EndpointUsage usage,bool configureIfRequired,params string[] endpoints)
+        {
+            AddPostInitStep(kernel =>
+                endpoints.Select(ep => m_EndpointProvider.Get(ep)).ForEach(endpoint =>
+                {
+                    string error;
+                    if (!m_MessagingEngine.VerifyEndpoint(endpoint, usage, configureIfRequired, out error))
+                        throw new ConfigurationErrorsException(error);
+                }));
             return this;
         }
 
@@ -128,15 +143,26 @@ namespace Inceptum.Messaging.Castle
             return this;
         }
 
-        public void AddInitStep(Action<IKernel> step)
+        public void AddPreInitStep(Action<IKernel> step)
         {
-            m_InitSteps.Add(step);
+            m_InitPreSteps.Add(step);
+        }
+  
+        public void AddPostInitStep(Action<IKernel> step)
+        {
+            m_InitPreSteps.Add(step);
+        }
+
+        protected override void Dispose()
+        {
+            m_MessagingEngine.Dispose();
+            base.Dispose();
         }
 
         protected override void Init()
         {
 
-            foreach (var initStep in m_InitSteps)
+            foreach (var initStep in m_InitPreSteps)
             {
                 initStep(Kernel);
             }
@@ -151,8 +177,9 @@ namespace Inceptum.Messaging.Castle
                     .ImplementedBy<EndpointResolver>()
                     .Named("EndpointResolver")
                     .DependsOn(new { endpoints = MessagingConfiguration.GetEndpoints() }));
-            var endpointResolver = Kernel.Resolve<ISubDependencyResolver>("EndpointResolver");
-            Kernel.Resolver.AddSubResolver(endpointResolver);
+            var subDependencyResolver = Kernel.Resolve<ISubDependencyResolver>("EndpointResolver");
+            m_EndpointProvider = Kernel.Resolve<IEndpointProvider>("EndpointResolver");
+            Kernel.Resolver.AddSubResolver(subDependencyResolver);
 
 
             m_MessagingEngine = new MessagingEngine(
@@ -165,12 +192,6 @@ namespace Inceptum.Messaging.Castle
                 );
             Kernel.ComponentRegistered += onComponentRegistered;
             Kernel.ComponentModelCreated += ProcessModel;
-        }
-
-        protected override void Dispose()
-        {
-            m_MessagingEngine.Dispose();
-            base.Dispose();
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
