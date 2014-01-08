@@ -150,7 +150,7 @@ namespace Inceptum.Messaging.Castle
   
         public void AddPostInitStep(Action<IKernel> step)
         {
-            m_InitPreSteps.Add(step);
+            m_InitPostSteps.Add(step);
         }
 
         protected override void Dispose()
@@ -192,6 +192,10 @@ namespace Inceptum.Messaging.Castle
                 );
             Kernel.ComponentRegistered += onComponentRegistered;
             Kernel.ComponentModelCreated += ProcessModel;
+            foreach (var initStep in m_InitPostSteps)
+            {
+                initStep(Kernel);
+            }
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
