@@ -41,6 +41,7 @@ namespace Inceptum.Messaging
             Action<int> doSubscribe = null;
             doSubscribe = attemptNumber =>
             {
+                string processingGroupName=null;
                 if (subscriptionHandler.IsDisposed)
                     return;
                 if (attemptNumber > 0)
@@ -50,24 +51,35 @@ namespace Inceptum.Messaging
                 try
                 {
                     var group = getProcessingGroup(processingGroup);
-                    var sessionName = getSessionName(@group,priority);
+                    processingGroupName = @group.Name;
+
+                    var sessionName = getSessionName(@group, priority);
 
                     var session = m_TransportManager.GetMessagingSession(endpoint.TransportId, sessionName, () =>
                     {
-                            m_Logger.Info("Subscription for endpoint {0} failure detected. Attempting subscribe again.", endpoint);
-                            doSubscribe(0);
-                        });
+                        m_Logger.Info("Subscription for endpoint {0} failure detected. Attempting subscribe again.", endpoint);
+                        doSubscribe(0);
+                    });
 
 
-                    var subscription = group.Subscribe(session,endpoint.Destination.Subscribe, (message, ack) => callback(message, createDeferredAcknowledge(ack)),messageType,priority);
+                    var subscription = group.Subscribe(session, endpoint.Destination.Subscribe,
+                        (message, ack) => callback(message, createDeferredAcknowledge(ack)), messageType, priority);
                     var brokenSubscription = subscriptionHandler.Disposable;
                     subscriptionHandler.Disposable = subscription;
                     try
                     {
                         if (attemptNumber > 0)
                             brokenSubscription.Dispose();
-                    }catch{}
-                    m_Logger.Info("Subscribed for endpoint {0} in processingGroup '{1}' using session {2}", endpoint,group.Name,sessionName);
+                    }
+                    catch
+                    {
+                    }
+                    m_Logger.Info("Subscribed for endpoint {0} in processingGroup '{1}' using session {2}", endpoint, processingGroupName, sessionName);
+                }
+                catch (InvalidSubscriptionException e)
+                {
+                    m_Logger.ErrorException(string.Format("Failed to subscribe for endpoint {0} within processing group '{1}'", endpoint, processingGroupName), e);
+                    throw;
                 }
                 catch (Exception e)
                 {

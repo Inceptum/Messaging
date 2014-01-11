@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
+using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Inceptum.Messaging.Transports;
@@ -11,6 +12,25 @@ using Inceptum.Messaging.Utils;
 
 namespace Inceptum.Messaging
 {
+
+    public class InvalidSubscriptionException:InvalidOperationException
+    {
+        public InvalidSubscriptionException()
+        {
+        }
+
+        public InvalidSubscriptionException(string message) : base(message)
+        {
+        }
+
+        public InvalidSubscriptionException(string message, Exception innerException) : base(message, innerException)
+        {
+        }
+
+        protected InvalidSubscriptionException(SerializationInfo info, StreamingContext context) : base(info, context)
+        {
+        }
+    }
     interface ISchedulingStrategy:IDisposable
     {
         TaskFactory GetTaskFactory(int priority);
@@ -59,7 +79,7 @@ namespace Inceptum.Messaging
         public TaskFactory GetTaskFactory(int priority)
         {
             if (priority != 0)
-                throw new ArgumentException("Priority other then 0 is not applicable for processing group with zero concurrencyLevel (messages are processed on consuming thread)", "priority");
+                throw new InvalidSubscriptionException("Priority other then 0 is not applicable for processing group with zero concurrencyLevel (messages are processed on consuming thread)");
 
             return new TaskFactory(new CurrentThreadTaskScheduler());
         }
