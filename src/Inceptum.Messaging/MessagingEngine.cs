@@ -48,6 +48,17 @@ namespace Inceptum.Messaging
         {
         }
 
+
+         public void AddProcessingGroup(string name,ProcessingGroupInfo info)
+        {
+            m_ProcessingGroupManager.AddProcessingGroup(name,info);
+        }
+
+        public bool GetProcessingGroupInfo(string name, out ProcessingGroupInfo groupInfo)
+        {
+            return m_ProcessingGroupManager.GetProcessingGroupInfo(name, out groupInfo);
+        }
+
         public string GetStatistics()
         {
             return m_ProcessingGroupManager.GetStatistics();
