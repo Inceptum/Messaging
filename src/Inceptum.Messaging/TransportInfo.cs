@@ -17,8 +17,8 @@ namespace Inceptum.Messaging
             QueueCapacity = info.QueueCapacity;
         }
 
-        public int ConcurrencyLevel { get; set; }
-        public int QueueCapacity { get; set; }
+        public uint ConcurrencyLevel { get; set; }
+        public uint QueueCapacity { get; set; }
     }
     public class TransportInfo
     {
