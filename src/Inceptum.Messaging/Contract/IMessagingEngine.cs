@@ -28,6 +28,9 @@ namespace Inceptum.Messaging.Contract
     //TODO: CallbackDelegate overloads for SendRequest RegisterHandler
     public interface IMessagingEngine:IDisposable
     {
+
+        void AddProcessingGroup(string name, ProcessingGroupInfo info);
+        bool GetProcessingGroupInfo(string name, out ProcessingGroupInfo groupInfo);
         ISerializationManager SerializationManager { get; }
         IDisposable SubscribeOnTransportEvents(TransportEventHandler handler);
         void Send<TMessage>(TMessage message, Endpoint endpoint, string processingGroup = null);

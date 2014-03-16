@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Text;
@@ -30,6 +31,29 @@ namespace Inceptum.Messaging
             m_ResubscriptionTimeout = resubscriptionTimeout;
             m_DeferredAcknowledger = new SchedulingBackgroundWorker("DeferredAcknowledgement", () => processDeferredAcknowledgements());
             m_Resubscriber = new SchedulingBackgroundWorker("Resubscription", () => processResubscription());
+        }
+
+        public void AddProcessingGroup(string name,ProcessingGroupInfo info)
+        {
+            lock (m_ProcessingGroups)
+            {
+                if (m_ProcessingGroups.ContainsKey(name))
+                    throw new InvalidOperationException(string.Format("Can not add processing group '{0}'. It already exists.",name));
+
+                m_ProcessingGroupInfos.Add(name, info);
+            }
+        }
+
+        public bool GetProcessingGroupInfo(string name,out ProcessingGroupInfo  groupInfo)
+        {
+            ProcessingGroupInfo info;
+            if (m_ProcessingGroupInfos.TryGetValue(name, out info))
+            {
+                groupInfo=new ProcessingGroupInfo(info);
+                return true;
+            }
+            groupInfo = null;
+            return false;
         }
 
         public IDisposable Subscribe(Endpoint endpoint, CallbackDelegate<BinaryMessage> callback, string messageType, string processingGroup, int priority)

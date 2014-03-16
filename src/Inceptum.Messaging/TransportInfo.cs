@@ -11,6 +11,12 @@ namespace Inceptum.Messaging
             QueueCapacity = 1024;
         }
 
+        public ProcessingGroupInfo(ProcessingGroupInfo info)
+        {
+            ConcurrencyLevel = info.ConcurrencyLevel;
+            QueueCapacity = info.QueueCapacity;
+        }
+
         public int ConcurrencyLevel { get; set; }
         public int QueueCapacity { get; set; }
     }
