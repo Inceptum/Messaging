@@ -49,9 +49,11 @@ namespace Inceptum.Messaging
             ProcessingGroupInfo info;
             if (m_ProcessingGroupInfos.TryGetValue(name, out info))
             {
-                groupInfo=new ProcessingGroupInfo(info);
+                groupInfo = new ProcessingGroupInfo(info);
                 return true;
             }
+            
+
             groupInfo = null;
             return false;
         }
@@ -134,7 +136,10 @@ namespace Inceptum.Messaging
 
                 ProcessingGroupInfo info;
                 if (!m_ProcessingGroupInfos.TryGetValue(processingGroup, out info))
+                {
                     info = new ProcessingGroupInfo();
+                    m_ProcessingGroupInfos.Add(processingGroup, info);
+                }
                 @group = new ProcessingGroup(processingGroup, info);
                 m_ProcessingGroups.Add(processingGroup, @group);
             }
