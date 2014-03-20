@@ -9,10 +9,8 @@ using Castle.MicroKernel;
 using Castle.MicroKernel.Context;
 using Castle.MicroKernel.Facilities;
 using Castle.MicroKernel.Registration;
-using Inceptum.Core;
 using Inceptum.Messaging.Configuration;
 using Inceptum.Messaging.Contract;
-using Inceptum.Messaging.Serialization;
 
 namespace Inceptum.Messaging.Castle
 {
@@ -58,7 +56,7 @@ namespace Inceptum.Messaging.Castle
         private readonly List<Action<IKernel>> m_InitPostSteps = new List<Action<IKernel>>();
         private readonly List<ITransportFactory> m_TransportFactories=new List<ITransportFactory>();
         private bool m_IsExplicitConfigurationProvided = false;
-        private MessagingConfiguration m_DefaultMessagingConfiguration=new MessagingConfiguration();
+        private readonly MessagingConfiguration m_DefaultMessagingConfiguration=new MessagingConfiguration();
         private IEndpointProvider m_EndpointProvider;
 
 
@@ -201,64 +199,52 @@ namespace Inceptum.Messaging.Castle
         [MethodImpl(MethodImplOptions.Synchronized)]
         private void onComponentRegistered(string key, IHandler handler)
         {
-         
-
             if ((bool)(handler.ComponentModel.ExtendedProperties["IsSerializerFactory"] ?? false))
             {
-                if (handler.CurrentState == HandlerState.WaitingDependency)
-                {
-                    m_SerializerFactoryWaitList.Add(handler);
-                }
-                else
-                {
-                    registerSerializerFactory(handler);
-                }
+                m_SerializerFactoryWaitList.Add(handler);
             }
 
             var messageHandlerFor = handler.ComponentModel.ExtendedProperties["MessageHandlerFor"] as string[];
             if (messageHandlerFor!=null && messageHandlerFor.Length > 0)
             {
-                if (handler.CurrentState == HandlerState.WaitingDependency)
-                {
-                    m_MessageHandlerWaitList.Add(handler);
-                }
-                else
-                {
-                    handler.Resolve(CreationContext.CreateEmpty());
-                }
+                m_MessageHandlerWaitList.Add(handler);
             }
 
             processWaitList();
         }
 
-        private void registerSerializerFactory(IHandler handler)
+        private bool tryRegisterSerializerFactory(IHandler handler)
         {
-            m_MessagingEngine.SerializationManager.RegisterSerializerFactory(Kernel.Resolve(handler.ComponentModel.Name, typeof(ISerializerFactory)) as ISerializerFactory);
+            var factory = handler.TryResolve(CreationContext.CreateEmpty());
+            if (factory ==null)
+                return false;
+            m_MessagingEngine.SerializationManager.RegisterSerializerFactory(factory as ISerializerFactory);
+            return true;
         }
  
-
-        private void onHandlerStateChanged(object source, EventArgs args)
-        {
-            processWaitList();
-        }
-
-
-
-
         private void processWaitList()
         {
-            foreach (var handler in m_MessageHandlerWaitList.Where(handler => handler.CurrentState == HandlerState.Valid))
+            foreach (var handler in m_MessageHandlerWaitList.ToArray())
             {
-                handler.Resolve(CreationContext.CreateEmpty());
+                if (tryStart(handler))
+                    m_MessageHandlerWaitList.Remove(handler);
             }
 
-            foreach (var factoryHandler in m_SerializerFactoryWaitList.ToArray().Where(factoryHandler => factoryHandler.CurrentState == HandlerState.Valid))
+            foreach (var factoryHandler in m_SerializerFactoryWaitList.ToArray())
             {
-                registerSerializerFactory(factoryHandler);
-                m_SerializerWaitList.Remove(factoryHandler);
+                if(tryRegisterSerializerFactory(factoryHandler))
+                    m_SerializerWaitList.Remove(factoryHandler);
             }
         }
-
+        /// <summary>
+        /// Request the component instance
+        /// 
+        /// </summary>
+        /// <param name="handler"/>
+        private bool tryStart(IHandler handler)
+        {
+            return handler.TryResolve(CreationContext.CreateEmpty()) != null;
+        }
 
         public void ProcessModel(ComponentModel model)
         {
@@ -277,5 +263,8 @@ namespace Inceptum.Messaging.Castle
                 model.ExtendedProperties["IsSerializerFactory"] = false;
             }
         }
+
+
+      
     }
 }
