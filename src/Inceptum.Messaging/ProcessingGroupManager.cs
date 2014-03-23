@@ -19,7 +19,6 @@ namespace Inceptum.Messaging
         private readonly SchedulingBackgroundWorker m_DeferredAcknowledger;
         private readonly SchedulingBackgroundWorker m_Resubscriber;
         readonly Logger m_Logger = LogManager.GetCurrentClassLogger();
-        private readonly int m_ResubscriptionTimeout;
         readonly Dictionary<string, ProcessingGroup> m_ProcessingGroups=new Dictionary<string, ProcessingGroup>();
         readonly Dictionary<string, ProcessingGroupInfo> m_ProcessingGroupInfos = new Dictionary<string, ProcessingGroupInfo>();
         private volatile bool m_IsDisposing;
@@ -28,11 +27,12 @@ namespace Inceptum.Messaging
         {
             m_ProcessingGroupInfos = new Dictionary<string, ProcessingGroupInfo>(processingGroups ?? new Dictionary<string, ProcessingGroupInfo>());
             m_TransportManager = transportManager;
-            m_ResubscriptionTimeout = resubscriptionTimeout;
+            ResubscriptionTimeout = resubscriptionTimeout;
             m_DeferredAcknowledger = new SchedulingBackgroundWorker("DeferredAcknowledgement", () => processDeferredAcknowledgements());
             m_Resubscriber = new SchedulingBackgroundWorker("Resubscription", () => processResubscription());
         }
 
+        public int ResubscriptionTimeout { get; set; }
         public void AddProcessingGroup(string name,ProcessingGroupInfo info)
         {
             lock (m_ProcessingGroups)
@@ -109,7 +109,7 @@ namespace Inceptum.Messaging
                 }
                 catch (Exception e)
                 {
-                    m_Logger.ErrorException(string.Format("Failed to subscribe for endpoint {0}. Attempt# {1}. Will retry in {2}ms", endpoint, attemptNumber,m_ResubscriptionTimeout),e);
+                    m_Logger.ErrorException(string.Format("Failed to subscribe for endpoint {0}. Attempt# {1}. Will retry in {2}ms", endpoint, attemptNumber,ResubscriptionTimeout),e);
                     scheduleSubscription(doSubscribe, attemptNumber + 1);
                 }
             };
@@ -160,8 +160,8 @@ namespace Inceptum.Messaging
         {
             lock (m_ResubscriptionSchedule)
             {
-                m_ResubscriptionSchedule.Add(Tuple.Create<DateTime, Action>(DateTime.Now.AddMilliseconds(attemptCount==0?100:m_ResubscriptionTimeout), () => subscribe(attemptCount)));
-                m_Resubscriber.Schedule(m_ResubscriptionTimeout);
+                m_ResubscriptionSchedule.Add(Tuple.Create<DateTime, Action>(DateTime.Now.AddMilliseconds(attemptCount == 0 ? 100 : ResubscriptionTimeout), () => subscribe(attemptCount)));
+                m_Resubscriber.Schedule(ResubscriptionTimeout);
             }
         }
 
