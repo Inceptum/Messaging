@@ -48,6 +48,10 @@ namespace Inceptum.Messaging
         {
         }
 
+        public int ResubscriptionTimeout { 
+            get { return m_ProcessingGroupManager.ResubscriptionTimeout; }
+            set { m_ProcessingGroupManager.ResubscriptionTimeout = value; }
+        }
 
          public void AddProcessingGroup(string name,ProcessingGroupInfo info)
         {
