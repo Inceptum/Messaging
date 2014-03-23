@@ -430,7 +430,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
             var sendEndpoint = new Endpoint("sendTransport", TEST_EXCHANGE, TEST_QUEUE, true, "json");
 
 
-            using (var me = new MessagingEngine(transportResolver, new RabbitMqTransportFactory()))
+            using (var me = new MessagingEngine(transportResolver, new RabbitMqTransportFactory(false)))
             {
                 me.Send(1, sendEndpoint);
                 me.ResubscriptionTimeout = 100;
