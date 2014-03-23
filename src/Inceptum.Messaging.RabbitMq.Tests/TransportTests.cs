@@ -416,5 +416,29 @@ namespace Inceptum.Messaging.RabbitMq.Tests
             return error;
         }
 
+
+        [Test]
+        public void SubscriptionToClusterTest()
+        {
+
+            ITransportResolver transportResolver = new TransportResolver(new Dictionary<string, TransportInfo>()
+            {
+                {"main", new TransportInfo("localhost1,localhost", "guest", "guest", "None", "RabbitMq")},
+                {"sendTransport", new TransportInfo("localhost", "guest", "guest", "None", "RabbitMq")}
+            });
+            var endpoint = new Endpoint("main", TEST_EXCHANGE, TEST_QUEUE, true, "json");
+            var sendEndpoint = new Endpoint("sendTransport", TEST_EXCHANGE, TEST_QUEUE, true, "json");
+
+
+            using (var me = new MessagingEngine(transportResolver, new RabbitMqTransportFactory()))
+            {
+                me.Send(1, sendEndpoint);
+                me.ResubscriptionTimeout = 100;
+                var received = new ManualResetEvent(false);
+                me.Subscribe<int>(endpoint, i => received.Set());
+                Assert.That(received.WaitOne(1000), Is.True, "Subscription when first broker in list is not resolvable while next one is ok");
+            }
+        }
+
     }
 }
