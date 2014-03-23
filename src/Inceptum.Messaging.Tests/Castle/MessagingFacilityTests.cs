@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using Castle.Facilities.Logging;
+using Castle.Facilities.Startable;
 using Castle.MicroKernel.Registration;
 using Castle.MicroKernel.Resolvers.SpecializedResolvers;
 using Castle.Windsor;
@@ -94,13 +95,13 @@ namespace Inceptum.Messaging.Tests.Castle
         {
             IMessagingEngine engine;
             using (IWindsorContainer container = new WindsorContainer())
-            {
+            { 
                 container.Kernel.Resolver.AddSubResolver(new ArrayResolver(container.Kernel));
                 container.AddFacility<LoggingFacility>(f => f.LogUsing(LoggerImplementation.Console))
                     .AddFacility<MessagingFacility>(f => f.WithConfiguration(m_MessagingConfiguration))
-                    .Register(Component.For<Handler>().AsMessageHandler("endpoint-1", "endpoint-2"));
+                    .Register(Component.For<HandlerWithDependency>().AsMessageHandler("endpoint-1", "endpoint-2"));
+                container.Register(Component.For<HandlerDependency>());
                 engine = container.Resolve<IMessagingEngine>();
-
                 engine.Send("test", m_Endpoint1);
                 Thread.Sleep(30); 
                 engine.Send(1, m_Endpoint1);
@@ -112,6 +113,7 @@ namespace Inceptum.Messaging.Tests.Castle
                 Console.WriteLine(engine.GetStatistics());
             }
         }
+  
 
         [Test]
         public void AsHandlerAndWithEndpointTest()
@@ -160,8 +162,20 @@ namespace Inceptum.Messaging.Tests.Castle
         }
     }
 
-    public class Handler
+        public class HandlerDependency
+        {
+        }
+
+    public class HandlerWithDependency : Handler
     {
+
+        public HandlerWithDependency(HandlerDependency dependency)
+        {
+        }
+    }
+
+    public class Handler{
+    
         public Endpoint SomeEndpoint { get; set; }
         readonly static List<object> m_Handled = new List<object>();
 
