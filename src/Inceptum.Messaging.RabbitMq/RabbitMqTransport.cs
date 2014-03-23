@@ -18,16 +18,22 @@ namespace Inceptum.Messaging.RabbitMq
     internal class RabbitMqTransport : ITransport
     {
         private readonly ConnectionFactory[] m_Factories;
-        private long m_FactoryCounter;
         private readonly List<RabbitMqSession> m_Sessions = new List<RabbitMqSession>();
         readonly ManualResetEvent m_IsDisposed=new ManualResetEvent(false);
         readonly Logger m_Logger = LogManager.GetCurrentClassLogger();
+        private bool m_ShuffleBrokersOnSessionCreate;
 
-        public RabbitMqTransport(string broker, string username, string password)
+        public RabbitMqTransport(string broker, string username, string password) : this(new[] {broker}, username, password)
         {
-            if (broker == null) throw new ArgumentNullException("broker");
-               
-            var factories = broker.Split(',').Select(b => b.Trim()).Select(brokerName =>
+            
+        }
+        public RabbitMqTransport(string[] brokers, string username, string password, bool shuffleBrokersOnSessionCreate=true)
+        {
+            m_ShuffleBrokersOnSessionCreate = shuffleBrokersOnSessionCreate&& brokers.Length>1;
+            if (brokers == null) throw new ArgumentNullException("brokers");
+            if (brokers.Length == 0) throw new ArgumentException("brokers list is empty", "brokers");
+
+            var factories = brokers.Select(brokerName =>
             {
 
                 var f = new ConnectionFactory();
@@ -58,23 +64,28 @@ namespace Inceptum.Messaging.RabbitMq
         [MethodImpl(MethodImplOptions.Synchronized)]
         private IConnection createConnection()
         {
-            Exception exception;
-            var initial = m_FactoryCounter;
-            do
+            Exception exception=null;
+            var factories = m_Factories;
+            if (m_ShuffleBrokersOnSessionCreate)
+            {
+                var random = new Random((int)DateTime.Now.Ticks & 0x0000FFFF);
+                factories = factories.OrderBy(x => random.Next()).ToArray();
+            }
+          
+            for (int i = 0; i < m_Factories.Length; i++)
             {
                 try
                 {
-                    var connection = m_Factories[m_FactoryCounter].CreateConnection();
-                    m_Logger.Info("Created rmq connection to {0}.", m_Factories[m_FactoryCounter].Endpoint.HostName);
+                    var connection = factories[i].CreateConnection();
+                    m_Logger.Info("Created rmq connection to {0}.", m_Factories[i].Endpoint.HostName);
                     return connection;
                 }
                 catch (Exception e)
                 {
-                    m_Logger.WarnException(string.Format("Failed to create rmq connection to {0}{1}: ", m_Factories[m_FactoryCounter].Endpoint.HostName, (m_FactoryCounter+1 != initial)?" (will try other known hosts)":""), e);
+                    m_Logger.WarnException(string.Format("Failed to create rmq connection to {0}{1}: ", factories[i].Endpoint.HostName, (i+ 1 != m_Factories.Length) ? " (will try other known hosts)" : ""), e);
                     exception = e;
                 }
-                m_FactoryCounter = (m_FactoryCounter + 1) % m_Factories.Length;
-            } while (m_FactoryCounter != initial);
+            }
             throw new TransportException("Failed to create rmq connection",exception);
         }
  
