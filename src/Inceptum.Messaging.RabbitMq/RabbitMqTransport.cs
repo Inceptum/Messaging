@@ -148,14 +148,13 @@ namespace Inceptum.Messaging.RabbitMq
                 {
                     using (IModel channel = connection.CreateModel())
                     {
-                        if ((usage & EndpointUsage.Publish) == EndpointUsage.Publish)
-                        {
-                            if (configureIfRequired)
-                                channel.ExchangeDeclare(publish.ExchangeName, publish.ExchangeType, true);
-                            else
-                                channel.ExchangeDeclarePassive(publish.ExchangeName);
+                            
+                        if (configureIfRequired)
+                            channel.ExchangeDeclare(publish.ExchangeName, publish.ExchangeType, true);
+                        else
+                            channel.ExchangeDeclarePassive(publish.ExchangeName);
 
-                        }
+                        
 
                         if ((usage & EndpointUsage.Subscribe) == EndpointUsage.Subscribe)
                         {
