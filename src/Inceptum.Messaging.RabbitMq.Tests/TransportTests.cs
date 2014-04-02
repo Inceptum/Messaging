@@ -405,14 +405,36 @@ namespace Inceptum.Messaging.RabbitMq.Tests
 
 
         [Test]
-        [TestCase(EndpointUsage.Subscribe,Result = @"The AMQP operation was interrupted: AMQP close-reason, initiated by Peer, code=404, text=""NOT_FOUND - no queue 'non.existing' in vhost '/'"", classId=50, methodId=10, cause=")]
-        [TestCase(EndpointUsage.Publish,Result = @"The AMQP operation was interrupted: AMQP close-reason, initiated by Peer, code=404, text=""NOT_FOUND - no exchange 'non.existing' in vhost '/'"", classId=40, methodId=10, cause=")]
-        public string VerifySubscriptionEndpointTest(EndpointUsage usage)
+        public string VerifyPublishEndpointFailureTest()
         {
             var transport = new RabbitMqTransport(HOST, "guest", "guest");
             string error;
-            var valid = transport.VerifyDestination("non.existing", usage, false, out error);
+            var valid = transport.VerifyDestination("non.existing", EndpointUsage.Publish, false, out error);
             Assert.That(valid,Is.False, "endpoint reported as valid");
+            Assert.That(error, Is.EqualTo(@"The AMQP operation was interrupted: AMQP close-reason, initiated by Peer, code=404, text=""NOT_FOUND - no exchange 'non.existing' in vhost '/'"", classId=40, methodId=10, cause="));
+            return error;
+        }
+
+        [Test]
+        public string VerifySubscriptionEndpointNoExchangeFailureTest()
+        {
+            var transport = new RabbitMqTransport(HOST, "guest", "guest");
+            string error;
+            var valid = transport.VerifyDestination(new Destination { Subscribe = "non.existing", Publish = "non.existing" }, EndpointUsage.Subscribe, false, out error);
+            Assert.That(valid,Is.False, "endpoint reported as valid");
+            Assert.That(error, Is.EqualTo(@"The AMQP operation was interrupted: AMQP close-reason, initiated by Peer, code=404, text=""NOT_FOUND - no exchange 'non.existing' in vhost '/'"", classId=40, methodId=10, cause="));
+            return error;
+        }
+
+
+        [Test]
+        public string VerifySubscriptionEndpointNoQueueFailureTest()
+        {
+            var transport = new RabbitMqTransport(HOST, "guest", "guest");
+            string error;
+            var valid = transport.VerifyDestination(new Destination { Subscribe = "non.existing", Publish = "amq.direct" }, EndpointUsage.Subscribe, false, out error);
+            Assert.That(valid,Is.False, "endpoint reported as valid");
+            Assert.That(error, Is.EqualTo(@"The AMQP operation was interrupted: AMQP close-reason, initiated by Peer, code=404, text=""NOT_FOUND - no queue 'non.existing' in vhost '/'"", classId=50, methodId=10, cause="));
             return error;
         }
 
