@@ -70,20 +70,20 @@ namespace Inceptum.Messaging
                 string processingGroupName=null;
                 if (subscriptionHandler.IsDisposed)
                     return;
-                if (attemptNumber > 0)
-                    m_Logger.Info("Resubscribing for endpoint {0}. Attempt# {1}", endpoint, attemptNumber);
-                else
-                    m_Logger.Info("Subscribing for endpoint {0}", endpoint);
-                try
+               try
                 {
                     var group = getProcessingGroup(processingGroup);
                     processingGroupName = @group.Name;
-
+                    if (attemptNumber > 0)
+                        m_Logger.Info("Resubscribing for endpoint {0} within processing group '{1}'. Attempt# {2}", endpoint, processingGroupName, attemptNumber);
+                    else
+                        m_Logger.Info("Subscribing for endpoint {0} within processing group '{1}'", endpoint, processingGroupName);
+ 
                     var sessionName = getSessionName(@group, priority);
 
                     var session = m_TransportManager.GetMessagingSession(endpoint.TransportId, sessionName, () =>
                     {
-                        m_Logger.Info("Subscription for endpoint {0} failure detected. Attempting subscribe again.", endpoint);
+                        m_Logger.Info("Subscription for endpoint {0} within processing group '{1}' failure detected. Attempting subscribe again.", endpoint, processingGroupName);
                         doSubscribe(0);
                     });
 
@@ -109,7 +109,7 @@ namespace Inceptum.Messaging
                 }
                 catch (Exception e)
                 {
-                    m_Logger.ErrorException(string.Format("Failed to subscribe for endpoint {0}. Attempt# {1}. Will retry in {2}ms", endpoint, attemptNumber,ResubscriptionTimeout),e);
+                    m_Logger.ErrorException(string.Format("Failed to subscribe for endpoint {0} within processing group '{1}'. Attempt# {2}. Will retry in {3}ms", endpoint, processingGroupName, attemptNumber, ResubscriptionTimeout), e);
                     scheduleSubscription(doSubscribe, attemptNumber + 1);
                 }
             };
