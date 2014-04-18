@@ -21,7 +21,8 @@ namespace Inceptum.Messaging.RabbitMq
         private readonly List<RabbitMqSession> m_Sessions = new List<RabbitMqSession>();
         readonly ManualResetEvent m_IsDisposed=new ManualResetEvent(false);
         readonly Logger m_Logger = LogManager.GetCurrentClassLogger();
-        private bool m_ShuffleBrokersOnSessionCreate;
+        private readonly bool m_ShuffleBrokersOnSessionCreate;
+        private static readonly Random m_Random = new Random((int)DateTime.Now.Ticks & 0x0000FFFF);
 
         public RabbitMqTransport(string broker, string username, string password) : this(new[] {broker}, username, password)
         {
@@ -68,21 +69,21 @@ namespace Inceptum.Messaging.RabbitMq
             var factories = m_Factories;
             if (m_ShuffleBrokersOnSessionCreate)
             {
-                var random = new Random((int)DateTime.Now.Ticks & 0x0000FFFF);
-                factories = factories.OrderBy(x => random.Next()).ToArray();
+                
+                factories = factories.OrderBy(x => m_Random.Next()).ToArray();
             }
-          
-            for (int i = 0; i < m_Factories.Length; i++)
+
+            for (int i = 0; i < factories.Length; i++)
             {
                 try
                 {
                     var connection = factories[i].CreateConnection();
-                    m_Logger.Info("Created rmq connection to {0}.", m_Factories[i].Endpoint.HostName);
+                    m_Logger.Info("Created rmq connection to {0}.", factories[i].Endpoint.HostName);
                     return connection;
                 }
                 catch (Exception e)
                 {
-                    m_Logger.WarnException(string.Format("Failed to create rmq connection to {0}{1}: ", factories[i].Endpoint.HostName, (i+ 1 != m_Factories.Length) ? " (will try other known hosts)" : ""), e);
+                    m_Logger.WarnException(string.Format("Failed to create rmq connection to {0}{1}: ", factories[i].Endpoint.HostName, (i + 1 != factories.Length) ? " (will try other known hosts)" : ""), e);
                     exception = e;
                 }
             }
