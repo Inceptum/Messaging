@@ -169,19 +169,35 @@ namespace Inceptum.Messaging
         private void processDeferredAcknowledgements(bool all = false)
         {
             Tuple<DateTime, Action>[] ready;
+            var succeeded=new List<Tuple<DateTime, Action>>();
             lock (m_DeferredAcknowledgements)
             {
                 ready = all
                                 ? m_DeferredAcknowledgements.ToArray()
                                 : m_DeferredAcknowledgements.Where(r => r.Item1 <= DateTime.Now).ToArray();
             }
-            Array.ForEach(ready, r => r.Item2());
+
+            foreach (var t in ready)
+            {
+                try
+                {
+                    t.Item2();
+                    succeeded.Add(t);
+                }
+                catch (Exception e)
+                {
+                    m_Logger.WarnException("Deferred acknowledge failed. Will retry later.",e);
+                    
+                }
+            }
 
             lock (m_DeferredAcknowledgements)
             {
-                Array.ForEach(ready, r => m_DeferredAcknowledgements.Remove(r));
+                Array.ForEach(succeeded.ToArray(), r => m_DeferredAcknowledgements.Remove(r));
             }
         }
+
+
         private void processResubscription(bool all = false)
         {
             Tuple<DateTime, Action>[] ready;
