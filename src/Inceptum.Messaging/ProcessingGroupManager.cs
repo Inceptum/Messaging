@@ -201,6 +201,7 @@ namespace Inceptum.Messaging
         private void processResubscription(bool all = false)
         {
             Tuple<DateTime, Action>[] ready;
+            var succeeded = new List<Tuple<DateTime, Action>>();
             lock (m_ResubscriptionSchedule)
             {
                 ready = all
@@ -208,11 +209,24 @@ namespace Inceptum.Messaging
                                 : m_ResubscriptionSchedule.Where(r => r.Item1 <= DateTime.Now).ToArray();
             }
 
-            Array.ForEach(ready, r => r.Item2());
+            foreach (var t in ready)
+            {
+                try
+                {
+                    t.Item2();
+                    succeeded.Add(t);
+                }
+                catch (Exception e)
+                {
+                    m_Logger.DebugException("Resubscription failed. Will retry later.", e);
+
+                }
+            }
+
 
             lock (m_ResubscriptionSchedule)
             {
-                Array.ForEach(ready, r => m_ResubscriptionSchedule.Remove(r));
+                Array.ForEach(succeeded.ToArray(), r => m_ResubscriptionSchedule.Remove(r));
             }
         }
 
