@@ -150,7 +150,7 @@ namespace Inceptum.Messaging.Tests
 
             var usedThreads = new List<int>();
             var processedMessages = new List<int>();
-            CallbackDelegate<BinaryMessage> callback = (message, action) =>
+            Action<BinaryMessage, AcknowledgeDelegate> callback = (message, action) =>
             {
                 lock (usedThreads)
                 {

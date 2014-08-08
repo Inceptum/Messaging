@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Inceptum.Messaging.Transports;
 
 namespace Inceptum.Messaging.Contract
@@ -23,7 +24,7 @@ namespace Inceptum.Messaging.Contract
     /// <typeparam name="TMessage">The type of the message.</typeparam>
     /// <param name="message">The message.</param>
     /// <param name="acknowledge">The acknowledge delegate (implementation should call it to report ack/nack to broker).</param>
-    public delegate void CallbackDelegate<in TMessage>(TMessage message, AcknowledgeDelegate acknowledge);
+    public delegate void CallbackDelegate<in TMessage>(TMessage message, AcknowledgeDelegate acknowledge,Dictionary<string,string> headers);
     
     //TODO: CallbackDelegate overloads for SendRequest RegisterHandler
     public interface IMessagingEngine:IDisposable
@@ -45,7 +46,7 @@ namespace Inceptum.Messaging.Contract
         //TODO: pass type to callback
         IDisposable Subscribe(Endpoint endpoint, CallbackDelegate<object> callback, Action<string, AcknowledgeDelegate> unknownTypeCallback, params Type[] knownTypes);
         IDisposable Subscribe(Endpoint endpoint, CallbackDelegate<object> callback, Action<string, AcknowledgeDelegate> unknownTypeCallback, string processingGroup, int priority = 0, params Type[] knownTypes);
-      
+
         TResponse SendRequest<TRequest, TResponse>(TRequest request, Endpoint endpoint, long timeout = TransportConstants.DEFAULT_REQUEST_TIMEOUT);
         IDisposable SendRequestAsync<TRequest, TResponse>(TRequest request, Endpoint endpoint, Action<TResponse> callback, Action<Exception> onFailure, long timeout = TransportConstants.DEFAULT_REQUEST_TIMEOUT, string processingGroup = null);
 		IDisposable RegisterHandler<TRequest, TResponse>(Func<TRequest, TResponse> handler, Endpoint endpoint) where TResponse : class;

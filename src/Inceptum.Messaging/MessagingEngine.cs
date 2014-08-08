@@ -159,7 +159,7 @@ namespace Inceptum.Messaging
 
 		public IDisposable Subscribe<TMessage>(Endpoint endpoint, Action<TMessage> callback)
 		{
-            return Subscribe(endpoint, (TMessage message, AcknowledgeDelegate acknowledge) =>
+            return Subscribe(endpoint, (TMessage message, AcknowledgeDelegate acknowledge,Dictionary<string,string> headers) =>
 		        {
 		            callback(message);
 		            acknowledge(0,true);
@@ -175,7 +175,7 @@ namespace Inceptum.Messaging
             {
                 try
                 {
-                    return subscribe(endpoint, (m, ack) => processMessage(m, typeof(TMessage), message => callback((TMessage)message, ack), ack, endpoint), endpoint.SharedDestination ? getMessageType(typeof(TMessage)) : null, processingGroup, priority);
+                    return subscribe(endpoint, (m, ack) => processMessage(m, typeof(TMessage), (message, headers) => callback((TMessage)message, ack, headers), ack, endpoint), endpoint.SharedDestination ? getMessageType(typeof(TMessage)) : null, processingGroup, priority);
                 }
                 catch (Exception e)
                 {
@@ -193,7 +193,7 @@ namespace Inceptum.Messaging
         public IDisposable Subscribe(Endpoint endpoint, Action<object> callback, Action<string> unknownTypeCallback, string processingGroup, int priority, params Type[] knownTypes)
         {
             return Subscribe(endpoint,
-                             (message, acknowledge) =>
+                             (message, acknowledge,headers) =>
                                  {
                                      callback(message);
                                      acknowledge(0, true);
@@ -240,7 +240,7 @@ namespace Inceptum.Messaging
                                 }
                                 return;
                             }
-                            processMessage(m, messageType, message => callback(message, ack), ack, endpoint);
+                            processMessage(m, messageType, (message,headers) => callback(message, ack,headers), ack, endpoint);
                         }, null, processingGroup, priority);
                 }
                 catch (Exception e)
@@ -503,7 +503,7 @@ namespace Inceptum.Messaging
         }
 
 
-        private IDisposable subscribe(Endpoint endpoint, CallbackDelegate<BinaryMessage> callback, string messageType, string processingGroup, int priority)
+        private IDisposable subscribe(Endpoint endpoint, Action<BinaryMessage, AcknowledgeDelegate> callback, string messageType, string processingGroup, int priority)
         {
             var subscription = m_ProcessingGroupManager.Subscribe(endpoint, callback, messageType, getProcessingGroup(endpoint,processingGroup),priority);
 
@@ -538,7 +538,7 @@ namespace Inceptum.Messaging
 
 
 
-        private void processMessage(BinaryMessage binaryMessage,Type type, Action<object> callback, AcknowledgeDelegate ack, Endpoint endpoint)
+        private void processMessage(BinaryMessage binaryMessage,Type type, Action<object,Dictionary<string,string>> callback, AcknowledgeDelegate ack, Endpoint endpoint)
         {
             object message = null;
             try
@@ -555,7 +555,7 @@ namespace Inceptum.Messaging
 
             try
             {
-                callback(message);
+                callback(message, binaryMessage.Headers);
             }
             catch (Exception e)
             {

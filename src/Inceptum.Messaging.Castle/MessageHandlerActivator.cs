@@ -66,9 +66,9 @@ namespace Inceptum.Messaging.Castle
             m_Subscriptions.Dispose();
             base.Destroy(instance);
         }
- 
 
-        private void dispatch(object message, AcknowledgeDelegate acknowledge)
+
+        private void dispatch(object message, AcknowledgeDelegate acknowledge, Dictionary<string, string> headers)
         {
             Func<object, CommandHandlingResult> handler;
             if (!m_Handlers.TryGetValue(message.GetType(), out handler))

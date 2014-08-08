@@ -58,7 +58,7 @@ namespace Inceptum.Messaging
             return false;
         }
 
-        public IDisposable Subscribe(Endpoint endpoint, CallbackDelegate<BinaryMessage> callback, string messageType, string processingGroup, int priority)
+        public IDisposable Subscribe(Endpoint endpoint, Action<BinaryMessage, AcknowledgeDelegate> callback, string messageType, string processingGroup, int priority)
         {
             if (string.IsNullOrEmpty(processingGroup)) throw new ArgumentNullException("processingGroup","should be not empty string");
             if (m_IsDisposing)
