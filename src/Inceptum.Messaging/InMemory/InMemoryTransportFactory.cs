@@ -171,7 +171,7 @@ namespace Inceptum.Messaging.InMemory
                     string correlationId;
                     if(request.Headers.TryGetValue("ReplyTo", out correlationId))
                         response.Headers["CorrelationId"] = correlationId;
-                    Send(replyTo, response,0);
+                    Send(replyTo.ToString(), response,0);
             }, messageType);
             return subscription;
         }

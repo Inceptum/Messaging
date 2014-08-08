@@ -24,7 +24,7 @@ namespace Inceptum.Messaging.Contract
     /// <typeparam name="TMessage">The type of the message.</typeparam>
     /// <param name="message">The message.</param>
     /// <param name="acknowledge">The acknowledge delegate (implementation should call it to report ack/nack to broker).</param>
-    public delegate void CallbackDelegate<in TMessage>(TMessage message, AcknowledgeDelegate acknowledge,Dictionary<string,string> headers);
+    public delegate void CallbackDelegate<in TMessage>(TMessage message, AcknowledgeDelegate acknowledge, Dictionary<string, string> headers);
     
     //TODO: CallbackDelegate overloads for SendRequest RegisterHandler
     public interface IMessagingEngine:IDisposable
@@ -34,9 +34,9 @@ namespace Inceptum.Messaging.Contract
         bool GetProcessingGroupInfo(string name, out ProcessingGroupInfo groupInfo);
         ISerializationManager SerializationManager { get; }
         IDisposable SubscribeOnTransportEvents(TransportEventHandler handler);
-        void Send<TMessage>(TMessage message, Endpoint endpoint, string processingGroup = null);
-        void Send<TMessage>(TMessage message, Endpoint endpoint, int ttl, string processingGroup = null);
-        void Send(object message, Endpoint endpoint, string processingGroup = null);
+        void Send<TMessage>(TMessage message, Endpoint endpoint, string processingGroup = null, Dictionary<string, string> headers = null);
+        void Send<TMessage>(TMessage message, Endpoint endpoint, int ttl, string processingGroup = null, Dictionary<string, string> headers = null);
+        void Send(object message, Endpoint endpoint, string processingGroup = null, Dictionary<string, string> headers = null);
         Destination CreateTemporaryDestination(string transportId, string processingGroup);
 
         IDisposable Subscribe<TMessage>(Endpoint endpoint, Action<TMessage> callback);

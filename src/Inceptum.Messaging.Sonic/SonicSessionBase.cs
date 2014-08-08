@@ -133,6 +133,11 @@ namespace Inceptum.Messaging.Sonic
                     break;
             }
 
+            foreach (var header in message.Headers)
+            {
+                sonicMessage.setStringProperty(header.Key, header.Value);
+            }
+
             sonicMessage.setStringProperty(SonicTransportConstants.JAILED_PROPERTY_NAME, m_JailedTag);
             sonicMessage.setJMSType(message.Type);
 
@@ -154,7 +159,15 @@ namespace Inceptum.Messaging.Sonic
             {
                 var bytes = new byte[bytesMessage.getBodyLength()];
                 bytesMessage.readBytes(bytes);
-                return new BinaryMessage {Bytes = bytes, Type = bytesMessage.getJMSType()};
+                var binaryMessage = new BinaryMessage {Bytes = bytes, Type = bytesMessage.getJMSType()};
+                var propertyNames = bytesMessage.getPropertyNames();
+                while (propertyNames.MoveNext())
+                {
+                    var propertyName = propertyNames.Current.ToString();
+                    var propertyValue = sonicMessage.getObjectProperty(propertyName);
+                    binaryMessage.Headers[propertyName] = propertyValue == null ? null : propertyValue.ToString();
+                }
+                return binaryMessage;
             }
 
             var textMessage = sonicMessage as TextMessage;
@@ -162,7 +175,16 @@ namespace Inceptum.Messaging.Sonic
             {
                 string text = textMessage.getText();
                 byte[] bytes = Encoding.UTF8.GetBytes(text);
-                return new BinaryMessage {Bytes = bytes, Type = textMessage.getJMSType()};
+                var binaryMessage = new BinaryMessage {Bytes = bytes, Type = textMessage.getJMSType()};
+                var propertyNames = textMessage.getPropertyNames();
+                while (propertyNames.MoveNext())
+                {
+                    var propertyName = propertyNames.Current.ToString();
+                    var propertyValue = sonicMessage.getObjectProperty(propertyName);
+                    binaryMessage.Headers[propertyName] = propertyValue == null ? null : propertyValue.ToString();
+                }
+
+                return binaryMessage;
             }
 
             throw new InvalidCastException("Message of unsupported type was received. Only binary and text messages are supported");

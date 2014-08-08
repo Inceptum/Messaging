@@ -61,6 +61,10 @@ namespace Inceptum.Messaging.RabbitMq
             var properties = m_Model.CreateBasicProperties();
             properties.Headers = new Dictionary<string, object>();
             properties.DeliveryMode = 2;//persistent
+            foreach (var header in message.Headers)
+            {
+                properties.Headers[header.Key] = header.Value;
+            }
             if (message.Type != null)
                 properties.Type = message.Type;
             if (tuneMessage != null)
@@ -115,7 +119,12 @@ namespace Inceptum.Messaging.RabbitMq
 
         private BinaryMessage toBinaryMessage(IBasicProperties properties, byte[] bytes)
         {
-            return new BinaryMessage {Bytes = bytes, Type = properties.Type};
+            var binaryMessage = new BinaryMessage {Bytes = bytes, Type = properties.Type};
+            foreach (var header in properties.Headers)
+            {
+                binaryMessage.Headers[header.Key] = header.Value == null ? null : header.Value.ToString();
+            }
+            return binaryMessage;
         }
 
         private IDisposable subscribe(string destination, Action<IBasicProperties, byte[],Action<bool>> callback, string messageType)

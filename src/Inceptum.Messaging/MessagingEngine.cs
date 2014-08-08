@@ -108,9 +108,9 @@ namespace Inceptum.Messaging
             return Disposable.Create(() => m_TransportManager.TransportEvents -= safeHandler);
         }
 
-        public void Send<TMessage>(TMessage message, Endpoint endpoint, string processingGroup = null)
+        public void Send<TMessage>(TMessage message, Endpoint endpoint, string processingGroup = null, Dictionary<string, string> headers = null)
         {
-            Send(message, endpoint, MESSAGE_DEFAULT_LIFESPAN,processingGroup);
+            Send(message, endpoint, MESSAGE_DEFAULT_LIFESPAN,processingGroup,headers);
         }
 
         private static string getProcessingGroup(Endpoint endpoint, string processingGroup)
@@ -119,19 +119,37 @@ namespace Inceptum.Messaging
             return  processingGroup ?? endpoint.Destination.ToString();
         }
 
-        public void Send<TMessage>(TMessage message, Endpoint endpoint, int ttl, string processingGroup = null)
+        public void Send<TMessage>(TMessage message, Endpoint endpoint, int ttl, string processingGroup = null, Dictionary<string, string> headers = null)
         {
             var serializedMessage = serializeMessage(endpoint.SerializationFormat, message);
+            if (headers != null)
+            {
+                foreach (var header in headers)
+                {
+                    serializedMessage.Headers[header.Key] = header.Value;
+                }
+            }
             send(serializedMessage,endpoint,ttl, processingGroup);
         }
 
 
 
-        public void Send(object message, Endpoint endpoint, string processingGroup = null)
+        public void Send(object message, Endpoint endpoint, string processingGroup = null, Dictionary<string, string> headers = null)
         {
             var type = getMessageType(message.GetType());
             var bytes = m_SerializationManager.SerializeObject(endpoint.SerializationFormat, message);
-            var serializedMessage = new BinaryMessage { Bytes = bytes, Type = type };
+            var serializedMessage = new BinaryMessage
+            {
+                Bytes = bytes, 
+                Type = type,
+            };
+            if (headers != null)
+            {
+                foreach (var header in headers)
+                {
+                    serializedMessage.Headers[header.Key] = header.Value;
+                }
+            }
             send(serializedMessage, endpoint, MESSAGE_DEFAULT_LIFESPAN, processingGroup);
         }
         
@@ -159,7 +177,7 @@ namespace Inceptum.Messaging
 
 		public IDisposable Subscribe<TMessage>(Endpoint endpoint, Action<TMessage> callback)
 		{
-            return Subscribe(endpoint, (TMessage message, AcknowledgeDelegate acknowledge,Dictionary<string,string> headers) =>
+            return Subscribe(endpoint, (TMessage message, AcknowledgeDelegate acknowledge, Dictionary<string, string> headers) =>
 		        {
 		            callback(message);
 		            acknowledge(0,true);
@@ -538,7 +556,7 @@ namespace Inceptum.Messaging
 
 
 
-        private void processMessage(BinaryMessage binaryMessage,Type type, Action<object,Dictionary<string,string>> callback, AcknowledgeDelegate ack, Endpoint endpoint)
+        private void processMessage(BinaryMessage binaryMessage, Type type, Action<object, Dictionary<string, string>> callback, AcknowledgeDelegate ack, Endpoint endpoint)
         {
             object message = null;
             try
