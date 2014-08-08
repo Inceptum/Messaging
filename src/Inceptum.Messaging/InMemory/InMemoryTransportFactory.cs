@@ -5,6 +5,7 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading;
+using System.Threading.Tasks;
 using Inceptum.Messaging.Contract;
 using Inceptum.Messaging.Transports;
 
@@ -133,9 +134,15 @@ namespace Inceptum.Messaging.InMemory
 
         public IDisposable Subscribe(string destination, Action<BinaryMessage, Action<bool>> callback, string messageType)
         {
-            var subscribe = m_Transport[destination].Where(m => m.Type == messageType || messageType == null).ObserveOn(m_Scheduler)
-                //NOTE:InMemory messaging desnot support acknowledge 
-                .Subscribe(message => callback(message, b => { }));
+            var subject = m_Transport[destination];
+            var subscribe = subject.Where(m => m.Type == messageType || messageType == null).ObserveOn(m_Scheduler)
+                .Subscribe(message => callback(message, b =>
+                {
+                    if (!b)
+                    {
+                        ThreadPool.QueueUserWorkItem(state => subject.OnNext(message));
+                    }
+                }));
             m_Subscriptions.Add(subscribe);
             return subscribe;
         }

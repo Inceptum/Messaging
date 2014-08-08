@@ -20,7 +20,40 @@ namespace Inceptum.Messaging.Tests
     public class InMemoryTransportTests
     {
         private const string TEST_TOPIC = "test.queue";
-        
+
+        [Test]
+        public void AcknowledgeTest()
+        {
+            var delivered1 = new ManualResetEvent(false);
+            var delivered2 = new ManualResetEvent(false);
+            bool processedOnce = false;
+            using (var transport = new InMemoryTransport())
+            {
+                IMessagingSession messagingSession = transport.CreateSession(null);
+                messagingSession.Subscribe(TEST_TOPIC, (message, ack) =>
+                {
+                    var receivedGuid = new Guid(message.Bytes);
+                    Console.WriteLine("subscription1: message {0} of type {1}", receivedGuid, message.Type);
+                    if (!processedOnce)
+                    {
+
+                        Console.WriteLine("Unack for the first delivery");
+                        processedOnce = true;
+                        ack(false);
+                        delivered1.Set();
+                        return;
+                    }
+                    Console.WriteLine("Ack for the second delivery");
+                    delivered2.Set();
+                }, typeof(byte[]).Name);
+                var guid = Guid.NewGuid();
+
+                messagingSession.Send(TEST_TOPIC, new BinaryMessage { Bytes = guid.ToByteArray(), Type = typeof(byte[]).Name }, 0);
+                Assert.That(delivered1.WaitOne(1000), Is.True, "message was not delivered");
+                Assert.That(delivered2.WaitOne(1000), Is.True, "message was not delivered redelivered on unack");
+            }
+        }
+
         [Test]
         public void SendTest()
         {
