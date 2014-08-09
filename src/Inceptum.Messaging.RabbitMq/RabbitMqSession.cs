@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Reactive.Disposables;
+using System.Text;
 using Inceptum.Messaging.Contract;
 using Inceptum.Messaging.Transports;
 using RabbitMQ.Client;
@@ -122,7 +123,8 @@ namespace Inceptum.Messaging.RabbitMq
             var binaryMessage = new BinaryMessage {Bytes = bytes, Type = properties.Type};
             foreach (var header in properties.Headers)
             {
-                binaryMessage.Headers[header.Key] = header.Value == null ? null : header.Value.ToString();
+                var value = header.Value as byte[];
+                binaryMessage.Headers[header.Key] = value == null ? null : Encoding.UTF8.GetString(value);
             }
             return binaryMessage;
         }
