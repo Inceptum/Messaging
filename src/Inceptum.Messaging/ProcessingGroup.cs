@@ -148,7 +148,7 @@ namespace Inceptum.Messaging
                         Interlocked.Increment(ref m_ProcessedMessages);
                     }
                     Interlocked.Decrement(ref m_TasksInProgress);
-                });
+                },TaskCreationOptions.HideScheduler);
             }, messageType);
             return subscription;
         }

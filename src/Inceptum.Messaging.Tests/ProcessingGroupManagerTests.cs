@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Castle.Core.Internal;
 using Inceptum.Messaging.Contract;
 using Inceptum.Messaging.InMemory;
@@ -91,6 +92,45 @@ namespace Inceptum.Messaging.Tests
             }
             Assert.That(usedThreads.Count(), Is.EqualTo(20), "not all messages were processed");
             Assert.That(usedThreads.Distinct().Count(), Is.EqualTo(3), "wrong number of threads was used for message processing");
+        }
+
+
+        [Test]
+        public void QueuedTaskSchedulerIsHiddenTest()
+        {
+            var transportManager = new TransportManager(
+                new TransportResolver(new Dictionary<string, TransportInfo>
+                    {
+                        {"transport-1", new TransportInfo("transport-1", "login1", "pwd1", "None", "InMemory")}
+                    }));
+            var processingGroupManager = new ProcessingGroupManager(transportManager, new Dictionary<string, ProcessingGroupInfo>()
+            {
+                {
+                    "pg", new ProcessingGroupInfo() {ConcurrencyLevel = 1,QueueCapacity = 1000}
+                }
+            });
+
+
+            var e = new ManualResetEvent(false);
+            var processingGroup = transportManager.GetMessagingSession("transport-1", "pg");
+            var childTaskFinishedBeforeHandler = false;
+            var subscription = processingGroupManager.Subscribe(new Endpoint { Destination = "queue", TransportId = "transport-1" },
+                (message, action) =>
+                {
+                    Console.WriteLine("Handler started");
+                    if (Task.Factory.StartNew(() => Console.WriteLine("Child task executed")).Wait(500))
+                        childTaskFinishedBeforeHandler = true;
+                    Console.WriteLine("Handler finished");
+                    e.Set();
+                }, null, "pg", 0);
+
+            using (subscription)
+            {
+                processingGroup.Send("queue", new BinaryMessage {Bytes = Encoding.UTF8.GetBytes((100).ToString())}, 0);
+                e.WaitOne(1000);
+                Assert.That(childTaskFinishedBeforeHandler, "Child task used scheduler from QueuedTaskScheduler");
+            }
+     
         }
 
         [Test]
