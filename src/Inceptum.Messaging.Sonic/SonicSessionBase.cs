@@ -135,7 +135,20 @@ namespace Inceptum.Messaging.Sonic
 
             foreach (var header in message.Headers)
             {
-                sonicMessage.setStringProperty(header.Key, header.Value);
+                bool flag;
+                int value;
+                if (bool.TryParse(header.Value, out flag))
+                {
+                    sonicMessage.setBooleanProperty(header.Key, flag);
+                }
+                else if (int.TryParse(header.Value, out value))
+                {
+                    sonicMessage.setIntProperty(header.Key, value);
+                }
+                else
+                {
+                    sonicMessage.setStringProperty(header.Key, header.Value);
+                }
             }
 
             sonicMessage.setStringProperty(SonicTransportConstants.JAILED_PROPERTY_NAME, m_JailedTag);
