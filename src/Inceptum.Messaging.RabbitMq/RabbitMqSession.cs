@@ -207,6 +207,7 @@ namespace Inceptum.Messaging.RabbitMq
             {
                 try
                 {
+                    m_Model.Close(200, "Goodbye");
                     m_Model.Dispose();
                 }
                 catch (Exception e)

@@ -173,7 +173,7 @@ namespace Inceptum.DataBus.Tests.Messaging
             }
 
             Assert.IsNotNull(ex as HeartbeatLostException, "Exception was not thrown");
-            Assert.AreEqual("Uptime date changed: was 01.01.2012 0:00:00, received 02.01.2012 0:00:00. Context Context", ex.Message);
+            Assert.AreEqual("Uptime date changed: was 01.01.2012 00:00:00, received 02.01.2012 00:00:00. Context Context", ex.Message);
         }
 
         private static ValueWaiter<Action<object>> mockFeedProvider(out MessagingFeedWithHbProviderBaseMock<int, int, string, object, object, object> feedProvider)

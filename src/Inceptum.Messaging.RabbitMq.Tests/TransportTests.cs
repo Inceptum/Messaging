@@ -269,19 +269,22 @@ namespace Inceptum.Messaging.RabbitMq.Tests
         {
             var received = new ManualResetEvent(false);
             Thread connectionThread = null;
+                int managedThreadId;
             using (var transport = new RabbitMqTransport(HOST, "guest", "guest"))
             {
                 IMessagingSession messagingSession = transport.CreateSession( null);
                 messagingSession.Subscribe(TEST_QUEUE, (message, acknowledge) =>
                     {
                         connectionThread = Thread.CurrentThread;
+                        managedThreadId = connectionThread.ManagedThreadId;
                         received.Set();
                     }, "type1");
                 messagingSession.Send(TEST_EXCHANGE, new BinaryMessage {Bytes = new byte[] {0x0, 0x1, 0x2}, Type = "type1"}, 0);
                 Assert.That(received.WaitOne(100), Is.True, "Message was not delivered");
                 messagingSession.Send(TEST_EXCHANGE, new BinaryMessage {Bytes = new byte[] {0x0, 0x1, 0x2}, Type = "type2"}, 0);
             }
-
+            GC.Collect();
+            Thread.Sleep(30000); 
             Assert.That(connectionThread.ThreadState, Is.EqualTo(ThreadState.Stopped), "Processing thread is still active in spite of transport dispose");
         }
 

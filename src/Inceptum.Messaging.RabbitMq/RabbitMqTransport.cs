@@ -112,23 +112,25 @@ namespace Inceptum.Messaging.RabbitMq
 
             var connection = createConnection();
             var session = new RabbitMqSession(connection);
-            connection.ConnectionShutdown += (connection1, reason) =>
+            connection.ConnectionShutdown += (c, reason) =>
                 {
                     lock (m_Sessions)
                     {
                         m_Sessions.Remove(session);
+       //                 session.Dispose();
                     }
-
+                    
 
                     if ((reason.Initiator != ShutdownInitiator.Application || reason.ReplyCode != 200) && onFailure != null)
                     {
-                        m_Logger.Warn("Rmq session to {0} is broken. Reason: {1}", connection1.Endpoint.HostName, reason);
+                        m_Logger.Warn("Rmq session to {0} is broken. Reason: {1}", connection.Endpoint.HostName, reason);
                         onFailure();
                     }
                     else
                     {
-                        m_Logger.Debug("Rmq session to {0} is closed", connection1.Endpoint.HostName);
+                        m_Logger.Debug("Rmq session to {0} is closed", connection.Endpoint.HostName);
                     }
+                    
                 };
 
             lock (m_Sessions)
