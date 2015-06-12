@@ -98,7 +98,7 @@ namespace Inceptum.DataBus.Messaging
                 {
                     if (LastKnownUptimeDate != uptimeDate)
                     {
-                        string errorMessage = String.Format("Uptime date changed: was {0}, received {1}. Context {2}", LastKnownUptimeDate, uptimeDate, GetContextLogRepresentationString(context));
+                        string errorMessage = String.Format("Uptime date changed: was {0:dd/MM/yyyy HH:mm:ss}, received  {0:dd/MM/yyyy HH:mm:ss}. Context {2}", LastKnownUptimeDate, uptimeDate, GetContextLogRepresentationString(context));
                         LastKnownUptimeDate = uptimeDate;
                         dataFeed.OnError(new HeartbeatLostException(errorMessage));
                         return;
