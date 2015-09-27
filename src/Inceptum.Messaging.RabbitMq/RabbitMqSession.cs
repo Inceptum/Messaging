@@ -21,6 +21,16 @@ namespace Inceptum.Messaging.RabbitMq
         {
             m_Connection = connection;
             m_Model = m_Connection.CreateModel();
+            //NOTE: looks like publish confirm is required for guaranteed delivery
+            //smth like:
+            //  m_Model.ConfirmSelect();
+            //and publish like this:
+            //  m_Model.BasicPublish()
+            //  m_Model.WaitForConfirmsOrDie();
+            //it will wait for ack from server and throw exception if message failed to persist ons srever side (e.g. broker reboot)
+            //more info here: http://rianjs.net/2013/12/publisher-confirms-with-rabbitmq-and-c-sharp
+            
+            
             //No limit to prefetch size, but limit prefetch to 1 message (actually no prefetch since this one message is the message being processed). 
             //m_Model.BasicQos(0,1,false);
             connection.ConnectionShutdown += (connection1, reason) =>
