@@ -51,7 +51,7 @@ namespace Inceptum.Messaging.Tests
             using (subscription)
             {
                 Enumerable.Range(1, 20).ForEach(i => session.Send("queue", new BinaryMessage(), 0));
-                Thread.Sleep(1200);
+                Thread.Sleep(2000);
             }
             Assert.That(usedThreads.Count(), Is.EqualTo(20), "not all messages were processed");
             Assert.That(usedThreads.Distinct().Count(), Is.EqualTo(1), "more then one thread was used for message processing");
@@ -272,9 +272,37 @@ namespace Inceptum.Messaging.Tests
 
 
 
- 
 
-       
+
+        [Test]
+        public void DuplicateSubscriptionFailuresShoudNotCauseDoubleResubscriptionTest()
+        {
+            var subscribed = new AutoResetEvent(false);
+            int subscriptionsCounter=0;
+            Action onSubscribe = () =>
+            {
+                Interlocked.Increment(ref subscriptionsCounter);
+                subscribed.Set();
+            };
+            Action emulateFail=null;
+            using ( var processingGroupManager = createProcessingGroupManagerWithMockedDependencies(action => { }, action => emulateFail = emulateFail ?? action, onSubscribe))
+            {
+                using (processingGroupManager.Subscribe(new Endpoint("test", "test", false, "fake"), (message, acknowledge) =>
+                {
+                    acknowledge(0, true);
+                    Console.WriteLine(DateTime.Now.ToString("HH:mm:ss.ffff") + " recieved");
+                }, null, "ProcessingGroup", 0))
+                {
+                    subscribed.WaitOne();
+                    emulateFail();
+                    Thread.Sleep(100);
+                    emulateFail();
+                }
+                Assert.That(subscriptionsCounter,Is.EqualTo(2),"Duplicate subscription failure report leaded to double resubscription");
+            }
+        }
+
+
         [Test]
         public void ResubscriptionTest()
         {
@@ -304,7 +332,9 @@ namespace Inceptum.Messaging.Tests
                 Thread.Sleep(300);
 
                 Console.WriteLine("{0:H:mm:ss.fff} Emulating fail", DateTime.Now);
+                
                 emulateFail();
+           
                 //First attempt is taken right after failure, but it fails next one happends in 1000ms and should be successfull
                 Assert.That(subscribed.WaitOne(1500), Is.True, "Resubscription has not happened within resubscription timeout");
                 Assert.That(subscriptionsCounter, Is.EqualTo(4));

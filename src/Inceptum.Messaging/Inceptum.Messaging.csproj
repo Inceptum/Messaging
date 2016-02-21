@@ -123,6 +123,7 @@
     <Compile Include="TransportResolver.cs" />
     <Compile Include="Utils\CountingTracker.cs" />
     <Compile Include="Utils\CurrentThreadTaskScheduler.cs" />
+    <Compile Include="Utils\Helper.cs" />
     <Compile Include="Utils\QueuedTaskScheduler.cs" />
     <Compile Include="Utils\SchedulingBackgroundWorker.cs" />
   </ItemGroup>

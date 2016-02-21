@@ -4,6 +4,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using Inceptum.Messaging.Contract;
 using Inceptum.Messaging.Transports;
+using Inceptum.Messaging.Utils;
 
 namespace Inceptum.Messaging
 {
@@ -46,7 +47,7 @@ namespace Inceptum.Messaging
         public IMessagingSession GetSession(string transportId, string name, Action onFailure)
         {
             addId(transportId);
-            var transport = Transport ?? (Transport = m_Factory.Create(m_TransportInfo, processTransportFailure));
+            var transport = Transport ?? (Transport = m_Factory.Create(m_TransportInfo, Helper.CallOnlyOnce(processTransportFailure)));
             MessagingSessionWrapper messagingSession;
 
             lock (m_MessagingSessions)
@@ -56,7 +57,7 @@ namespace Inceptum.Messaging
                 if (messagingSession == null)
                 {
                     messagingSession = new MessagingSessionWrapper(transportId, name);
-                    messagingSession.SetSession(transport.CreateSession(() => processSessionFailure(messagingSession)));
+                    messagingSession.SetSession(transport.CreateSession(() => Helper.CallOnlyOnce(()=>processSessionFailure(messagingSession))));
                     m_MessagingSessions.Add(messagingSession);
                 }
             }

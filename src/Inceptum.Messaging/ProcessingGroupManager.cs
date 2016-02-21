@@ -4,9 +4,11 @@ using System.Configuration;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Text;
+using System.Threading;
 using Inceptum.Core.Utils;
 using Inceptum.Messaging.Contract;
 using Inceptum.Messaging.Transports;
+using Inceptum.Messaging.Utils;
 using NLog;
 
 namespace Inceptum.Messaging
@@ -81,13 +83,13 @@ namespace Inceptum.Messaging
  
                     var sessionName = getSessionName(@group, priority);
 
-                    var session = m_TransportManager.GetMessagingSession(endpoint.TransportId, sessionName, () =>
+                    var session = m_TransportManager.GetMessagingSession(endpoint.TransportId, sessionName, Helper.CallOnlyOnce(() =>
                     {
                         m_Logger.Info("Subscription for endpoint {0} within processing group '{1}' failure detected. Attempting subscribe again.", endpoint, processingGroupName);
                         doSubscribe(0);
-                    });
+                    }));
 
-
+   
                     var subscription = group.Subscribe(session, endpoint.Destination.Subscribe,
                         (message, ack) => callback(message, createDeferredAcknowledge(ack)), messageType, priority);
                     var brokenSubscription = subscriptionHandler.Disposable;
@@ -118,6 +120,7 @@ namespace Inceptum.Messaging
             
             return subscriptionHandler;
         }
+
 
         private string getSessionName(ProcessingGroup processingGroup, int priority)
         {
