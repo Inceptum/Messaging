@@ -103,6 +103,34 @@ namespace Inceptum.Messaging.RabbitMq.Tests
 
 
         [Test]
+        public void SendFailureTest()
+        {
+            using (var transport = new RabbitMqTransport(HOST, "guest", "guest"))
+            {
+                var delivered=new ManualResetEvent(false);
+                IMessagingSession messagingSession = transport.CreateSession( ()=>Console.WriteLine("onFailure called"));
+                /*FieldInfo field = typeof(RabbitMqSession).GetField("m_Connection", BindingFlags.NonPublic | BindingFlags.Instance);
+                var connection = field.GetValue(messagingSession) as IConnection;
+                connection.Abort(1, "All your base are belong to us");*/
+                while (true)
+                {
+                    try
+                    {
+                        messagingSession.Send(TEST_EXCHANGE, new BinaryMessage {Bytes = new byte[] {0x0, 0x1, 0x2}, Type = typeof (byte[]).Name}, 0);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.Message+"!!!!!!!!!");
+                        throw;
+                    }
+                    Thread.Sleep(1000);
+                    Console.WriteLine('.');
+                }
+            }
+        }
+
+
+        [Test]
         public void AckTest()
         {
             using (var transport = new RabbitMqTransport(HOST, "guest", "guest"))
@@ -290,18 +318,19 @@ namespace Inceptum.Messaging.RabbitMq.Tests
 
         [Test]
         [Ignore]
-        [TestCase(10, TestName = "10b")]
-        [TestCase(1024, TestName = "1Kb")]
-        [TestCase(8912, TestName = "8Kb")]
-        [TestCase(1024*1024, TestName = "1Mb")]
-        public void PerformanceTest(int messageSize)
+        [TestCase(10, true,TestName = "10b confirmed")]
+        [TestCase(10, false,TestName = "10b")]
+        [TestCase(1024, false, TestName = "1Kb")]
+        [TestCase(8912, false, TestName = "8Kb")]
+        [TestCase(1024 * 1024, false, TestName = "1Mb")]
+        public void PerformanceTest(int messageSize, bool confirmedSending)
         {
             var messageBytes = new byte[messageSize];
             new Random().NextBytes(messageBytes);
 
             using (var transport = new RabbitMqTransport(HOST, "guest", "guest"))
             {
-                IMessagingSession messagingSession = transport.CreateSession( null);
+                IMessagingSession messagingSession = transport.CreateSession(null, confirmedSending);
                 Stopwatch sw = Stopwatch.StartNew();
                 messagingSession.Send(TEST_EXCHANGE, new BinaryMessage { Bytes = messageBytes, Type = typeof(byte[]).Name }, 0);
                 int sendCounter;

@@ -105,13 +105,13 @@ namespace Inceptum.Messaging.RabbitMq
 
         }
 
-        public IMessagingSession CreateSession(Action onFailure)
+        public IMessagingSession CreateSession(Action onFailure, bool confirmedSending)
         {
             if(m_IsDisposed.WaitOne(0))
                 throw new ObjectDisposedException("Transport is disposed");
 
             var connection = createConnection();
-            var session = new RabbitMqSession(connection);
+            var session = new RabbitMqSession(connection,confirmedSending);
             connection.ConnectionShutdown += (c, reason) =>
                 {
                     lock (m_Sessions)
@@ -141,6 +141,11 @@ namespace Inceptum.Messaging.RabbitMq
             return session;
         }
 
+
+        public IMessagingSession CreateSession(Action onFailure)
+        {
+            return CreateSession(onFailure, false);
+        }
 
         public bool VerifyDestination(Destination destination, EndpointUsage usage, bool configureIfRequired, out string error)
         {

@@ -15,12 +15,15 @@ namespace Inceptum.Messaging.RabbitMq
         private readonly IConnection m_Connection;
         private readonly IModel m_Model;
         private readonly CompositeDisposable m_Subscriptions = new CompositeDisposable();
+        private bool m_ConfirmedSending = false;
 
-
-        public RabbitMqSession(IConnection connection)
+        public RabbitMqSession(IConnection connection, bool confirmedSending = false)
         {
+
             m_Connection = connection;
             m_Model = m_Connection.CreateModel();
+            if(confirmedSending)
+                m_Model.ConfirmSelect();
             //NOTE: looks like publish confirm is required for guaranteed delivery
             //smth like:
             //  m_Model.ConfirmSelect();
@@ -46,7 +49,8 @@ namespace Inceptum.Messaging.RabbitMq
         }
 
         readonly Dictionary<string, DefaultBasicConsumer> m_Consumers = new Dictionary<string, DefaultBasicConsumer>();
-       
+        
+
         public Destination CreateTemporaryDestination()
         {
             var queueName = m_Model.QueueDeclare().QueueName;
@@ -70,6 +74,7 @@ namespace Inceptum.Messaging.RabbitMq
         private void send(PublicationAddress destination, BinaryMessage message, Action<IBasicProperties> tuneMessage = null)
         {
             var properties = m_Model.CreateBasicProperties();
+            
             properties.Headers = new Dictionary<string, object>();
             properties.DeliveryMode = 2;//persistent
             foreach (var header in message.Headers)
@@ -82,8 +87,12 @@ namespace Inceptum.Messaging.RabbitMq
                 tuneMessage(properties);
 
             properties.Headers.Add("initialRoute", destination.ToString());
-            lock(m_Model)
-                m_Model.BasicPublish(destination, properties, message.Bytes);
+            lock (m_Model)
+            {
+                m_Model.BasicPublish(destination.ExchangeName, destination.RoutingKey ,true, false, properties, message.Bytes);
+                if (m_ConfirmedSending) 
+                    m_Model.WaitForConfirmsOrDie();
+            }
         }
 
         public RequestHandle SendRequest(string destination, BinaryMessage message, Action<BinaryMessage> callback)
