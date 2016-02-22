@@ -103,6 +103,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
 
 
         [Test]
+        [Ignore]
         public void SendFailureTest()
         {
             using (var transport = new RabbitMqTransport(HOST, "guest", "guest"))
