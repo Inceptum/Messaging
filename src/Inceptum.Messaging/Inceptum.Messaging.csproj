@@ -97,6 +97,8 @@
     <Compile Include="Contract\TransportException.cs" />
     <Compile Include="Contract\TransportOutdatedException.cs" />
     <Compile Include="Contract\TransportOutdateEventArgs.cs" />
+    <Compile Include="InMemory\InMemorySession.cs" />
+    <Compile Include="InMemory\InMemoryTransport.cs" />
     <Compile Include="InMemory\InMemoryTransportFactory.cs" />
     <Compile Include="ISerializerFactory.cs" />
     <Compile Include="ITransportFactory.cs" />
