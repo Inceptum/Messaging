@@ -24,6 +24,10 @@ namespace Inceptum.Messaging.RabbitMq
         private readonly bool m_ShuffleBrokersOnSessionCreate;
         private static readonly Random m_Random = new Random((int)DateTime.Now.Ticks & 0x0000FFFF);
 
+        internal long SessionsCount
+        {
+            get { return m_Sessions.Count; }
+        }
         public RabbitMqTransport(string broker, string username, string password) : this(new[] {broker}, username, password)
         {
             
@@ -111,13 +115,19 @@ namespace Inceptum.Messaging.RabbitMq
                 throw new ObjectDisposedException("Transport is disposed");
 
             var connection = createConnection();
-            var session = new RabbitMqSession(connection,confirmedSending);
+            var session = new RabbitMqSession(connection, confirmedSending, (rabbitMqSession, destination,exception) =>
+            {
+                lock (m_Sessions)
+                {
+                    m_Sessions.Remove(rabbitMqSession);
+                    m_Logger.WarnException(string.Format("Failed to send message to destination '{0}' broker '{1}'. Treating session as broken. ", destination, connection.Endpoint.HostName), exception); 
+                }
+            });
             connection.ConnectionShutdown += (c, reason) =>
                 {
                     lock (m_Sessions)
                     {
                         m_Sessions.Remove(session);
-       //                 session.Dispose();
                     }
                     
 

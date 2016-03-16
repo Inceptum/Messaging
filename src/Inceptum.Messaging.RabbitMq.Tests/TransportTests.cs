@@ -10,6 +10,7 @@ using Inceptum.Messaging.Transports;
 using NLog;
 using NUnit.Framework;
 using RabbitMQ.Client;
+using RabbitMQ.Client.Exceptions;
 using ThreadState = System.Threading.ThreadState;
 
 namespace Inceptum.Messaging.RabbitMq.Tests
@@ -238,6 +239,40 @@ namespace Inceptum.Messaging.RabbitMq.Tests
                 FieldInfo field = typeof (RabbitMqSession).GetField("m_Connection", BindingFlags.NonPublic | BindingFlags.Instance);
                 var connection = field.GetValue(messagingSession) as IConnection;
                 connection.Abort(1, "All your base are belong to us");
+                Assert.That(onFailureCalled.WaitOne(500), Is.True, "Subsciptionwas not notefied on failure");
+            }
+        }
+
+
+        [Test]
+        public void SessionIsTreatedAsBrokenAfterSendFailureWithAlreadyClosedExceptionTest()
+        {
+            using (var transport = new RabbitMqTransport(HOST, "guest", "guest"))
+            {
+                var onFailureCalled = new AutoResetEvent(false);
+                IMessagingSession messagingSession = transport.CreateSession( () =>
+                    {
+                        onFailureCalled.Set();
+                        Console.WriteLine(Thread.CurrentThread.ManagedThreadId);
+                    });
+
+                messagingSession.Send(TEST_EXCHANGE, new BinaryMessage {Bytes = new byte[] {0x0, 0x1, 0x2}, Type = "messageType"}, 0);
+                FieldInfo field = typeof (RabbitMqSession).GetField("m_Connection", BindingFlags.NonPublic | BindingFlags.Instance);
+                var connection = field.GetValue(messagingSession) as IConnection;
+                connection.Abort(1, "All your base are belong to us"); 
+                AlreadyClosedException ex=null;
+                try
+                {
+                    messagingSession.Send(TEST_EXCHANGE, new BinaryMessage {Bytes = new byte[] {0x0, 0x1, 0x2}, Type = "messageType"}, 0);
+                }
+                catch (AlreadyClosedException e)
+                {
+                    ex = e;
+                }
+
+                Assert.That(ex,Is.Not.Null, "Exception was not thrown on send fail");
+                Assert.That(ex, Is.InstanceOf<AlreadyClosedException>(), "Wrong exception type was thrown on send fail");
+                Assert.That(transport.SessionsCount, Is.EqualTo(0), "session was not removed after send failed AlreadyClosedException ");
                 Assert.That(onFailureCalled.WaitOne(500), Is.True, "Subsciptionwas not notefied on failure");
             }
         }

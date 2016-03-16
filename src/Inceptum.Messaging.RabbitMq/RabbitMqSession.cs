@@ -7,6 +7,7 @@ using System.Text;
 using Inceptum.Messaging.Contract;
 using Inceptum.Messaging.Transports;
 using RabbitMQ.Client;
+using RabbitMQ.Client.Exceptions;
 
 namespace Inceptum.Messaging.RabbitMq
 {
@@ -17,9 +18,9 @@ namespace Inceptum.Messaging.RabbitMq
         private readonly CompositeDisposable m_Subscriptions = new CompositeDisposable();
         private bool m_ConfirmedSending = false;
 
-        public RabbitMqSession(IConnection connection, bool confirmedSending = false)
+        public RabbitMqSession(IConnection connection, bool confirmedSending = false, Action<RabbitMqSession, PublicationAddress, Exception> onSendFail = null)
         {
-
+            m_OnSendFail = onSendFail??((s,d,e) => { });
             m_Connection = connection;
             m_Model = m_Connection.CreateModel();
             if(confirmedSending)
@@ -49,7 +50,8 @@ namespace Inceptum.Messaging.RabbitMq
         }
 
         readonly Dictionary<string, DefaultBasicConsumer> m_Consumers = new Dictionary<string, DefaultBasicConsumer>();
-        
+        private readonly Action<RabbitMqSession, PublicationAddress, Exception> m_OnSendFail;
+
 
         public Destination CreateTemporaryDestination()
         {
@@ -73,26 +75,35 @@ namespace Inceptum.Messaging.RabbitMq
         }
         private void send(PublicationAddress destination, BinaryMessage message, Action<IBasicProperties> tuneMessage = null)
         {
-            var properties = m_Model.CreateBasicProperties();
-            
-            properties.Headers = new Dictionary<string, object>();
-            properties.DeliveryMode = 2;//persistent
-            foreach (var header in message.Headers)
+            try
             {
-                properties.Headers[header.Key] = header.Value;
-            }
-            if (message.Type != null)
-                properties.Type = message.Type;
-            if (tuneMessage != null)
-                tuneMessage(properties);
+                var properties = m_Model.CreateBasicProperties();
 
-            properties.Headers.Add("initialRoute", destination.ToString());
-            lock (m_Model)
-            {
-                m_Model.BasicPublish(destination.ExchangeName, destination.RoutingKey ,true, false, properties, message.Bytes);
-                if (m_ConfirmedSending) 
-                    m_Model.WaitForConfirmsOrDie();
+                properties.Headers = new Dictionary<string, object>();
+                properties.DeliveryMode = 2; //persistent
+                foreach (var header in message.Headers)
+                {
+                    properties.Headers[header.Key] = header.Value;
+                }
+                if (message.Type != null)
+                    properties.Type = message.Type;
+                if (tuneMessage != null)
+                    tuneMessage(properties);
+
+                properties.Headers.Add("initialRoute", destination.ToString());
+                lock (m_Model)
+                {
+                    m_Model.BasicPublish(destination.ExchangeName, destination.RoutingKey, true, false, properties, message.Bytes);
+                    if (m_ConfirmedSending)
+                        m_Model.WaitForConfirmsOrDie();
+                }
             }
+            catch (AlreadyClosedException e)
+            {
+                m_OnSendFail(this,destination,e);
+                throw;
+            }
+
         }
 
         public RequestHandle SendRequest(string destination, BinaryMessage message, Action<BinaryMessage> callback)
