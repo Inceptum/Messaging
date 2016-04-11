@@ -28,8 +28,8 @@ namespace Inceptum.Messaging.Sonic
 
             var factory = new QueueConnectionFactory();
             (factory as ConnectionFactory).setConnectionURLs(transportInfo.Broker);
-            (factory as ConnectionFactory).setFaultTolerant(true);
-            (factory as ConnectionFactory).setFaultTolerantReconnectTimeout(0);
+            //(factory as ConnectionFactory).setFaultTolerant(true);
+            //(factory as ConnectionFactory).setFaultTolerantReconnectTimeout(0);
             m_Connection = factory.createQueueConnection(transportInfo.Login, transportInfo.Password);
             ((Connection)m_Connection).setConnectionStateChangeListener(new GenericConnectionStateChangeListener(connectionStateHandler));
             ((Connection)m_Connection).setPingInterval(30);
