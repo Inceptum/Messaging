@@ -166,13 +166,19 @@ namespace Inceptum.Messaging.RabbitMq
                 {
                     using (IModel channel = connection.CreateModel())
                     {
-                            
-                        if (configureIfRequired)
-                            channel.ExchangeDeclare(publish.ExchangeName, publish.ExchangeType, true);
-                        else
-                            channel.ExchangeDeclarePassive(publish.ExchangeName);
 
-                        
+                        if (publish.ExchangeName == "" && publish.ExchangeType.ToLower() == "direct")
+                        {
+                            //default exchange should not be verified since it always exists and publication to it is always possible
+                        }
+                        else
+                        {
+                            if (configureIfRequired)
+                                channel.ExchangeDeclare(publish.ExchangeName, publish.ExchangeType, true);
+                            else
+                                channel.ExchangeDeclarePassive(publish.ExchangeName);
+                        }
+
 
                         if ((usage & EndpointUsage.Subscribe) == EndpointUsage.Subscribe)
                         {

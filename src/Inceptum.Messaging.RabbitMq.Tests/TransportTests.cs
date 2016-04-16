@@ -422,6 +422,25 @@ namespace Inceptum.Messaging.RabbitMq.Tests
                 Assert.That(res,Is.False);
             }
         }
+
+        [Test]
+        public void DefaultExchangeVerificationTest()
+        {
+            var defaultExchangeDestination = new Destination()
+            {
+                Subscribe = TEST_QUEUE,
+                Publish = ((object) new PublicationAddress("direct", "", TEST_QUEUE)).ToString()
+            };
+
+            using (var transport = new RabbitMqTransport(HOST, "guest", "guest"))
+            {
+                string error;
+                var res = transport.VerifyDestination(defaultExchangeDestination, EndpointUsage.Publish | EndpointUsage.Subscribe, false, out error);
+                Console.WriteLine(error);
+                Assert.That(res,Is.True);
+            }
+        }
+
         [Test]
         [ExpectedException(typeof (InvalidOperationException))]
         public void AttemptToSubscribeSameDestinationAndMessageTypeTwiceFailureTest()
