@@ -25,6 +25,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
             m_Channel = m_Connection.CreateModel();
             Console.WriteLine("Purging queue {0}", TEST_QUEUE);
             m_Channel.QueuePurge(TEST_QUEUE);
+            m_TempQueue = m_Channel.QueueDeclare().QueueName;
         }
 
         [TearDown]
@@ -47,6 +48,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
         private IConnection m_Connection;
         private IModel m_Channel;
         private ConnectionFactory m_Factory;
+        private string m_TempQueue;
 
 
         [TestFixtureSetUp]
@@ -428,18 +430,20 @@ namespace Inceptum.Messaging.RabbitMq.Tests
         {
             var defaultExchangeDestination = new Destination()
             {
-                Subscribe = TEST_QUEUE,
-                Publish = ((object) new PublicationAddress("direct", "", TEST_QUEUE)).ToString()
+                Subscribe = m_TempQueue,
+                Publish = ((object) new PublicationAddress("direct", "", m_TempQueue)).ToString()
             };
 
             using (var transport = new RabbitMqTransport(HOST, "guest", "guest"))
             {
                 string error;
-                var res = transport.VerifyDestination(defaultExchangeDestination, EndpointUsage.Publish | EndpointUsage.Subscribe, false, out error);
+                var res = transport.VerifyDestination(defaultExchangeDestination, EndpointUsage.Publish | EndpointUsage.Subscribe, true, out error);
                 Console.WriteLine(error);
                 Assert.That(res,Is.True);
             }
         }
+
+      
 
         [Test]
         [ExpectedException(typeof (InvalidOperationException))]

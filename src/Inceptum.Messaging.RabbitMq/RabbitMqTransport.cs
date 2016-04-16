@@ -180,7 +180,8 @@ namespace Inceptum.Messaging.RabbitMq
                         }
 
 
-                        if ((usage & EndpointUsage.Subscribe) == EndpointUsage.Subscribe)
+                        //temporary queue should not be verified since it is not supported by rmq client
+                        if((usage & EndpointUsage.Subscribe) == EndpointUsage.Subscribe && !destination.Subscribe.ToLower().StartsWith("amq."))
                         {
                             if (configureIfRequired)
                                 channel.QueueDeclare(destination.Subscribe, true, false, false, null);
