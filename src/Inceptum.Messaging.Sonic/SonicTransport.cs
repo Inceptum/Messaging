@@ -9,17 +9,17 @@ using QueueConnectionFactory = Sonic.Jms.Cf.Impl.QueueConnectionFactory;
 
 namespace Inceptum.Messaging.Sonic
 {
-    internal class Transport :  ITransport
+    internal class SonicTransport :  ITransport
     {
         private readonly object m_SyncRoot = new object();
         private volatile bool m_IsDisposed;
         private Action m_OnFailure;
         private readonly MessageFormat m_MessageFormat;
-        private readonly List<IProcessingGroup> m_ProcessingGroups = new List<IProcessingGroup>();
+        private readonly List<IMessagingSession> m_Sessions = new List<IMessagingSession>();
         private readonly string m_JailedTag;
         private readonly QueueConnection m_Connection;
 
-        public Transport(TransportInfo transportInfo, Action onFailure, MessageFormat messageFormat)
+        public SonicTransport(TransportInfo transportInfo, Action onFailure, MessageFormat messageFormat)
         {
             if (onFailure == null) throw new ArgumentNullException("onFailure");
             m_OnFailure = onFailure;
@@ -28,6 +28,8 @@ namespace Inceptum.Messaging.Sonic
 
             var factory = new QueueConnectionFactory();
             (factory as ConnectionFactory).setConnectionURLs(transportInfo.Broker);
+            //(factory as ConnectionFactory).setFaultTolerant(true);
+            //(factory as ConnectionFactory).setFaultTolerantReconnectTimeout(0);
             m_Connection = factory.createQueueConnection(transportInfo.Login, transportInfo.Password);
             ((Connection)m_Connection).setConnectionStateChangeListener(new GenericConnectionStateChangeListener(connectionStateHandler));
             ((Connection)m_Connection).setPingInterval(30);
@@ -51,13 +53,13 @@ namespace Inceptum.Messaging.Sonic
             }
         }
 
-        public IProcessingGroup CreateProcessingGroup(Action onFailure)
+        public IMessagingSession CreateSession(Action onFailure)
         {
-            IProcessingGroup group;
+            IMessagingSession group;
             lock (m_SyncRoot)
             {
-                group = new ProcessingGroupWrapper(m_Connection, m_JailedTag, m_MessageFormat);
-                m_ProcessingGroups.Add(group);
+                group = new SonicSessionWrapper(m_Connection, m_JailedTag, m_MessageFormat);
+                m_Sessions.Add(group);
             }
             return group;
         }
@@ -76,9 +78,9 @@ namespace Inceptum.Messaging.Sonic
             {
                 if (m_IsDisposed) return;
                 m_OnFailure = () => { };
-                foreach (var processingGroup in m_ProcessingGroups)
+                foreach (var session in m_Sessions)
                 {
-                    processingGroup.Dispose();
+                    session.Dispose();
                 }
 
                 if (m_Connection != null)

@@ -149,6 +149,11 @@ namespace Inceptum.Messaging.Tests.Castle
         {
             return m_Endpoints;
         }
+
+        public IDictionary<string, ProcessingGroupInfo> GetProcessingGroups()
+        {
+            return null;
+        }
     }
 
     internal class EndpointDependTestClass1

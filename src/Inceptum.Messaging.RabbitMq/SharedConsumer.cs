@@ -36,7 +36,7 @@ namespace Inceptum.Messaging.RabbitMq
             {
 
                 if (!m_Callbacks.Remove(messageType))
-                    throw new InvalidOperationException("Unsibscribe from not subscribed message type");
+                    throw new InvalidOperationException("Unsubscribe from not subscribed message type");
                 if (m_Callbacks.Any())
                     return true;
             }

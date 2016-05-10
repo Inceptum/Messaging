@@ -105,8 +105,8 @@ namespace Inceptum.Messaging.Sonic.Tests
         public static ITransportResolver MockTransportResolver()
         {
             var resolver = MockRepository.GenerateMock<ITransportResolver>();
-            resolver.Expect(r => r.GetTransport(TransportConstants.TRANSPORT_ID1)).Return(new TransportInfo(TransportConstants.BROKER, TransportConstants.USERNAME, TransportConstants.PASSWORD, "MachineName") { JailStrategy = JailStrategy.MachineName });
-            resolver.Expect(r => r.GetTransport(TransportConstants.TRANSPORT_ID2)).Return(new TransportInfo(TransportConstants.BROKER, TransportConstants.USERNAME, TransportConstants.PASSWORD, "MachineName") { JailStrategy = JailStrategy.MachineName });
+            resolver.Expect(r => r.GetTransport(TransportConstants.TRANSPORT_ID1)).Return(new TransportInfo(TransportConstants.BROKER, TransportConstants.USERNAME, TransportConstants.PASSWORD, "MachineName","Sonic") { JailStrategy = JailStrategy.MachineName });
+            resolver.Expect(r => r.GetTransport(TransportConstants.TRANSPORT_ID2)).Return(new TransportInfo(TransportConstants.BROKER, TransportConstants.USERNAME, TransportConstants.PASSWORD, "MachineName", "Sonic") { JailStrategy = JailStrategy.MachineName });
             return resolver;
         }
 
@@ -215,40 +215,7 @@ namespace Inceptum.Messaging.Sonic.Tests
             }
         }        
         
-        
-        [TestCase(TransportConstants.QUEUE1, Description = "Send queue")]
-        [Ignore("Investigation test")]
-        public void SendTest(string dest)
-        {
-            
-            ITransportResolver resolver = MockTransportResolver();
-            using (var engine = new MessagingEngine(resolver, new SonicTransportFactory()))
-            {
-                engine.SerializationManager.RegisterSerializer("fake", typeof (string), new FakeStringSerializer());
-
-                using (engine.Subscribe<string>(new Endpoint(TransportConstants.TRANSPORT_ID1, dest), s => { }))
-                {
-                    engine.Send(Guid.NewGuid().ToString(), new Endpoint(TransportConstants.TRANSPORT_ID1, dest));
-                    Thread.Sleep(1000);
-                }
-
-                int i = 0;
-                Stopwatch sw = Stopwatch.StartNew();
-                var done = new ManualResetEvent(false);
-                using (engine.Subscribe<string>(new Endpoint(TransportConstants.TRANSPORT_ID1, dest), s =>
-                {
-                    if (Interlocked.Increment(ref i) == 2961)
-                        done.Set();
-                }))
-                {
-                    var message = string.Join(",", Enumerable.Range(0, 100).Select(x => Guid.NewGuid().ToString()));
-                    while (!done.WaitOne(0))
-                        engine.Send(message, new Endpoint(TransportConstants.TRANSPORT_ID1, dest));
-                }
-
-                Console.WriteLine(sw.ElapsedMilliseconds);
-            }
-        }
+         
 
 
         [Test]
@@ -306,67 +273,9 @@ namespace Inceptum.Messaging.Sonic.Tests
         }
 
 
+      
         [Test]
-        public void EachDestinationIsSubscribedOnDedicatedThreadTest()
-        {
-            ITransportResolver resolver = MockTransportResolver();
-            using(var engine = new MessagingEngine(resolver, new SonicTransportFactory())){
-                engine.SerializationManager.RegisterSerializer("fake", typeof(string), new FakeStringSerializer());
-
-                var queue1MessagesThreadIds = new List<int>();
-                var queue2MessagesThreadIds = new List<int>();
-                using (engine.Subscribe<string>(new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE1, serializationFormat: "fake"), s => queue1MessagesThreadIds.Add(Thread.CurrentThread.ManagedThreadId)))
-                using (engine.Subscribe<string>(new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE2, serializationFormat: "fake"), s => queue2MessagesThreadIds.Add(Thread.CurrentThread.ManagedThreadId)))
-                {
-                    engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE1, serializationFormat: "fake"));
-                    engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE2, serializationFormat: "fake"));
-                    engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE1, serializationFormat: "fake"));
-                    engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE2, serializationFormat: "fake"));
-                    engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE1, serializationFormat: "fake"));
-                    engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.QUEUE2, serializationFormat: "fake"));
-                    Thread.Sleep(1000);
-                }
-                Assert.That(queue1MessagesThreadIds.Distinct().Any(), Is.True, "Messages were not processed");
-                Assert.That(queue2MessagesThreadIds.Distinct().Any(), Is.True, "Messages were not processed");
-                Assert.That(queue1MessagesThreadIds.Distinct().Count(), Is.EqualTo(1), "Messages from one subscription were processed in more then 1 thread");
-                Assert.That(queue2MessagesThreadIds.Distinct().Count(), Is.EqualTo(1), "Messages from one subscription were processed in more then 1 thread");
-                Assert.That(queue1MessagesThreadIds.First() != queue2MessagesThreadIds.First(), Is.True, "Messages from different subscriptions were processed one thread");
-            }
-        }
-
-        [Test]
-        public void FacilityTest()
-        {
-            using (IWindsorContainer container = new WindsorContainer())
-            {
-                container.Kernel.Resolver.AddSubResolver(new ArrayResolver(container.Kernel));
-                container.AddFacility<MessagingFacility>(f => f
-                    .WithTransport(TransportConstants.TRANSPORT_ID1, new TransportInfo(TransportConstants.BROKER,TransportConstants.USERNAME,TransportConstants.PASSWORD, "MachineName"))
-                    .WithTransportFactory(new SonicTransportFactory()));
-                var factory = MockRepository.GenerateMock<ISerializerFactory>();
-                factory.Expect(f => f.SerializationFormat).Return("fake");
-                factory.Expect(f => f.Create<string>()).Return(new FakeStringSerializer());
-                container.Register(Component.For<ISerializerFactory>().Instance(factory));
-                var engine = container.Resolve<IMessagingEngine>();
-                var ev = new ManualResetEvent(false);
-                using (engine.Subscribe<string>(new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC, serializationFormat: "fake"), s =>
-                            {
-                                Console.WriteLine(s);
-                                ev.Set();
-                            }))
-                {
-                    engine.Send("test", new Endpoint(TransportConstants.TRANSPORT_ID1, TransportConstants.TOPIC,serializationFormat:"fake"));
-                    Assert.That(ev.WaitOne(500), Is.True, "message was not received");
-                }
-            }
-
-        }
-
-
-
-
-        [Test]
-        public void SendToOverflowenQueueFailureTest()
+        public void SendToOverflownQueueFailureTest()
         {
 
            
@@ -392,145 +301,12 @@ namespace Inceptum.Messaging.Sonic.Tests
                     }
                 });
                 t.Start();
-                Assert.That(t.Join(2000), Is.True, "Exception was not thrown when queue is overflowed");
+                Assert.That(t.Join(2000), Is.True, "Exception was not thrown when queue is overflown");
                 Assert.That(exception, Is.Not.Null);
                 Console.WriteLine(exception);
             }
         }
-
-
-
-        [Test]
-        public void TransportFailuteHandlingTest()
-        {
-            var resolver = MockTransportResolver();
-            var transportManager = new TransportManager(resolver, new SonicTransportFactory());
-            using (var engine = new MessagingEngine(transportManager))
-            {
-                engine.SerializationManager.RegisterSerializer("fake", typeof (string), new FakeStringSerializer());
-                int failureWasReportedCount = 0;
-                engine.SubscribeOnTransportEvents((transportid, @event) => failureWasReportedCount++);
-
-                //need for transportManager to start tracking transport failures for these ids
-                transportManager.GetProcessingGroup(TransportConstants.TRANSPORT_ID1, "test");
-                transportManager.GetProcessingGroup(TransportConstants.TRANSPORT_ID2, "test");
-
-                transportManager.ProcessTransportFailure(
-                    new TransportInfo(TransportConstants.BROKER,
-                        TransportConstants.USERNAME,
-                        TransportConstants.PASSWORD, "MachineName"));
-                Assert.That(failureWasReportedCount, Is.GreaterThan(0), "Failure was not reported");
-                Assert.That(failureWasReportedCount, Is.EqualTo(2), "Failure was not reported for all ids");
-            }
-        }
-
-
-
-        [Test]
-        public void ConcurrentTransportResolutionTest()
-        {
-            var resolver = MockTransportResolver();
-            var transportManager = new TransportManager(resolver,  new SonicTransportFactory());
-            var start =new ManualResetEvent(false);
-            int errorCount=0;
-            int attemptCount=0;
-
-            foreach (var i in Enumerable.Range(1, 10))
-            {
-                int treadNum = i;
-                var thread = new Thread(() =>
-                {
-                    start.WaitOne();
-                    try
-                    {
-                        var transport = transportManager.GetProcessingGroup(TransportConstants.TRANSPORT_ID1,"test");
-                        Console.WriteLine(treadNum+". "+transport);
-                        Interlocked.Increment(ref attemptCount);
-                    }
-                    catch (Exception)
-                    {
-                        Interlocked.Increment(ref errorCount);
-                    }
-                });
-                thread.Start();
-            }
-           
-
-            start.Set();
-            while (attemptCount<10)
-            {
-                Thread.Sleep(50);
-            }
-
-            Assert.That(errorCount, Is.EqualTo(0));            
-            
-
-        }
-
-        [Test]
-        [Ignore]
-        public void InvestigationTest()
-        {
-
-            var factory = new QueueConnectionFactory();
-            (factory as ConnectionFactory).setConnectionURLs(TransportConstants.BROKER);
-            var connection = factory.createQueueConnection(TransportConstants.USERNAME, TransportConstants.PASSWORD);
-            ((Connection)connection).setPingInterval(30);
-            connection.start();
-
-
-            var session = (QueueSession)connection.createQueueSession(false, 1004);
-
-          
-
-            var queue = session.createQueue("finam.ibank.dev.tests");
-
-
-            var consumer = session.createConsumer(queue);
-            int i = 0;
-
-            consumer.setMessageListener(new GenericMessageListener(message => { Console.WriteLine(DateTime.Now);message.acknowledge(); }));
-            Thread.Sleep(2000);
-            consumer.close();
-
-
-
-
-            
-            var producer = session.createProducer(queue);
-
-            BytesMessage bytesMessage;
-            for (int j = 0; j < 5; j++)
-            {
-                bytesMessage = session.createBytesMessage();
-                bytesMessage.writeBytes(new byte[] { 100 });
-                producer.send(bytesMessage);
-            }
-            
-
-            consumer = session.createConsumer(queue);
-
-
-            var p = session.createProducer(session.createTemporaryQueue());
-            bytesMessage = session.createBytesMessage();
-            bytesMessage.writeBytes(new byte[] { 100 });
-            p.send(bytesMessage);
-
-            consumer.setMessageListener(new GenericMessageListener(message =>
-                                                                                {
-                                                                                    Console.WriteLine(""+DateTime.Now+(++i)+" "+(i % 2 == 0));
-                                                                                    //message.acknowledge();return;                    
-                                                                                    if (i % 2 == 0) message.acknowledge();
-                                                                                    else throw new Exception();
-                                                                                    //session.recover();
-                                                                                }));
-            Thread.Sleep(1000);
-            Console.WriteLine("waiting");
-            Thread.Sleep(60*60 * 1000);
-            consumer.close();
-            session.close();
-            connection.close();
-        }
+      
     }
 
 }

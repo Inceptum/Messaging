@@ -6,16 +6,16 @@ using Destination = Inceptum.Messaging.Contract.Destination;
 
 namespace Inceptum.Messaging.Sonic
 {
-    internal class ProcessingGroupWrapper : IProcessingGroup
+    internal class SonicSessionWrapper : IMessagingSession
     {
         private readonly QueueConnection m_Connection;
         private readonly string m_JailedTag;
         private readonly MessageFormat m_MessageFormat;
-        private volatile IProcessingGroup m_Instance;
+        private volatile IMessagingSession m_Instance;
         private volatile bool m_IsQueueGroup;
         private readonly object m_SyncRoot = new object();
 
-        public ProcessingGroupWrapper(QueueConnection connection, string jailedTag, MessageFormat messageFormat)
+        public SonicSessionWrapper(QueueConnection connection, string jailedTag, MessageFormat messageFormat)
         {
             m_JailedTag = jailedTag;
             m_MessageFormat = messageFormat;
@@ -39,29 +39,29 @@ namespace Inceptum.Messaging.Sonic
 
         public IDisposable Subscribe(string destination, Action<BinaryMessage, Action<bool>> callback, string messageType)
         {
-            ensureProcessingGroupIsCreated(destination);
+            ensureSessionIsCreated(destination);
             return m_Instance.Subscribe(destination, callback, messageType);
         }
 
         public void Send(string destination, BinaryMessage message, int ttl)
         {
-            ensureProcessingGroupIsCreated(destination);
+            ensureSessionIsCreated(destination);
             m_Instance.Send(destination, message, ttl);
         }
 
         public RequestHandle SendRequest(string destination, BinaryMessage message, Action<BinaryMessage> callback)
         {
-            ensureProcessingGroupIsCreated(destination);
+            ensureSessionIsCreated(destination);
             return m_Instance.SendRequest(destination, message, callback);
         }
 
         public IDisposable RegisterHandler(string destination, Func<BinaryMessage, BinaryMessage> handler, string messageType)
         {
-            ensureProcessingGroupIsCreated(destination);
+            ensureSessionIsCreated(destination);
             return m_Instance.RegisterHandler(destination, handler, messageType);
         }
 
-        private void ensureProcessingGroupIsCreated(string destination)
+        private void ensureSessionIsCreated(string destination)
         {
             if (m_Instance != null)
             {
@@ -76,9 +76,9 @@ namespace Inceptum.Messaging.Sonic
                 {
                     m_IsQueueGroup = isQueue(destination);
                     if (m_IsQueueGroup)
-                        m_Instance = new QueueProcessingGroup(m_Connection, m_JailedTag, m_MessageFormat);
+                        m_Instance = new QueueSonicSession(m_Connection, m_JailedTag, m_MessageFormat);
                     else
-                        m_Instance = new TopicProcessingGroup(m_Connection, m_JailedTag, m_MessageFormat);
+                        m_Instance = new TopicSonicSession(m_Connection, m_JailedTag, m_MessageFormat);
                 }
             }
         }

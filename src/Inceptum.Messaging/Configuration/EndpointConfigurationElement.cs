@@ -1,4 +1,5 @@
 ﻿using System.Configuration;
+using Inceptum.Messaging.Contract;
 
 namespace Inceptum.Messaging.Configuration
 {
@@ -11,13 +12,21 @@ namespace Inceptum.Messaging.Configuration
             set { this["transportId"] = value; }
         }
 
-        [ConfigurationProperty("destination", IsRequired = true, IsKey = false)]
-        public string Destination
+        [ConfigurationProperty("publish", IsRequired = false, IsKey = false)]
+        public string Publish
         {
-            get { return (string) this["destination"]; }
-            set { this["destination"] = value; }
+            get { return (string)this["publish"]; }
+            set { this["publish"] = value; }
         }
 
+        [ConfigurationProperty("subscribe", IsRequired = false, IsKey = false)]
+        public string Subscribe
+        {
+            get { return (string)this["subscribe"]; }
+            set { this["subscribe"] = value; }
+        }
+
+       
         [ConfigurationProperty("sharedDestination", IsRequired = false, IsKey = false, DefaultValue = false)]
         public bool SharedDestination
         {
@@ -30,6 +39,11 @@ namespace Inceptum.Messaging.Configuration
         {
             get { return (string)this["serializationFormat"]; }
             set { this["serializationFormat"] = value; }
+        }
+
+        public Endpoint ToEndpoint()
+        {
+            return new Endpoint(TransportId, Publish, Subscribe, SharedDestination, SerializationFormat);
         }
     }
 }

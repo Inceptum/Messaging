@@ -28,6 +28,16 @@ namespace Inceptum.Messaging.Configuration
             get { return (EndpointsCollection) base["endpoints"]; }
         }
 
+        [ConfigurationProperty("processingGroups", IsDefaultCollection = false)]
+        [ConfigurationCollection(typeof (ProcessingGroupsCollection),
+            AddItemName = "add",
+            ClearItemsName = "clear",
+            RemoveItemName = "remove")]
+        public ProcessingGroupsCollection ProcessingGroups
+        {
+            get { return (ProcessingGroupsCollection)base["processingGroups"]; }
+        }
+
         public IDictionary<string, TransportInfo> GetTransports()
         {
             return Transports.Cast<TransportConfigurationElement>()
@@ -39,7 +49,12 @@ namespace Inceptum.Messaging.Configuration
 
         public IDictionary<string, Endpoint> GetEndpoints()
         {
-            return Endpoints.Cast<EndpointConfigurationElement>().ToDictionary(ece => ece.Name, ece => new Endpoint(ece.TransportId, ece.Destination, ece.SharedDestination, ece.SerializationFormat));
+            return Endpoints.Cast<EndpointConfigurationElement>().ToDictionary(ece => ece.Name, ece => ece.ToEndpoint());
+        }
+
+        public IDictionary<string, ProcessingGroupInfo> GetProcessingGroups()
+        {
+            return ProcessingGroups.Cast<ProcessingGroupConfigurationElement>().ToDictionary(pge => pge.Name, pge => new ProcessingGroupInfo() { ConcurrencyLevel = pge.ConcurrencyLevel,QueueCapacity = pge.QueueCapacity});
         }
     }
 }

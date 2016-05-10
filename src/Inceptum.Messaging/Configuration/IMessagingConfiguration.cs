@@ -7,5 +7,6 @@ namespace Inceptum.Messaging.Configuration
     {
         IDictionary<string, TransportInfo> GetTransports();
         IDictionary<string, Endpoint> GetEndpoints();
+        IDictionary<string, ProcessingGroupInfo> GetProcessingGroups();
     }
 }

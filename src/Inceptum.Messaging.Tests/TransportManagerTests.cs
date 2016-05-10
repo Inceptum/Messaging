@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using Castle.Core.Internal;
+using Inceptum.Messaging.Contract;
+using Inceptum.Messaging.InMemory;
 using Inceptum.Messaging.Transports;
 using NUnit.Framework;
+using Rhino.Mocks;
 
 namespace Inceptum.Messaging.Tests
 {
@@ -15,114 +17,84 @@ namespace Inceptum.Messaging.Tests
     [TestFixture]
     public class TransportManagerTests
     {
-        [Test]
-        public void SameThreadSubscriptionTest()
+        private class TransportConstants
         {
-            var manager=new TransportManager(
-                new TransportResolver(new Dictionary<string, TransportInfo>
-                    {
-                        {"transport-1", new TransportInfo("transport-1", "login1", "pwd1", "None", "InMemory")}
-                    }));
-
-            var processingGroup = manager.GetProcessingGroup("transport-1", "pg");
-            var usedThreads=new List<int>();
-            var subscription = processingGroup.Subscribe("queue", (message, action) =>
-                {
-                    lock (usedThreads)
-                    {
-                        usedThreads.Add(Thread.CurrentThread.ManagedThreadId);
-                        Console.WriteLine(Thread.CurrentThread.Name + Thread.CurrentThread.ManagedThreadId);
-                    }
-                    Thread.Sleep(50);
-                }, null,0);
-
-            Enumerable.Range(1, 20).ForEach(i => processingGroup.Send("queue", new BinaryMessage(), 0));
-
-            Thread.Sleep(1200);
-            Assert.That(usedThreads.Count(), Is.EqualTo(20), "not all messages were processed");
-            Assert.That(usedThreads.Distinct().Count(),Is.EqualTo(1), "more then one thread was used for message processing");
+            public const string TRANSPORT_ID1 = "tr1";
+            public const string TRANSPORT_ID2 = "tr2";
+            public const string TRANSPORT_ID3 = "tr3";
+            public const string USERNAME = "test";
+            public const string PASSWORD = "test";
+            public const string BROKER = "test";
         }
-  
-        [Test]
-        public void MultiThreadThreadSubscriptionTest()
+
+        private static ITransportResolver MockTransportResolver()
         {
-            var manager=new TransportManager(
-                new TransportResolver(new Dictionary<string, TransportInfo>
-                    {
-                        {"transport-1", new TransportInfo("transport-1", "login1", "pwd1", "None", "InMemory")
-                            {
-                                ProcessingGroups=new Dictionary<string, ProcessingGroupInfo>(){
-                                    {
-                                        "pg",new ProcessingGroupInfo(){ConcurrencyLevel = 3}
-                                    }}
-                            }}
-                    }));
-
-            var processingGroup = manager.GetProcessingGroup("transport-1", "pg");
-            var usedThreads=new List<int>();
-            var subscription = processingGroup.Subscribe("queue", (message, action) =>
-                {
-                    lock (usedThreads)
-                    {
-                        usedThreads.Add(Thread.CurrentThread.ManagedThreadId);
-                        Console.WriteLine(Thread.CurrentThread.Name + Thread.CurrentThread.ManagedThreadId + ":" + Encoding.UTF8.GetString(message.Bytes));
-                    }
-                    Thread.Sleep(50);
-                }, null,0);
-
-
-            Enumerable.Range(1, 20).ForEach(i => processingGroup.Send("queue", new BinaryMessage { Bytes = Encoding.UTF8.GetBytes((i % 3).ToString()) }, 0));
-
-            Thread.Sleep(1200);
-            Assert.That(usedThreads.Count(),Is.EqualTo(20), "not all messages were processed");
-            Assert.That(usedThreads.Distinct().Count(),Is.EqualTo(3), "wrong number of threads was used for message processing");
+            var resolver = MockRepository.GenerateMock<ITransportResolver>();
+            resolver.Expect(r => r.GetTransport(TransportConstants.TRANSPORT_ID1)).Return(new TransportInfo(TransportConstants.BROKER, TransportConstants.USERNAME, TransportConstants.PASSWORD, "MachineName", "InMemory") );
+            resolver.Expect(r => r.GetTransport(TransportConstants.TRANSPORT_ID2)).Return(new TransportInfo(TransportConstants.BROKER, TransportConstants.USERNAME, TransportConstants.PASSWORD, "MachineName", "InMemory") );
+            resolver.Expect(r => r.GetTransport(TransportConstants.TRANSPORT_ID3)).Return(new TransportInfo(TransportConstants.BROKER, TransportConstants.USERNAME, TransportConstants.PASSWORD, "MachineName", "Mock") );
+            return resolver;
         }
 
         [Test]
-        public void MultiThreadPrioritizedThreadSubscriptionTest()
+        public void MessagingSessionFailureCallbackTest()
         {
-            var manager=new TransportManager(
-                new TransportResolver(new Dictionary<string, TransportInfo>
-                    {
-                        {"transport-1", new TransportInfo("transport-1", "login1", "pwd1", "None", "InMemory")
-                            {
-                                ProcessingGroups=new Dictionary<string, ProcessingGroupInfo>(){
-                                    {
-                                        "pg",new ProcessingGroupInfo(){ConcurrencyLevel = 3}
-                                    }}
-                            }}
-                    }));
+            var resolver = MockTransportResolver();
+            var factory=MockRepository.GenerateMock<ITransportFactory>();
+            var transport = MockRepository.GenerateMock<ITransport>();
+            Action creaedSessionOnFailure = () => { Console.WriteLine("!!"); };
+            transport.Expect(t => t.CreateSession(null)).IgnoreArguments().WhenCalled(invocation => creaedSessionOnFailure = (Action) invocation.Arguments[0]);
+            factory.Expect(f => f.Create(null, null)).IgnoreArguments().Return(transport);
+            factory.Expect(f => f.Name).Return("Mock");
+            var transportManager = new TransportManager(resolver, factory);
+            int i = 0;
+           
+            transportManager.GetMessagingSession(TransportConstants.TRANSPORT_ID3, "test", () => { Interlocked.Increment(ref i); });
+            creaedSessionOnFailure();
+            creaedSessionOnFailure();
+            
+            Assert.That(i,Is.Not.EqualTo(0),"Session failure callback was not called");
+            Assert.That(i, Is.EqualTo(1), "Session  failure callback was called twice");
 
-            var processingGroup = manager.GetProcessingGroup("transport-1", "pg");
-            var usedThreads=new List<int>();
-            var processedMessages=new List<int>();
-            Action<BinaryMessage, Action<bool>> callback = (message, action) =>
+        }
+        [Test]
+        public void ConcurrentTransportResolutionTest()
+        {
+            var resolver = MockTransportResolver();
+            var transportManager = new TransportManager(resolver, new InMemoryTransportFactory());
+            var start = new ManualResetEvent(false);
+            int errorCount = 0;
+            int attemptCount = 0;
+
+            foreach (var i in Enumerable.Range(1, 10))
+            {
+                int threadNumber = i;
+                var thread = new Thread(() =>
                 {
-                    lock (usedThreads)
+                    start.WaitOne();
+                    try
                     {
-                        usedThreads.Add(Thread.CurrentThread.ManagedThreadId);
-                        processedMessages.Add(int.Parse(Encoding.UTF8.GetString(message.Bytes)));
-                        Console.WriteLine(Thread.CurrentThread.ManagedThreadId + ":" + Encoding.UTF8.GetString(message.Bytes));
+                        var transport = transportManager.GetMessagingSession(TransportConstants.TRANSPORT_ID1, "test");
+                        Console.WriteLine(threadNumber + ". " + transport);
+                        Interlocked.Increment(ref attemptCount);
                     }
-                    Thread.Sleep(50);
-                };
-            var subscription0 = processingGroup.Subscribe("queue0", callback, null,0);
-            var subscription1 = processingGroup.Subscribe("queue1", callback, null,1);
-            var subscription2 = processingGroup.Subscribe("queue2", callback, null,2);
+                    catch (Exception)
+                    {
+                        Interlocked.Increment(ref errorCount);
+                    }
+                });
+                thread.Start();
+            }
 
 
-            Enumerable.Range(1, 20).ForEach(i => processingGroup.Send("queue" + i % 3, new BinaryMessage { Bytes = Encoding.UTF8.GetBytes((i % 3).ToString()) }, 0));
+            start.Set();
+            while (attemptCount < 10)
+            {
+                Thread.Sleep(50);
+            }
 
-            Thread.Sleep(1200);
-            Assert.That(usedThreads.Count(),Is.EqualTo(20), "not all messages were processed");
-            Assert.That(usedThreads.Distinct().Count(),Is.EqualTo(3), "wrong number of threads was used for message processing");
+            Assert.That(errorCount, Is.EqualTo(0));
 
-            double averageOrder0 = processedMessages.Select((i, index) => new { message = i, index }).Where(arg => arg.message == 0).Average(arg => arg.index);
-            double averageOrder1 = processedMessages.Select((i, index) => new { message = i, index }).Where(arg => arg.message == 1).Average(arg => arg.index);
-            double averageOrder2 = processedMessages.Select((i, index) => new { message = i, index }).Where(arg => arg.message == 2).Average(arg => arg.index);
-            Assert.That(averageOrder0,Is.LessThan(averageOrder1), "priority was not respected");
-            Assert.That(averageOrder1,Is.LessThan(averageOrder2), "priority was not respected");
- 
 
         }
 

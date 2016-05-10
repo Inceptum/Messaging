@@ -18,7 +18,7 @@ namespace Inceptum.Messaging.Sonic
         public string Name { get { return "Sonic"; } }
         public ITransport Create(TransportInfo transportInfo, Action onFailure)
         {
-            return new Transport(transportInfo, onFailure, MessageFormat.Binary);
+            return new SonicTransport(transportInfo, onFailure, MessageFormat.Binary);
         }
     }
 
@@ -27,7 +27,7 @@ namespace Inceptum.Messaging.Sonic
         public string Name { get { return "SonicText"; } }
         public ITransport Create(TransportInfo transportInfo, Action onFailure)
         {
-            return new Transport(transportInfo, onFailure, MessageFormat.Text);
+            return new SonicTransport(transportInfo, onFailure, MessageFormat.Text);
         }        
     }
 }

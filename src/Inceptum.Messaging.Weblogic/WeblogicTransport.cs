@@ -6,19 +6,19 @@ using WebLogic.Messaging;
 
 namespace Inceptum.Messaging.Weblogic
 {
-    internal class Transport : ITransport
+    internal class WeblogicTransport : ITransport
     {
         private readonly object m_SyncRoot = new object();
         private volatile bool m_IsDisposed;
         private Action m_OnFailure;
         private readonly IDictionary<string, string> m_CustomHeaders;
         private readonly IDictionary<string, string> m_CustomSelectors;
-        private readonly List<IProcessingGroup> m_ProcessingGroups = new List<IProcessingGroup>();
+        private readonly List<IMessagingSession> m_Sessions = new List<IMessagingSession>();
         private readonly string m_JailedTag;
         private readonly IConnection m_Connection;
         private readonly IContext m_Context;
 
-        public Transport(TransportInfo transportInfo, Action onFailure, IDictionary<string, string> customHeaders, IDictionary<string, string> customSelectors)
+        public WeblogicTransport(TransportInfo transportInfo, Action onFailure, IDictionary<string, string> customHeaders, IDictionary<string, string> customSelectors)
         {
             if (onFailure == null) throw new ArgumentNullException("onFailure");
             m_OnFailure = onFailure;
@@ -45,13 +45,13 @@ namespace Inceptum.Messaging.Weblogic
             }
         }
 
-        public IProcessingGroup CreateProcessingGroup(Action onFailure)
+        public IMessagingSession CreateSession(Action onFailure)
         {
-            IProcessingGroup group;
+            IMessagingSession group;
             lock (m_SyncRoot)
             {
-                group = new ProcessingGroup(m_Connection, m_JailedTag, m_CustomHeaders, m_CustomSelectors);
-                m_ProcessingGroups.Add(group);
+                group = new WeblogicSession(m_Connection, m_JailedTag, m_CustomHeaders, m_CustomSelectors);
+                m_Sessions.Add(group);
             }
             return group;
         }
@@ -76,9 +76,9 @@ namespace Inceptum.Messaging.Weblogic
                 if (m_IsDisposed) return;
                 m_OnFailure = () => { };
 
-                foreach (var processingGroup in m_ProcessingGroups)
+                foreach (var session in m_Sessions)
                 {
-                    processingGroup.Dispose();
+                    session.Dispose();
                 }
 
                 if (m_Connection != null)

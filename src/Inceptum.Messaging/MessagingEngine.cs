@@ -7,7 +7,6 @@ using System.Reactive.Disposables;
 using System.Threading;
 using Inceptum.Core.Utils;
 using Inceptum.Messaging.Contract;
-using Inceptum.Messaging.InMemory;
 using Inceptum.Messaging.Serialization;
 using Inceptum.Messaging.Transports;
 using NLog;
@@ -17,48 +16,56 @@ namespace Inceptum.Messaging
     public class MessagingEngine : IMessagingEngine
     {
         private const int DEFAULT_UNACK_DELAY = 60000;
-        internal const int MESSAGE_DEFAULT_LIFESPAN = 0; // forever // 1800000; // milliseconds (30 minutes)
+        private const int MESSAGE_DEFAULT_LIFESPAN = 0; // forever // 1800000; // milliseconds (30 minutes)
         private readonly ManualResetEvent m_Disposing = new ManualResetEvent(false);
         private readonly CountingTracker m_RequestsTracker = new CountingTracker();
         private readonly ISerializationManager m_SerializationManager;
         private readonly List<IDisposable> m_MessagingHandles = new List<IDisposable>();
         private readonly TransportManager m_TransportManager;
 
-        Logger m_Logger = LogManager.GetCurrentClassLogger();
+        readonly Logger m_Logger = LogManager.GetCurrentClassLogger();
 
         readonly ConcurrentDictionary<Type, string> m_MessageTypeMapping = new ConcurrentDictionary<Type, string>();
         private readonly SchedulingBackgroundWorker m_RequestTimeoutManager;
         readonly Dictionary<RequestHandle, Action<Exception>> m_ActualRequests = new Dictionary<RequestHandle, Action<Exception>>();
         
 
-        private SubscriptionManager m_SubscriptionManager;
+        private readonly ProcessingGroupManager m_ProcessingGroupManager;
 
+ 
 
-        /// <summary>
-        /// ctor for tests
-        /// </summary>
-        /// <param name="transportManager"></param>
-        internal MessagingEngine(TransportManager transportManager)
+        public MessagingEngine(ITransportResolver transportResolver,IDictionary<string, ProcessingGroupInfo> processingGroups=null, params ITransportFactory[] transportFactories)
         {
-            if (transportManager == null) throw new ArgumentNullException("transportManager");
-            m_TransportManager = transportManager;
-            m_SubscriptionManager = new SubscriptionManager(m_TransportManager);
+            if (transportResolver == null) throw new ArgumentNullException("transportResolver");
+            m_TransportManager = new TransportManager(transportResolver, transportFactories);
+            m_ProcessingGroupManager = new ProcessingGroupManager(m_TransportManager,processingGroups);
             m_SerializationManager = new SerializationManager();
             m_RequestTimeoutManager = new SchedulingBackgroundWorker("RequestTimeoutManager", () => stopTimeoutedRequests());
             createMessagingHandle(() => stopTimeoutedRequests(true));
-
         }
-
-        internal Logger Logger
-        {
-            get { return m_Logger; }
-            set { m_Logger = value; }
-        }
-
-
         public MessagingEngine(ITransportResolver transportResolver, params ITransportFactory[] transportFactories)
-            : this(new TransportManager(transportResolver, transportFactories))
+            : this(transportResolver,null, transportFactories)
         {
+        }
+
+        public int ResubscriptionTimeout { 
+            get { return m_ProcessingGroupManager.ResubscriptionTimeout; }
+            set { m_ProcessingGroupManager.ResubscriptionTimeout = value; }
+        }
+
+         public void AddProcessingGroup(string name,ProcessingGroupInfo info)
+        {
+            m_ProcessingGroupManager.AddProcessingGroup(name,info);
+        }
+
+        public bool GetProcessingGroupInfo(string name, out ProcessingGroupInfo groupInfo)
+        {
+            return m_ProcessingGroupManager.GetProcessingGroupInfo(name, out groupInfo);
+        }
+
+        public string GetStatistics()
+        {
+            return m_ProcessingGroupManager.GetStatistics();
         }
 
         internal TransportManager TransportManager
@@ -81,7 +88,7 @@ namespace Inceptum.Messaging
 
         public Destination CreateTemporaryDestination(string transportId,string processingGroup)
         {
-            return m_TransportManager.GetProcessingGroup(transportId,processingGroup).CreateTemporaryDestination();
+            return m_TransportManager.GetMessagingSession(transportId,processingGroup??"default").CreateTemporaryDestination();
         }
 
         public IDisposable SubscribeOnTransportEvents(TransportEventHandler handler)
@@ -101,25 +108,49 @@ namespace Inceptum.Messaging
             return Disposable.Create(() => m_TransportManager.TransportEvents -= safeHandler);
         }
 
-        public void Send<TMessage>(TMessage message, Endpoint endpoint, string processingGroup = null)
+        public void Send<TMessage>(TMessage message, Endpoint endpoint, string processingGroup = null, Dictionary<string, string> headers = null)
         {
-            Send(message, endpoint, MESSAGE_DEFAULT_LIFESPAN);
+            Send(message, endpoint, MESSAGE_DEFAULT_LIFESPAN,processingGroup,headers);
         }
 
-        public void Send<TMessage>(TMessage message, Endpoint endpoint, int ttl, string processingGroup = null)
+        private static string getProcessingGroup(Endpoint endpoint, string processingGroup)
+        {
+            //by default on processing group per destination
+            return  processingGroup ?? endpoint.Destination.ToString();
+        }
+
+        public void Send<TMessage>(TMessage message, Endpoint endpoint, int ttl, string processingGroup = null, Dictionary<string, string> headers = null)
         {
             var serializedMessage = serializeMessage(endpoint.SerializationFormat, message);
-            send(serializedMessage,endpoint,ttl, processingGroup??endpoint.Destination.ToString());
+            if (headers != null)
+            {
+                foreach (var header in headers)
+                {
+                    serializedMessage.Headers[header.Key] = header.Value;
+                }
+            }
+            send(serializedMessage,endpoint,ttl, processingGroup);
         }
 
 
 
-        public void Send(object message, Endpoint endpoint, string processingGroup = null)
+        public void Send(object message, Endpoint endpoint, string processingGroup = null, Dictionary<string, string> headers = null)
         {
             var type = getMessageType(message.GetType());
             var bytes = m_SerializationManager.SerializeObject(endpoint.SerializationFormat, message);
-            var serializedMessage = new BinaryMessage { Bytes = bytes, Type = type };
-            send(serializedMessage, endpoint, MESSAGE_DEFAULT_LIFESPAN, processingGroup??endpoint.Destination.ToString());
+            var serializedMessage = new BinaryMessage
+            {
+                Bytes = bytes, 
+                Type = type,
+            };
+            if (headers != null)
+            {
+                foreach (var header in headers)
+                {
+                    serializedMessage.Headers[header.Key] = header.Value;
+                }
+            }
+            send(serializedMessage, endpoint, MESSAGE_DEFAULT_LIFESPAN, processingGroup);
         }
         
         private void send(BinaryMessage message, Endpoint endpoint, int ttl,string processingGroup)
@@ -127,13 +158,13 @@ namespace Inceptum.Messaging
             if (endpoint.Destination == null) throw new ArgumentException("Destination can not be null");
             if (m_Disposing.WaitOne(0))
                 throw new InvalidOperationException("Engine is disposing");
+            
 
             using (m_RequestsTracker.Track())
             {
                 try
                 {
-                    var procGroup = m_TransportManager.GetProcessingGroup(endpoint.TransportId, processingGroup);
-                    procGroup.Send(endpoint.Destination.Publish, message, ttl);
+                    m_ProcessingGroupManager.Send(endpoint, message, ttl, getProcessingGroup(endpoint, processingGroup));
                 }
                 catch (Exception e)
                 {
@@ -146,7 +177,7 @@ namespace Inceptum.Messaging
 
 		public IDisposable Subscribe<TMessage>(Endpoint endpoint, Action<TMessage> callback)
 		{
-            return Subscribe(endpoint, (TMessage message, AcknowledgeDelegate acknowledge) =>
+            return Subscribe(endpoint, (TMessage message, AcknowledgeDelegate acknowledge, Dictionary<string, string> headers) =>
 		        {
 		            callback(message);
 		            acknowledge(0,true);
@@ -162,7 +193,7 @@ namespace Inceptum.Messaging
             {
                 try
                 {
-                    return subscribe(endpoint, (m, ack) => processMessage(m, typeof(TMessage), message => callback((TMessage)message, ack), ack, endpoint), endpoint.SharedDestination ? getMessageType(typeof(TMessage)) : null, processingGroup, priority);
+                    return subscribe(endpoint, (m, ack) => processMessage(m, typeof(TMessage), (message, headers) => callback((TMessage)message, ack, headers), ack, endpoint), endpoint.SharedDestination ? getMessageType(typeof(TMessage)) : null, processingGroup, priority);
                 }
                 catch (Exception e)
                 {
@@ -180,7 +211,7 @@ namespace Inceptum.Messaging
         public IDisposable Subscribe(Endpoint endpoint, Action<object> callback, Action<string> unknownTypeCallback, string processingGroup, int priority, params Type[] knownTypes)
         {
             return Subscribe(endpoint,
-                             (message, acknowledge) =>
+                             (message, acknowledge,headers) =>
                                  {
                                      callback(message);
                                      acknowledge(0, true);
@@ -227,7 +258,7 @@ namespace Inceptum.Messaging
                                 }
                                 return;
                             }
-                            processMessage(m, messageType, message => callback(message, ack), ack, endpoint);
+                            processMessage(m, messageType, (message,headers) => callback(message, ack,headers), ack, endpoint);
                         }, null, processingGroup, priority);
                 }
                 catch (Exception e)
@@ -248,7 +279,7 @@ namespace Inceptum.Messaging
 
             using (m_RequestsTracker.Track())
             {
-                var responseRecieved = new ManualResetEvent(false);
+                var responseReceived = new ManualResetEvent(false);
                 TResponse response = default(TResponse);
                 Exception exception = null;
 
@@ -256,15 +287,15 @@ namespace Inceptum.Messaging
                                                              r =>
                                                                  {
                                                                      response = r;
-                                                                     responseRecieved.Set();
+                                                                     responseReceived.Set();
                                                                  },
                                                              ex =>
                                                                  {
                                                                      exception = ex;
-                                                                     responseRecieved.Set();
+                                                                     responseReceived.Set();
                                                                  },timeout))
                 {
-                    int waitResult = WaitHandle.WaitAny(new WaitHandle[] {m_Disposing, responseRecieved});
+                    int waitResult = WaitHandle.WaitAny(new WaitHandle[] {m_Disposing, responseReceived});
                     switch (waitResult)
                     {
                         case 1:
@@ -274,7 +305,7 @@ namespace Inceptum.Messaging
                                 throw exception;//StackTrace is replaced bat it is ok here.
                             throw new ProcessingException("Failed to process response", exception);
                         case 0:
-                            throw new ProcessingException("Request was cancelled due to engine dispose", exception);
+                            throw new ProcessingException("Request was canceled due to engine dispose", exception);
  
                         default:
                             throw new InvalidOperationException();
@@ -318,8 +349,8 @@ namespace Inceptum.Messaging
             {
                 try
                 {
-                    var procGroup = m_TransportManager.GetProcessingGroup(endpoint.TransportId,processingGroup??endpoint.Destination.ToString());
-                    RequestHandle requestHandle = procGroup.SendRequest(endpoint.Destination.Publish, serializeMessage(endpoint.SerializationFormat, request),
+                    var session = m_TransportManager.GetMessagingSession(endpoint.TransportId, getProcessingGroup(endpoint, processingGroup));
+                    RequestHandle requestHandle = session.SendRequest(endpoint.Destination.Publish, serializeMessage(endpoint.SerializationFormat, request),
                                                                      message =>
                                                                      {
                                                                          try
@@ -360,9 +391,9 @@ namespace Inceptum.Messaging
 			where TResponse : class
 		{
 			var handle = new SerialDisposable();
-            IDisposable transportWatcher = SubscribeOnTransportEvents((trasnportId, @event) =>
+            IDisposable transportWatcher = SubscribeOnTransportEvents((transportId, @event) =>
 			                                                          	{
-			                                                          		if (trasnportId == endpoint.TransportId || @event != TransportEvents.Failure)
+			                                                          		if (transportId == endpoint.TransportId || @event != TransportEvents.Failure)
 			                                                          			return;
 			                                                          		registerHandlerWithRetry(handler, endpoint, handle);
 			                                                          	});
@@ -377,8 +408,6 @@ namespace Inceptum.Messaging
         {
             m_Logger.Debug("Disposing");
             m_Disposing.Set();
-            m_RequestTimeoutManager.Dispose();
-            m_SubscriptionManager.Dispose();
             m_RequestsTracker.WaitAll();
             lock (m_MessagingHandles)
             {
@@ -388,12 +417,14 @@ namespace Inceptum.Messaging
                     m_MessagingHandles.First().Dispose();
                 }
             }
+            m_RequestTimeoutManager.Dispose();
+            m_ProcessingGroupManager.Dispose();
             m_TransportManager.Dispose();
         }
 
         #endregion
 
-        public void registerHandlerWithRetry<TRequest, TResponse>(Func<TRequest, TResponse> handler, Endpoint endpoint, SerialDisposable handle)
+        private void registerHandlerWithRetry<TRequest, TResponse>(Func<TRequest, TResponse> handler, Endpoint endpoint, SerialDisposable handle)
             where TResponse : class
         {
             lock (handle)
@@ -406,7 +437,7 @@ namespace Inceptum.Messaging
                 {
                     m_Logger.Info("Scheduling register handler attempt in 1 minute. Transport: {0}, Queue: {1}",
                                        endpoint.TransportId, endpoint.Destination);
-                	handle.Disposable = Scheduler.ThreadPool.Schedule(DateTimeOffset.Now.AddMinutes(1),
+                	handle.Disposable = Scheduler.Default.Schedule(DateTimeOffset.Now.AddMinutes(1),
                 	                                                  () =>
                 	                                                  	{
                 	                                                  		lock (handle)
@@ -430,8 +461,8 @@ namespace Inceptum.Messaging
             {
                 try
                 {
-                    var procGroup = m_TransportManager.GetProcessingGroup(endpoint.TransportId, processingGroup??endpoint.Destination.ToString());
-                    var subscription = procGroup.RegisterHandler(endpoint.Destination.Subscribe,
+                    var session = m_TransportManager.GetMessagingSession(endpoint.TransportId, getProcessingGroup(endpoint, processingGroup));
+                    var subscription = session.RegisterHandler(endpoint.Destination.Subscribe,
                 	                                                     requestMessage =>
                 	                                                     	{
                                                                                 var message = m_SerializationManager.Deserialize<TRequest>(endpoint.SerializationFormat, requestMessage.Bytes); 
@@ -490,9 +521,9 @@ namespace Inceptum.Messaging
         }
 
 
-        private IDisposable subscribe(Endpoint endpoint, CallbackDelegate<BinaryMessage> callback, string messageType, string processingGroup, int priority)
+        private IDisposable subscribe(Endpoint endpoint, Action<BinaryMessage, AcknowledgeDelegate> callback, string messageType, string processingGroup, int priority)
         {
-            var subscription = m_SubscriptionManager.Subscribe(endpoint, callback, messageType, processingGroup,priority);
+            var subscription = m_ProcessingGroupManager.Subscribe(endpoint, callback, messageType, getProcessingGroup(endpoint,processingGroup),priority);
 
             return createMessagingHandle(() =>
             {
@@ -525,7 +556,7 @@ namespace Inceptum.Messaging
 
 
 
-        private void processMessage(BinaryMessage binaryMessage,Type type, Action<object> callback, AcknowledgeDelegate ack, Endpoint endpoint)
+        private void processMessage(BinaryMessage binaryMessage, Type type, Action<object, Dictionary<string, string>> callback, AcknowledgeDelegate ack, Endpoint endpoint)
         {
             object message = null;
             try
@@ -542,7 +573,7 @@ namespace Inceptum.Messaging
 
             try
             {
-                callback(message);
+                callback(message, binaryMessage.Headers);
             }
             catch (Exception e)
             {

@@ -27,7 +27,7 @@ namespace Inceptum.Messaging.Tests.Configuration
                                      .And.Property("Broker").EqualTo("localhost")
                                      .And.Property("Login").EqualTo("guest")
                                      .And.Property("Password").EqualTo("guest")
-                                     .And.Property("Messaging").EqualTo("Sonic")
+                                     .And.Property("Messaging").EqualTo("InMemory")
                                      .And.Property("JailStrategyName").EqualTo("None")
                 );
 
@@ -37,6 +37,10 @@ namespace Inceptum.Messaging.Tests.Configuration
                                      .And.Property("Destination").EqualTo((Destination)"queue1")
                                      .And.Property("SharedDestination").EqualTo(false)
                 );
+
+            var processingGroup1 = messagingConfiguration.GetProcessingGroups()["processingGroup1"];
+            Assert.That(processingGroup1, Is.Not.Null.And.Property("ConcurrencyLevel").EqualTo(10));
+            Assert.That(processingGroup1, Is.Not.Null.And.Property("QueueCapacity").EqualTo(1024));
         }
 
         [Test]
@@ -49,6 +53,7 @@ namespace Inceptum.Messaging.Tests.Configuration
             var transports = messagingConfiguration.GetTransports();
             Assert.IsEmpty(transports);
             CollectionAssert.IsEmpty(messagingConfiguration.GetEndpoints());
+            CollectionAssert.IsEmpty(messagingConfiguration.GetProcessingGroups());
         }
 
         [Test]
@@ -89,6 +94,26 @@ namespace Inceptum.Messaging.Tests.Configuration
                                      .And.Property("Destination").EqualTo((Destination)"queue3")
                                      .And.Property("SharedDestination").EqualTo(false)
                 );
+
+
+            var processingGroup1 = messagingConfiguration.GetProcessingGroups()["processingGroup1"];
+            Assert.That(processingGroup1, Is.Not.Null.And.Property("ConcurrencyLevel").EqualTo(5));
+            Assert.That(processingGroup1, Is.Not.Null.And.Property("QueueCapacity").EqualTo(1000));
+
+        }
+
+        [Test]
+        public void ReadDestionationElementTest()
+        {
+            var configuration = ConfigurationManager.OpenExeConfiguration(new Uri(GetType().Assembly.CodeBase).LocalPath);
+            var messagingConfiguration = configuration.GetSection("one-transport-messaging") as IMessagingConfiguration;
+            Assert.IsNotNull(messagingConfiguration);
+            
+             var endpoint1 = messagingConfiguration.GetEndpoints()["endpoint4"];
+            Assert.That(endpoint1, Is.Not.Null
+                                     .And.Property("TransportId").EqualTo("main")
+                                     .And.Property("Destination").EqualTo(new Destination() { Publish = "exchange1", Subscribe = "queue4" })
+                                     .And.Property("SharedDestination").EqualTo(true));
         }
     }
 }

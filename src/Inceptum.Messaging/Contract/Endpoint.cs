@@ -1,4 +1,6 @@
-﻿namespace Inceptum.Messaging.Contract
+﻿using System;
+
+namespace Inceptum.Messaging.Contract
 {
 
     public struct Destination
@@ -60,16 +62,18 @@
 		/// </summary>
         public Endpoint(string transportId, string destination, bool sharedDestination = false, string serializationFormat="protobuf")
 		{
-		  
+		    if (destination == null) throw new ArgumentNullException("destination");
+
 		    m_TransportId = transportId;
 			m_Destination = destination;
 			m_SharedDestination = sharedDestination;
 		    m_SerializationFormat = serializationFormat;
 		}
-/// <summary>
+        
+        /// <summary>
 		/// 
 		/// </summary>
-        public Endpoint(string transportId, string publish,string subscribe, bool sharedDestination = false, string serializationFormat="protobuf")
+        public Endpoint(string transportId, string publish, string subscribe, bool sharedDestination = false, string serializationFormat="protobuf")
 		{
 		  
 		    m_TransportId = transportId;

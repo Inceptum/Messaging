@@ -4,6 +4,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using Inceptum.Messaging.Contract;
 using Inceptum.Messaging.Transports;
+using Inceptum.Messaging.Utils;
 
 namespace Inceptum.Messaging
 {
@@ -13,7 +14,7 @@ namespace Inceptum.Messaging
         private readonly TransportInfo m_TransportInfo;
         private readonly Action m_ProcessTransportFailure;
         private readonly ITransportFactory m_Factory;
-        private readonly List<ProcessingGroupWrapper> m_ProcessingGroups = new List<ProcessingGroupWrapper>();
+        private readonly List<MessagingSessionWrapper> m_MessagingSessions = new List<MessagingSessionWrapper>();
 
         public ResolvedTransport(TransportInfo transportInfo, Action processTransportFailure, ITransportFactory factory)
         {
@@ -22,13 +23,17 @@ namespace Inceptum.Messaging
             m_TransportInfo = transportInfo;
         }
 
-            
+        internal MessagingSessionWrapper[] Sessions
+        {
+            get { return m_MessagingSessions.ToArray(); }
+        }
+
         public IEnumerable<string> KnownIds
         {
             get { return m_KnownIds.ToArray(); }
         }
 
-        private ITransport Transport { get; set; }
+        internal ITransport Transport { get; set; }
 
 
         private void addId(string transportId)
@@ -39,57 +44,53 @@ namespace Inceptum.Messaging
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public IPrioritizedProcessingGroup GetProcessingGroup(string transportId, string name, Action onFailure)
+        public IMessagingSession GetSession(string transportId, string name, Action onFailure)
         {
             addId(transportId);
-            var transport = Transport ?? (Transport = m_Factory.Create(m_TransportInfo, processTransportFailure));
-            ProcessingGroupWrapper processingGroup;
+            var transport = Transport ?? (Transport = m_Factory.Create(m_TransportInfo, Helper.CallOnlyOnce(processTransportFailure)));
+            MessagingSessionWrapper messagingSession;
 
-            lock (m_ProcessingGroups)
+            lock (m_MessagingSessions)
             {
-                processingGroup = m_ProcessingGroups.FirstOrDefault(g => g.TransportId == transportId && g.Name == name);
+                messagingSession = m_MessagingSessions.FirstOrDefault(g => g.TransportId == transportId && g.Name == name);
 
-                if (processingGroup == null)
+                if (messagingSession == null)
                 {
-                    ProcessingGroupInfo processingGroupInfo;
-                    if (!m_TransportInfo.ProcessingGroups.TryGetValue(name, out processingGroupInfo))
-                        processingGroupInfo = new ProcessingGroupInfo { ConcurrencyLevel = 1 };
-
-                    processingGroup = new ProcessingGroupWrapper(transportId, name, processingGroupInfo);
-                    processingGroup.SetProcessingGroup(transport.CreateProcessingGroup(() => processProcessingGroupFailure(processingGroup)));
-                    m_ProcessingGroups.Add(processingGroup);
+                    messagingSession = new MessagingSessionWrapper(transportId, name);
+                    messagingSession.SetSession(transport.CreateSession(Helper.CallOnlyOnce(()=>processSessionFailure(messagingSession))));
+                    m_MessagingSessions.Add(messagingSession);
                 }
             }
 
             if (onFailure != null)
-                processingGroup.OnFailure += onFailure;
-            return processingGroup;
+                messagingSession.OnFailure += onFailure;
+            return messagingSession;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         private void processTransportFailure()
         {
-            ProcessingGroupWrapper[] processingGroupWrappers;
-            lock (m_ProcessingGroups)
+            MessagingSessionWrapper[] messagingSessionWrappers;
+            lock (m_MessagingSessions)
             {
-                processingGroupWrappers = m_ProcessingGroups.ToArray();
+                messagingSessionWrappers = m_MessagingSessions.ToArray();
             }
 
-            foreach (var processingGroup in processingGroupWrappers)
+            foreach (var session in messagingSessionWrappers)
             {
-                processProcessingGroupFailure(processingGroup);
+                processSessionFailure(session);
             }
 
             m_ProcessTransportFailure();
         }
 
-        private void processProcessingGroupFailure(ProcessingGroupWrapper processingGroup)
+        private void processSessionFailure(MessagingSessionWrapper messagingSession)
         {
-            lock (m_ProcessingGroups)
+            lock (m_MessagingSessions)
             {
-                m_ProcessingGroups.Remove(processingGroup);
+                m_MessagingSessions.Remove(messagingSession);
             }
-            processingGroup.ReportFailure();
+            messagingSession.ReportFailure();
         }
 
 
@@ -99,15 +100,15 @@ namespace Inceptum.Messaging
             if (Transport == null)
                 return;
 
-            ProcessingGroupWrapper[] processingGroupWrappers;
-            lock (m_ProcessingGroups)
+            MessagingSessionWrapper[] sessions;
+            lock (m_MessagingSessions)
             {
-                processingGroupWrappers = m_ProcessingGroups.ToArray();
+                sessions = m_MessagingSessions.ToArray();
             }
 
-            foreach (var processinGroupWrapper in processingGroupWrappers)
+            foreach (var session in sessions)
             {
-                processinGroupWrapper.Dispose();
+                session.Dispose();
             }
 
             Transport.Dispose();
@@ -121,5 +122,77 @@ namespace Inceptum.Messaging
             return transport.VerifyDestination(destination, usage, configureIfRequired, out error);
         }
 
+    }
+
+    internal class MessagingSessionWrapper:IMessagingSession
+    {
+        public string TransportId { get; private set; }
+        public string Name { get; private set; }
+        private IMessagingSession MessagingSession { get; set; }
+        public event Action OnFailure;
+
+
+        public MessagingSessionWrapper(string transportId, string name)
+        {
+            TransportId = transportId;
+            Name = name;
+        }
+        public void SetSession(IMessagingSession messagingSession)
+        {
+            MessagingSession = messagingSession;
+        }
+
+        public void ReportFailure()
+        {
+            if (OnFailure == null)
+                return;
+
+            foreach (var handler in OnFailure.GetInvocationList())
+            {
+                try
+                {
+                    handler.DynamicInvoke();
+                }
+                catch (Exception)
+                {
+                    //TODO: log
+                }
+            }
+        }
+
+
+
+        public void Dispose()
+        {
+            if (MessagingSession == null)
+                return;
+            MessagingSession.Dispose();
+            MessagingSession = null;
+        }
+
+        public void Send(string destination, BinaryMessage message, int ttl)
+        {
+            MessagingSession.Send(destination, message, ttl);
+        }
+
+        public RequestHandle SendRequest(string destination, BinaryMessage message, Action<BinaryMessage> callback)
+        {
+            return MessagingSession.SendRequest(destination, message, callback);
+        }
+
+        public IDisposable RegisterHandler(string destination, Func<BinaryMessage, BinaryMessage> handler, string messageType)
+        {
+            return MessagingSession.RegisterHandler(destination, handler, messageType);
+        }
+
+        public IDisposable Subscribe(string destination, Action<BinaryMessage, Action<bool>> callback, string messageType)
+        {
+            return MessagingSession.Subscribe(destination,callback, messageType);
+        }
+
+        public Destination CreateTemporaryDestination()
+        {
+            return MessagingSession.CreateTemporaryDestination();
+        }
     }
 }
