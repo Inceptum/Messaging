@@ -233,7 +233,7 @@ namespace Inceptum.Messaging.Castle
             foreach (var factoryHandler in m_SerializerFactoryWaitList.ToArray())
             {
                 if(tryRegisterSerializerFactory(factoryHandler))
-                    m_SerializerWaitList.Remove(factoryHandler);
+                    m_SerializerFactoryWaitList.Remove(factoryHandler);
             }
         }
         /// <summary>
