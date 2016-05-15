@@ -48,7 +48,6 @@ namespace Inceptum.Messaging.Castle
     public class MessagingFacility : AbstractFacility
     {
         private IDictionary<string, JailStrategy> m_JailStrategies;
-        private readonly List<IHandler> m_SerializerWaitList = new List<IHandler>();
         private readonly List<IHandler> m_SerializerFactoryWaitList = new List<IHandler>();
         private readonly List<IHandler> m_MessageHandlerWaitList = new List<IHandler>();
         private IMessagingEngine m_MessagingEngine;
@@ -233,7 +232,7 @@ namespace Inceptum.Messaging.Castle
             foreach (var factoryHandler in m_SerializerFactoryWaitList.ToArray())
             {
                 if(tryRegisterSerializerFactory(factoryHandler))
-                    m_SerializerWaitList.Remove(factoryHandler);
+                    m_SerializerFactoryWaitList.Remove(factoryHandler);
             }
         }
         /// <summary>
