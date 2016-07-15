@@ -53,7 +53,7 @@ namespace Inceptum.Messaging.Sonic.Tests
     }
 
 
-    [TestFixture]
+    [TestFixture, Ignore("Integration tests - uses real sonic environments")]
     public class MessagingEngineTests1
     {
         #region Setup/Teardown
