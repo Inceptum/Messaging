@@ -245,7 +245,7 @@ namespace Inceptum.Messaging
                     return subscribe(endpoint, (m,ack) =>
                         {
                             Type messageType;
-                            if (!dictionary.TryGetValue(m.Type, out messageType))
+                            if (!dictionary.TryGetValue(m.Type ?? "", out messageType))
                             {
                                 try
                                 {
