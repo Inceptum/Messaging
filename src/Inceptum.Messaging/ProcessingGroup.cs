@@ -4,6 +4,7 @@ using System.Reactive.Disposables;
 using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+using Inceptum.Messaging.Contract;
 using Inceptum.Messaging.Transports;
 using Inceptum.Messaging.Utils;
 
@@ -161,6 +162,12 @@ namespace Inceptum.Messaging
         public void Send(IMessagingSession messagingSession, string publish, BinaryMessage message, int ttl)
         {
             messagingSession.Send(publish,message,ttl);
+            Interlocked.Increment(ref m_SentMessages);
+        }
+
+        public void Send(IMessagingSession messagingSession, string publish, BinaryMessage message, int ttl, ReplyTo replyTo)
+        {
+            messagingSession.Send(publish, message, ttl, replyTo);
             Interlocked.Increment(ref m_SentMessages);
         }
     }

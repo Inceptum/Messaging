@@ -89,5 +89,13 @@ namespace Inceptum.Messaging.InMemory
             m_Scheduler.Dispose();
             m_IsDisposed = true;
         }
+
+        public void Send(string destination, BinaryMessage message, int ttl, ReplyTo replyTo)
+        {
+            message.Headers["ReplyTo"] = replyTo.Destination;
+            if (replyTo.CorrelationId != null)
+                message.Headers["CorrelationId"] = replyTo.CorrelationId;
+            m_Transport[destination].OnNext(message);
+        }
     }
 }

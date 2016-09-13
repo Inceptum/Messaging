@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+using Inceptum.Messaging.Contract;
 using Inceptum.Messaging.Transports;
 using Sonic.Jms;
 using Destination = Inceptum.Messaging.Contract.Destination;
@@ -101,6 +102,13 @@ namespace Inceptum.Messaging.Sonic
         public Destination CreateTemporaryDestination()
         {
             return m_Instance.CreateTemporaryDestination();
+        }
+
+
+        public void Send(string destination, BinaryMessage message, int ttl, ReplyTo replyTo)
+        {
+            ensureSessionIsCreated(destination);
+            m_Instance.Send(destination, message, ttl, replyTo);
         }
     }
 }

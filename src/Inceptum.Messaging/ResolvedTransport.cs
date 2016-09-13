@@ -194,5 +194,10 @@ namespace Inceptum.Messaging
         {
             return MessagingSession.CreateTemporaryDestination();
         }
+
+        public void Send(string destination, BinaryMessage message, int ttl, ReplyTo replyTo)
+        {
+            MessagingSession.Send(destination, message, ttl, replyTo);
+        }
     }
 }

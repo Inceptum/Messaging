@@ -153,7 +153,7 @@ namespace Inceptum.Messaging
             send(serializedMessage, endpoint, MESSAGE_DEFAULT_LIFESPAN, processingGroup);
         }
         
-        private void send(BinaryMessage message, Endpoint endpoint, int ttl,string processingGroup)
+        private void send(BinaryMessage message, Endpoint endpoint, int ttl, string processingGroup)
         {
             if (endpoint.Destination == null) throw new ArgumentException("Destination can not be null");
             if (m_Disposing.WaitOne(0))
@@ -173,7 +173,6 @@ namespace Inceptum.Messaging
                 }
             }
         }
-
 
 		public IDisposable Subscribe<TMessage>(Endpoint endpoint, Action<TMessage> callback)
 		{
@@ -422,6 +421,26 @@ namespace Inceptum.Messaging
             m_TransportManager.Dispose();
         }
 
+
+        public void Send<TMessage>(TMessage message, Endpoint endpoint, ReplyTo replyTo, string processingGroup = null, Dictionary<string, string> headers = null)
+        {
+            Send(message, endpoint, MESSAGE_DEFAULT_LIFESPAN, replyTo, processingGroup, headers);
+        }
+
+        public void Send<TMessage>(TMessage message, Endpoint endpoint, int ttl, ReplyTo replyTo, string processingGroup = null, Dictionary<string, string> headers = null)
+        {
+            var serializedMessage = serializeMessage(endpoint.SerializationFormat, message);
+            if (headers != null)
+            {
+                foreach (var header in headers)
+                {
+                    serializedMessage.Headers[header.Key] = header.Value;
+                }
+            }
+            send(serializedMessage, endpoint, MESSAGE_DEFAULT_LIFESPAN, processingGroup, replyTo);
+        }
+
+
         #endregion
 
         private void registerHandlerWithRetry<TRequest, TResponse>(Func<TRequest, TResponse> handler, Endpoint endpoint, SerialDisposable handle)
@@ -580,6 +599,27 @@ namespace Inceptum.Messaging
                  m_Logger.ErrorException(string.Format("Failed to handle message. Transport: {0}, Destination: {1}, Message Type: {2}",
                                    endpoint.TransportId, endpoint.Destination, type.Name),e);
                 ack(DEFAULT_UNACK_DELAY, false);
+            }
+        }
+
+        private void send(BinaryMessage message, Endpoint endpoint, int ttl, string processingGroup, ReplyTo replyTo)
+        {
+            if (endpoint.Destination == null) throw new ArgumentException("Destination can not be null");
+            if (m_Disposing.WaitOne(0))
+                throw new InvalidOperationException("Engine is disposing");
+
+
+            using (m_RequestsTracker.Track())
+            {
+                try
+                {
+                    m_ProcessingGroupManager.Send(endpoint, message, ttl, getProcessingGroup(endpoint, processingGroup), replyTo);
+                }
+                catch (Exception e)
+                {
+                    m_Logger.ErrorException(string.Format("Failed to send message. Transport: {0}, Queue: {1}", endpoint.TransportId, endpoint.Destination), e);
+                    throw;
+                }
             }
         }
     }

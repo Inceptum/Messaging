@@ -158,7 +158,6 @@ namespace Inceptum.Messaging
 
         }
 
-
         private void scheduleSubscription(Action<int> subscribe, int attemptCount)
         {
             lock (m_ResubscriptionSchedule)
@@ -272,6 +271,15 @@ namespace Inceptum.Messaging
                 processingGroup.Dispose();
             }
             processDeferredAcknowledgements(true);
+        }
+
+        public void Send(Endpoint endpoint, BinaryMessage message, int ttl, string processingGroup, ReplyTo replyTo)
+        {
+            var group = getProcessingGroup(processingGroup);
+            var session = m_TransportManager.GetMessagingSession(endpoint.TransportId, getSessionName(group, 0));
+
+            group.Send(session, endpoint.Destination.Publish, message, ttl, replyTo);
+
         }
     }
 }

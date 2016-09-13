@@ -257,5 +257,17 @@ namespace Inceptum.Messaging.RabbitMq
             }
             
         }
+
+
+        public void Send(string destination, BinaryMessage message, int ttl, ReplyTo replyTo)
+        {
+            send(destination, message, properties =>
+            {
+                if (ttl > 0) properties.Expiration = ttl.ToString(CultureInfo.InvariantCulture);
+                properties.ReplyTo = replyTo.Destination;
+                if (replyTo.CorrelationId != null)
+                    properties.CorrelationId = replyTo.CorrelationId;
+            });
+        }
     }
 }

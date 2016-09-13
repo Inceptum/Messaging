@@ -196,5 +196,19 @@ namespace Inceptum.Messaging.Weblogic
         {
             return m_Connection.CreateSession(Constants.SessionMode.AUTO_ACKNOWLEDGE);
         }
+
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void Send(string destination, BinaryMessage message, int ttl, ReplyTo replyTo)
+        {
+            ensureSessionIsCreated();
+            send(destination, message, ttl, tuneMessage =>
+            {
+                tuneMessage.JMSReplyTo = createDestination(replyTo.Destination);
+                if (replyTo.CorrelationId != null)
+                    tuneMessage.JMSCorrelationID = replyTo.CorrelationId;
+            });
+        }
+
     }
 }

@@ -35,6 +35,7 @@ namespace Inceptum.Messaging.Contract
         ISerializationManager SerializationManager { get; }
         IDisposable SubscribeOnTransportEvents(TransportEventHandler handler);
         void Send<TMessage>(TMessage message, Endpoint endpoint, string processingGroup = null, Dictionary<string, string> headers = null);
+
         void Send<TMessage>(TMessage message, Endpoint endpoint, int ttl, string processingGroup = null, Dictionary<string, string> headers = null);
         void Send(object message, Endpoint endpoint, string processingGroup = null, Dictionary<string, string> headers = null);
         Destination CreateTemporaryDestination(string transportId, string processingGroup);
@@ -53,6 +54,9 @@ namespace Inceptum.Messaging.Contract
 
         bool VerifyEndpoint(Endpoint endpoint, EndpointUsage usage, bool configureIfRequired, out string error);
         string GetStatistics();
+
+        void Send<TMessage>(TMessage message, Endpoint endpoint, int ttl, ReplyTo replyTo, string processingGroup = null, Dictionary<string, string> headers = null);
+        void Send<TMessage>(TMessage message, Endpoint endpoint, ReplyTo replyTo, string processingGroup = null, Dictionary<string, string> headers = null);
     }
 
     [Flags]
