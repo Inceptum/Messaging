@@ -93,6 +93,7 @@
     <Compile Include="Configuration\TransportsCollection.cs" />
     <Compile Include="Contract\Endpoint.cs" />
     <Compile Include="Contract\IMessagingEngine.cs" />
+    <Compile Include="Contract\ReplyTo.cs" />
     <Compile Include="Contract\TransportConstants.cs" />
     <Compile Include="Contract\TransportException.cs" />
     <Compile Include="Contract\TransportOutdatedException.cs" />

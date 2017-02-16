@@ -4,8 +4,10 @@ using System.Net.Mime;
 using System.Reactive.Disposables;
 using System.Runtime.CompilerServices;
 using System.Text;
+using Inceptum.Messaging.Contract;
 using Inceptum.Messaging.Transports;
 using Sonic.Jms;
+using Destination = Sonic.Jms.Destination;
 using Message = Sonic.Jms.Message;
 using QueueConnection = Sonic.Jms.QueueConnection;
 using Session = Sonic.Jms.Ext.Session;
@@ -53,7 +55,6 @@ namespace Inceptum.Messaging.Sonic
             ensureSessionIsCreated();
             send(destination, message, ttl);
         }
-
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         public IDisposable Subscribe(string destination, Action<BinaryMessage, Action<bool>> callback,
@@ -265,5 +266,18 @@ namespace Inceptum.Messaging.Sonic
         public abstract Contract.Destination CreateTemporaryDestination();
 
         protected abstract TSession CreateSession();
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void Send(string destination, BinaryMessage message, int ttl, ReplyTo replyTo)
+        {
+            ensureSessionIsCreated();
+            send(destination, message, ttl, tuneMessage =>
+            {
+                tuneMessage.setJMSReplyTo(createDestination(replyTo.Destination));
+                if (replyTo.CorrelationId != null)
+                    tuneMessage.setJMSCorrelationID(replyTo.CorrelationId);
+            });
+        }
+
     }
 }
