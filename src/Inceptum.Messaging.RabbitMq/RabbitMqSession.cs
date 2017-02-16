@@ -151,10 +151,13 @@ namespace Inceptum.Messaging.RabbitMq
         private BinaryMessage toBinaryMessage(IBasicProperties properties, byte[] bytes)
         {
             var binaryMessage = new BinaryMessage {Bytes = bytes, Type = properties.Type};
-            foreach (var header in properties.Headers)
+            if (properties.Headers != null)
             {
-                var value = header.Value as byte[];
-                binaryMessage.Headers[header.Key] = value == null ? null : Encoding.UTF8.GetString(value);
+                foreach (var header in properties.Headers)
+                {
+                    var value = header.Value as byte[];
+                    binaryMessage.Headers[header.Key] = value == null ? null : Encoding.UTF8.GetString(value);
+                }
             }
             return binaryMessage;
         }
