@@ -14,6 +14,7 @@ namespace Inceptum.Messaging.RabbitMq
 {
     internal class RabbitMqTransport : ITransport
     {
+        private readonly TimeSpan? m_NetworkRecoveryInterval;
         private readonly ConnectionFactory[] m_Factories;
         private readonly List<RabbitMqSession> m_Sessions = new List<RabbitMqSession>();
         readonly ManualResetEvent m_IsDisposed=new ManualResetEvent(false);
@@ -32,6 +33,7 @@ namespace Inceptum.Messaging.RabbitMq
 
         public RabbitMqTransport(string[] brokers, string username, string password, bool shuffleBrokersOnSessionCreate=true, TimeSpan? networkRecoveryInterval = null)
         {
+            m_NetworkRecoveryInterval = networkRecoveryInterval;
             m_ShuffleBrokersOnSessionCreate = shuffleBrokersOnSessionCreate&& brokers.Length>1;
             if (brokers == null) throw new ArgumentNullException("brokers");
             if (brokers.Length == 0) throw new ArgumentException("brokers list is empty", "brokers");
@@ -44,10 +46,10 @@ namespace Inceptum.Messaging.RabbitMq
                 f.UserName = username;
                 f.Password = password;
 
-                if (networkRecoveryInterval.HasValue)
+                if (m_NetworkRecoveryInterval.HasValue)
                 {
                     f.AutomaticRecoveryEnabled = true;
-                    f.NetworkRecoveryInterval = networkRecoveryInterval.Value; //it's default value
+                    f.NetworkRecoveryInterval = m_NetworkRecoveryInterval.Value; //it's default value
                 }
 
                 if (Uri.TryCreate(brokerName, UriKind.Absolute, out uri))
@@ -133,8 +135,19 @@ namespace Inceptum.Messaging.RabbitMq
                     if ((reason.Initiator != ShutdownInitiator.Application || reason.ReplyCode != 200) && onFailure != null)
                     {
                         m_Logger.Warn("Rmq session to {0} is broken. Reason: {1}", connection.Endpoint.HostName, reason);
-                        
-                        onFailure();
+
+                        // If m_NetworkRecoveryInterval is null this
+                        //         means that native Rabbit MQ 
+                        //         automaic recovery is disabled
+                        //         and processing group recovery mechanism must be enabled
+                        // If m_NetworkRecoveryInterval is set to some value this 
+                        //         means that native Rabbit MQ 
+                        //         automaic recovery is enabled 
+                        //         and there is not need to use processing group recovery mechanism
+                        if (!m_NetworkRecoveryInterval.HasValue) 
+                        {
+                            onFailure();
+                        }
                     }
                     else
                     {
