@@ -12,9 +12,6 @@ using RabbitMQ.Client.Exceptions;
 
 namespace Inceptum.Messaging.RabbitMq
 {
-
-  
-
     internal class RabbitMqTransport : ITransport
     {
         private readonly ConnectionFactory[] m_Factories;
@@ -30,9 +27,10 @@ namespace Inceptum.Messaging.RabbitMq
         }
         public RabbitMqTransport(string broker, string username, string password) : this(new[] {broker}, username, password)
         {
-            
+
         }
-        public RabbitMqTransport(string[] brokers, string username, string password, bool shuffleBrokersOnSessionCreate=true)
+
+        public RabbitMqTransport(string[] brokers, string username, string password, bool shuffleBrokersOnSessionCreate=true, TimeSpan? networkRecoveryInterval = null)
         {
             m_ShuffleBrokersOnSessionCreate = shuffleBrokersOnSessionCreate&& brokers.Length>1;
             if (brokers == null) throw new ArgumentNullException("brokers");
@@ -46,8 +44,11 @@ namespace Inceptum.Messaging.RabbitMq
                 f.UserName = username;
                 f.Password = password;
 
-                f.AutomaticRecoveryEnabled = true;
-                f.NetworkRecoveryInterval = TimeSpan.FromSeconds(5);//it's default value
+                if (networkRecoveryInterval.HasValue)
+                {
+                    f.AutomaticRecoveryEnabled = true;
+                    f.NetworkRecoveryInterval = networkRecoveryInterval.Value; //it's default value
+                }
 
                 if (Uri.TryCreate(brokerName, UriKind.Absolute, out uri))
                 {
@@ -61,13 +62,7 @@ namespace Inceptum.Messaging.RabbitMq
             });
 
             m_Factories = factories.ToArray();
-
- 
-
         }
-
-
-
 
         [MethodImpl(MethodImplOptions.Synchronized)]
         private IConnection createConnection()
@@ -118,7 +113,7 @@ namespace Inceptum.Messaging.RabbitMq
                 throw new ObjectDisposedException("Transport is disposed");
 
             var connection = createConnection();
-            var session = new RabbitMqSession(connection, confirmedSending, (rabbitMqSession, destination,exception) =>
+            var session = new RabbitMqSession(connection, confirmedSending, (rabbitMqSession, destination, exception) =>
             {
                 lock (m_Sessions)
                 {
@@ -126,6 +121,7 @@ namespace Inceptum.Messaging.RabbitMq
                     m_Logger.WarnException(string.Format("Failed to send message to destination '{0}' broker '{1}'. Treating session as broken. ", destination, connection.Endpoint.HostName), exception); 
                 }
             });
+            
             connection.ConnectionShutdown += (c, reason) =>
                 {
                     lock (m_Sessions)
@@ -137,13 +133,13 @@ namespace Inceptum.Messaging.RabbitMq
                     if ((reason.Initiator != ShutdownInitiator.Application || reason.ReplyCode != 200) && onFailure != null)
                     {
                         m_Logger.Warn("Rmq session to {0} is broken. Reason: {1}", connection.Endpoint.HostName, reason);
+                        
                         onFailure();
                     }
                     else
                     {
                         m_Logger.Debug("Rmq session to {0} is closed", connection.Endpoint.HostName);
                     }
-                    
                 };
 
             lock (m_Sessions)
@@ -153,7 +149,6 @@ namespace Inceptum.Messaging.RabbitMq
             m_Logger.Debug("Rmq session to {0} is opened", connection.Endpoint.HostName);
             return session;
         }
-
 
         public IMessagingSession CreateSession(Action onFailure)
         {
@@ -181,7 +176,6 @@ namespace Inceptum.Messaging.RabbitMq
                             else
                                 channel.ExchangeDeclarePassive(publish.ExchangeName);
                         }
-
 
                         //temporary queue should not be verified since it is not supported by rmq client
                         if((usage & EndpointUsage.Subscribe) == EndpointUsage.Subscribe && !destination.Subscribe.ToLower().StartsWith("amq."))
