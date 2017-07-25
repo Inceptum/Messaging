@@ -17,7 +17,8 @@ namespace Inceptum.Messaging.Castle
         private const long FAILED_COMMAND_RETRY_DELAY = 60000;
         private IMessagingEngine m_MessagingEngine;
         private readonly string[] m_Endpoints;
-        readonly Dictionary<Type, Func<object, CommandHandlingResult>> m_Handlers = new Dictionary<Type, Func<object, CommandHandlingResult>>();
+        private readonly Dictionary<Type, Func<object, CommandHandlingResult>> m_Handlers = new Dictionary<Type, Func<object, CommandHandlingResult>>();
+        private Action<string> m_HandlerDefault;
         private CompositeDisposable m_Subscriptions;
         private object m_Lock=new object();
 
@@ -47,16 +48,16 @@ namespace Inceptum.Messaging.Castle
         public override object Create(CreationContext context, Burden burden)
         {
             var component = base.Create(context, burden);
+            wireDefault(component);
             var types = wire(component).ToArray();
+
             m_Subscriptions = new CompositeDisposable(
                 m_Endpoints.Select(endpoint =>
                     MessagingEngine.Subscribe(
                         (Endpoint) Kernel.Resolver.Resolve(context, context.Handler, Model, new DependencyModel(endpoint,typeof(Endpoint),false)) ,
                         dispatch,
-                        (type, acknowledge) =>
-                        {
-                            throw new InvalidOperationException("Message of unknown received: " + type);
-                        }, types))
+                        dispatchUnknown,
+                        types))
                     .ToArray());
             return component;
         }
@@ -67,6 +68,26 @@ namespace Inceptum.Messaging.Castle
             base.Destroy(instance);
         }
 
+        private void dispatchUnknown(string type, AcknowledgeDelegate acknowledge)
+        {
+            if (m_HandlerDefault == null)
+            {
+                throw new InvalidOperationException(String.Format("Failed to handle unknown message: {0}, no default handler registered", type));
+            }
+
+            try
+            {
+                m_HandlerDefault(type);
+            }
+            catch (Exception e)
+            {
+            }
+            finally
+            {
+                acknowledge(0, true);
+            }
+
+        }
 
         private void dispatch(object message, AcknowledgeDelegate acknowledge, Dictionary<string, string> headers)
         {
@@ -133,6 +154,32 @@ namespace Inceptum.Messaging.Castle
             }
 
             m_Handlers.Add(commandType, lambda.Compile());
+        }
+
+
+        private void wireDefault(object component)
+        {
+            if (component == null) throw new ArgumentNullException("o");
+
+            var handleMethod = component.GetType().GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
+                .FirstOrDefault(m => m.Name == "HandleUnknown" &&
+                                     !m.IsGenericMethod &&
+                                     m.GetParameters().Length == 1 && m.GetParameters()[0].ParameterType == typeof (string));
+
+            if (handleMethod != null)
+            {
+                registerDefaultHandler(component);
+            }
+        }
+
+        private void registerDefaultHandler(object o)
+        {
+            var typeParameter = Expression.Parameter(typeof(string), "type");
+            Expression[] parameters = new Expression[] { typeParameter }.ToArray();
+            var call = Expression.Call(Expression.Constant(o), "HandleUnknown", null, parameters);
+
+            Expression<Action<string>> lambda = (Expression<Action<string>>)Expression.Lambda(call, typeParameter);
+            m_HandlerDefault = lambda.Compile();
         }
     }
 }

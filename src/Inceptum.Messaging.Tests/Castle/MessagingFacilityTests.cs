@@ -108,8 +108,18 @@ namespace Inceptum.Messaging.Tests.Castle
                 Thread.Sleep(30); 
                 engine.Send(DateTime.MinValue, m_Endpoint2);
                 Thread.Sleep(100);
-                
+
                 Assert.That(Handler.Handled, Is.EquivalentTo(new object[] { "test", 1, DateTime.MinValue }), "message was not handled");
+                Assert.That(Handler.HandledUnknown, Is.EqualTo(0), "unknown handler called");
+
+                engine.Send(2, m_Endpoint1);
+                Thread.Sleep(30);
+                engine.Send((decimal)100, m_Endpoint1);
+                Thread.Sleep(100);
+
+                Assert.That(Handler.Handled, Is.EquivalentTo(new object[] { "test", 1, DateTime.MinValue, 2 }), "message was not handled");
+                Assert.That(Handler.HandledUnknown, Is.EqualTo(1), "unknown handler was not called");
+
                 Console.WriteLine(engine.GetStatistics());
             }
         }
@@ -178,6 +188,7 @@ namespace Inceptum.Messaging.Tests.Castle
     
         public Endpoint SomeEndpoint { get; set; }
         readonly static List<object> m_Handled = new List<object>();
+        private static int m_HandledUnknown;
 
         public Handler()
         {
@@ -191,22 +202,36 @@ namespace Inceptum.Messaging.Tests.Castle
 
         public void Handle(string message)
         {
+            Console.WriteLine("string - " + message);
             m_Handled.Add(message);
         }
 
         public void Handle(int message)
         {
+            Console.WriteLine("int - " + message);
             m_Handled.Add(message);
         }
 
         public void Handle(DateTime message)
         {
+            Console.WriteLine("DateTime - " + message);
             m_Handled.Add(message);
+        }
+
+        public void HandleUnknown(string type)
+        {
+            Console.WriteLine("unknown - " + type);
+            m_HandledUnknown++;
         }
 
         public static List<object> Handled
         {
             get { return m_Handled; }
+        }
+
+        public static int HandledUnknown
+        {
+            get { return m_HandledUnknown; }
         }
     }
 }
