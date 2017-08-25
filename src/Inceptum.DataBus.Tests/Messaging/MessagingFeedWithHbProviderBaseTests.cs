@@ -173,9 +173,8 @@ namespace Inceptum.DataBus.Tests.Messaging
             }
 
             Assert.IsNotNull(ex as HeartbeatLostException, "Exception was not thrown");
-            var expectedWas = new DateTime(2012, 01, 01);
-            var expectedReceived = new DateTime(2012, 01, 02);
-            Assert.AreEqual($"Uptime date changed: was {expectedWas:dd/MM/yyyy HH:mm:ss}, received {expectedReceived:dd/MM/yyyy HH:mm:ss}. Context Context", ex.Message);
+            var expectedMessage = string.Format("Uptime date changed: was {0:dd/MM/yyyy HH:mm:ss}, received {1:dd/MM/yyyy HH:mm:ss}. Context Context", new DateTime(2012, 01, 01), new DateTime(2012, 01, 02));
+            Assert.AreEqual(expectedMessage, ex.Message);
 
         }
 
