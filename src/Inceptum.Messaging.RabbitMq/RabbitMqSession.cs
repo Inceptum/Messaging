@@ -93,7 +93,7 @@ namespace Inceptum.Messaging.RabbitMq
                 properties.Headers.Add("initialRoute", destination.ToString());
                 lock (m_Model)
                 {
-                    m_Model.BasicPublish(destination.ExchangeName, destination.RoutingKey, true, false, properties, message.Bytes);
+                    m_Model.BasicPublish(destination.ExchangeName, destination.RoutingKey, true, properties, message.Bytes);
                     if (m_ConfirmedSending)
                         m_Model.WaitForConfirmsOrDie();
                 }

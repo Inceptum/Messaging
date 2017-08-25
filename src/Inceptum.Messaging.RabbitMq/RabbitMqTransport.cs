@@ -46,15 +46,15 @@ namespace Inceptum.Messaging.RabbitMq
                 f.UserName = username;
                 f.Password = password;
 
+                f.AutomaticRecoveryEnabled = m_NetworkRecoveryInterval.HasValue;
                 if (m_NetworkRecoveryInterval.HasValue)
                 {
-                    f.AutomaticRecoveryEnabled = true;
                     f.NetworkRecoveryInterval = m_NetworkRecoveryInterval.Value; //it's default value
                 }
 
                 if (Uri.TryCreate(brokerName, UriKind.Absolute, out uri))
                 {
-                    f.Uri = brokerName;
+                    f.Uri = uri;
                 }
                 else
                 {
