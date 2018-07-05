@@ -37,17 +37,9 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json, Version=4.5.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.5.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="NLog, Version=2.1.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c, processorArchitecture=MSIL">
       <HintPath>..\packages\NLog.2.1.0\lib\net45\NLog.dll</HintPath>
       <Private>True</Private>
-    </Reference>
-    <Reference Include="protobuf-net, Version=2.0.0.640, Culture=neutral, PublicKeyToken=257b51d87d2e4d67, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\protobuf-net.2.0.0.640\lib\net40\protobuf-net.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
@@ -105,10 +97,6 @@
     <Compile Include="ITransportFactory.cs" />
     <Compile Include="ProcessingGroup.cs" />
     <Compile Include="ResolvedTransport.cs" />
-    <Compile Include="Serialization\JsonSerializer.cs" />
-    <Compile Include="Serialization\JsonSerializerFactory.cs" />
-    <Compile Include="Serialization\ProtobufSerializer.cs" />
-    <Compile Include="Serialization\ProtobufSerializerFactory.cs" />
     <Compile Include="IMessageSerializer.cs" />
     <Compile Include="ISerializationManager.cs" />
     <Compile Include="ITransportResolver.cs" />

@@ -1,8 +1,11 @@
-﻿namespace Inceptum.Messaging.Serialization
+using System;
+
+namespace Inceptum.Messaging.Serialization.Json
 {
     public class JsonSerializerFactory : ISerializerFactory
     {
-        public string SerializationFormat {
+        public string SerializationFormat
+        {
             get { return "json"; }
         }
 
