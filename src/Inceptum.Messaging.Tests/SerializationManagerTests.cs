@@ -51,7 +51,6 @@ namespace Inceptum.Messaging.Tests
         }
              
         [Test]
-        [ExpectedException(typeof(ProcessingException))]
         public void SerializerNotRegistedFailureTest()
         {
             var serializationManager = new SerializationManager();
@@ -59,13 +58,11 @@ namespace Inceptum.Messaging.Tests
             factory.Expect(f => f.SerializationFormat).Return("fake");
             factory.Expect(f => f.Create<int>()).Return(null);
             serializationManager.RegisterSerializerFactory(factory);
-
-            serializationManager.ExtractSerializer<int>("fake");
+            Assert.Throws<ProcessingException>(() => serializationManager.ExtractSerializer<int>("fake"));
         }
         
              
         [Test]
-        [ExpectedException(typeof(ProcessingException))]
         public void SerializerNotCreatedByFactoryFailureTest()
         {
             var serializationManager = new SerializationManager();
@@ -73,8 +70,7 @@ namespace Inceptum.Messaging.Tests
             factory.Expect(f => f.SerializationFormat).Return("fake");
             factory.Expect(f => f.Create<string>()).Return(null);
             serializationManager.RegisterSerializerFactory(factory);
-
-            serializationManager.ExtractSerializer<string>("fake");
+            Assert.Throws<ProcessingException>(() => serializationManager.ExtractSerializer<string>("fake"));
         }
         
               
