@@ -136,8 +136,9 @@ namespace Inceptum.Messaging
 
         public void Send(object message, Endpoint endpoint, string processingGroup = null, Dictionary<string, string> headers = null)
         {
-            var type = getMessageType(message.GetType());
+            var type = m_SerializationManager.GetMessageTypeStringObject(endpoint.SerializationFormat, message.GetType());
             var bytes = m_SerializationManager.SerializeObject(endpoint.SerializationFormat, message);
+            
             var serializedMessage = new BinaryMessage
             {
                 Bytes = bytes, 
@@ -193,7 +194,7 @@ namespace Inceptum.Messaging
             {
                 try
                 {
-                    return subscribe(endpoint, (m, ack) => processMessage(m, typeof(TMessage), (message, headers) => callback((TMessage)message, ack, headers), ack, endpoint), endpoint.SharedDestination ? getMessageType(typeof(TMessage)) : null, processingGroup, priority);
+                    return subscribe(endpoint, (m, ack) => processMessage(m, typeof(TMessage), (message, headers) => callback((TMessage)message, ack, headers), ack, endpoint), endpoint.SharedDestination ? getMessageType<TMessage>(endpoint.SerializationFormat) : null, processingGroup, priority);
                 }
                 catch (Exception e)
                 {
@@ -240,7 +241,7 @@ namespace Inceptum.Messaging
             {
                 try
                 {
-                    var dictionary = knownTypes.ToDictionary(getMessageType);
+                    var dictionary = knownTypes.ToDictionary(knownType => getMessageType(endpoint.SerializationFormat, knownType));
 
                     return subscribe(endpoint, (m,ack) =>
                         {
@@ -470,7 +471,7 @@ namespace Inceptum.Messaging
                 	                                                     		return serializeMessage(endpoint.SerializationFormat,response);
                 	                                                     	},
                 	                                                     endpoint.SharedDestination
-                	                                                     	? getMessageType(typeof (TRequest))
+                	                                                     	? getMessageType<TRequest>(endpoint.SerializationFormat)
                 	                                                     	: null
                 		);
                 	var messagingHandle = createMessagingHandle(() =>
@@ -500,24 +501,21 @@ namespace Inceptum.Messaging
 
         private BinaryMessage serializeMessage<TMessage>(string format,TMessage message)
         {
-            var type = getMessageType(typeof(TMessage));
+            var type = getMessageType(format, typeof(TMessage));
             var bytes = m_SerializationManager.Serialize(format,message);
             return new BinaryMessage{Bytes=bytes,Type=type};
         }
     
 
-        private string getMessageType(Type type)
+        private string getMessageType(string format, Type messageType)
         {
-        	return m_MessageTypeMapping.GetOrAdd(type, clrType =>
-        	                                           	{
-                                                            //TODO: type should be determined by serializer
-        	                                           		var typeName = clrType.GetCustomAttributes(false)
-        	                                           			.Select(a => a as ProtoBuf.ProtoContractAttribute)
-        	                                           			.Where(a => a != null)
-        	                                           			.Select(a => a.Name)
-        	                                           			.FirstOrDefault();
-        	                                           		return typeName ?? clrType.Name;
-        	                                           	});
+            return m_MessageTypeMapping.GetOrAdd(messageType, clrType => m_SerializationManager.GetMessageTypeStringObject(format, messageType) ?? messageType.Name);
+        }
+
+        private string getMessageType<TMessage>(string format)
+        {
+            var messageType = typeof(TMessage);
+            return m_MessageTypeMapping.GetOrAdd(messageType, clrType => m_SerializationManager.GetMessageTypeString<TMessage>(format) ?? messageType.Name);
         }
 
 

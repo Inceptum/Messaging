@@ -64,7 +64,7 @@ namespace Inceptum.Messaging.Sonic.Tests
             PurgeQueue("Test setup");
         }
 
-     [TestFixtureTearDown]
+     [OneTimeTearDown]
         public void TestFixtureTearDown()
         {
             PurgeQueue("Fixture teardown");

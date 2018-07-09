@@ -13,8 +13,6 @@ namespace Inceptum.Messaging.Serialization
 
         public SerializationManager()
         {
-            RegisterSerializerFactory(new JsonSerializerFactory());
-            RegisterSerializerFactory(new ProtobufSerializerFactory());            
         }
 /*
         public SerializationManager(params ISerializerFactory[] serializerFactories)
@@ -56,6 +54,13 @@ namespace Inceptum.Messaging.Serialization
             {
                 m_SerializerFactories.Add(serializerFactory);
             }
+        }
+
+        public string GetMessageTypeString<TMessage>(string format)
+        {
+            if (format == null) throw new ArgumentNullException(nameof(format));
+
+            return (ExtractSerializer<TMessage>(format) as IMessageTypeStringProvider)?.GetMessageTypeString();
         }
 
         public void RegisterSerializer(string format, Type targetType, object serializer)
@@ -106,7 +111,7 @@ namespace Inceptum.Messaging.Serialization
             }
             return null;
         }
-
+        
         /// <summary>
         /// Extracts serializer for TMessage type
         /// NORE: this method is internal only for testing purposes.

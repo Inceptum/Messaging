@@ -98,7 +98,6 @@ namespace Inceptum.DataBus.Tests
 
 
         [Test]
-        [ExpectedException(typeof (InvalidOperationException)/*, ExpectedMessage = "FeedProvider 'Inceptum.DataBus.Tests.FeedProviderWithNotResolvableDependency' can not be resolved"*/)]
         public void ChannelDependencyResolvingFailureTest()
         {
             IWindsorContainer container = new WindsorContainer();
@@ -106,7 +105,7 @@ namespace Inceptum.DataBus.Tests
             container.Register(Component.For<IFeedProvider<int, string>>().ImplementedBy<FeedProviderWithNotResolvableDependency>());
             var bus = container.Resolve<IDataBus>();
             Assert.IsNotNull(bus, "Facility have not registered DataBus as component");
-            bus.Channel<int>("ChannelHavingFeedWithNotResolvableDependency").Feed("10");
+            Assert.Throws<InvalidOperationException>(() => bus.Channel<int>("ChannelHavingFeedWithNotResolvableDependency").Feed("10"));
         }
     }
 }

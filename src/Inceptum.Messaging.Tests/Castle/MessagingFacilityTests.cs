@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Threading;
 using Castle.Facilities.Logging;
-using Castle.Facilities.Startable;
 using Castle.MicroKernel.Registration;
 using Castle.MicroKernel.Resolvers.SpecializedResolvers;
 using Castle.Windsor;
@@ -10,6 +9,7 @@ using Inceptum.Messaging.Castle;
 using Inceptum.Messaging.Configuration;
 using Inceptum.Messaging.Contract;
 using Inceptum.Messaging.InMemory;
+using Inceptum.Messaging.Serialization.Json;
 using NUnit.Framework;
 using Rhino.Mocks;
 
@@ -99,6 +99,7 @@ namespace Inceptum.Messaging.Tests.Castle
                 container.Kernel.Resolver.AddSubResolver(new ArrayResolver(container.Kernel));
                 container.AddFacility<LoggingFacility>(f => f.LogUsing(LoggerImplementation.Console))
                     .AddFacility<MessagingFacility>(f => f.WithConfiguration(m_MessagingConfiguration))
+                    .Register(Component.For<ISerializerFactory>().ImplementedBy<JsonSerializerFactory>())
                     .Register(Component.For<HandlerWithDependency>().AsMessageHandler("endpoint-1", "endpoint-2"));
                 container.Register(Component.For<HandlerDependency>());
                 engine = container.Resolve<IMessagingEngine>();
@@ -133,7 +134,9 @@ namespace Inceptum.Messaging.Tests.Castle
                 container.Kernel.Resolver.AddSubResolver(new ArrayResolver(container.Kernel));
                 container.AddFacility<LoggingFacility>(f => f.LogUsing(LoggerImplementation.Console))
                     .AddFacility<MessagingFacility>(f => f.WithConfiguration(m_MessagingConfiguration))
+                    .Register(Component.For<ISerializerFactory>().ImplementedBy<JsonSerializerFactory>())
                     .Register(Component.For<Handler>().WithEndpoints(new { someEndpoint = "endpoint-2" }).AsMessageHandler("endpoint-1"));
+
                 var handler= container.Resolve<Handler>();
                 Assert.That(handler.SomeEndpoint,Is.Not.Null);
                 Assert.That(handler.SomeEndpoint.Destination.Subscribe, Is.EqualTo("second-destination"));

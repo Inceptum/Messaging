@@ -79,7 +79,7 @@ namespace Inceptum.DataBus.Tests.Messaging
         }
 
         [Test]
-        [Ignore]
+        [Ignore("Ignored")]
         public void MultipleInitializationsRaceConditionTest()
         {
             var transportResolver = new TransportResolver(new Dictionary<string, TransportInfo>

@@ -15,30 +15,35 @@ namespace Inceptum.DataBus.Tests
     public class DataBusTests
     {
         [Test]
-        [ExpectedException(typeof (DataBusException),
-            ExpectedMessage = "Can not register feed provider resolving feeds of 'Int32' within context of 'String' for channel '[System.Int64] test (System.String)'")]
         public void RegisterFeedProvider_MismatchWithPreviouselyRegisteredChannel_FailureTest()
         {
             DataBus db = new DataBus();
             db.RegisterFeedProvider<long, string>("test", context => Observable.Empty<long>());
-            db.RegisterFeedProvider<int, string>("test", context => Observable.Empty<int>());
+            Assert.Throws<DataBusException>(
+                () => db.RegisterFeedProvider<int, string>("test", context => Observable.Empty<int>())
+                ,"Can not register feed provider resolving feeds of 'Int32' within context of 'String' for channel '[System.Int64] test (System.String)'"
+            );
         }
 
         [Test]
-        [ExpectedException(typeof (ArgumentNullException), ExpectedMessage = "Value cannot be null.\r\nParameter name: feedResolver")]
         public void RegisterFeedProviderNullResolverFailureTest()
         {
             DataBus db = new DataBus();
             const Func<string, IObservable<int>> feedResolver = null;
-            db.RegisterFeedProvider("test", feedResolver);
+            Assert.Throws<ArgumentNullException>(
+                () => db.RegisterFeedProvider("test", feedResolver)
+                , "Value cannot be null.\r\nParameter name: feedResolver"
+            );
         }
 
         [Test]
-        [ExpectedException(typeof (ArgumentException), ExpectedMessage = "'channelName' should be not empty string\r\nParameter name: channelName")]
         public void RegisterFeedProviderEmptyNameFailureTest()
         {
             DataBus db = new DataBus();
-            db.RegisterFeedProvider<int, string>("", context => Observable.Empty<int>());
+            Assert.Throws<ArgumentException>(
+                () => db.RegisterFeedProvider<int, string>("", context => Observable.Empty<int>())
+                , "'channelName' should be not empty string\r\nParameter name: channelName"
+            );
         }
 
 
@@ -63,39 +68,35 @@ namespace Inceptum.DataBus.Tests
 
 
         [Test]
-        [ExpectedException(typeof (DataBusException), ExpectedMessage = "Channel 'MyChannel' does not have feed for context 2 (Int32)")]
         public void CanSubscribeReturnsFalseFailureTest()
         {
             DataBus db = new DataBus();
             MyFeedProvider feedProvider = new MyFeedProvider();
             db.RegisterFeedProvider("MyChannel", feedProvider);
 
-            try
-            {
-                db.Channel<string>("MyChannel").Feed(2);
-            }
-            finally
-            {
-                Assert.IsTrue(feedProvider.CanProvideForWasCalled, "IFeedProvider.CanProvideFor was not called");
-            }
+            Assert.Throws<DataBusException>(
+                () => db.Channel<string>("MyChannel").Feed(2)
+                , "Channel 'MyChannel' does not have feed for context 2 (Int32)"
+            );
+            Assert.IsTrue(feedProvider.CanProvideForWasCalled, "IFeedProvider.CanProvideFor was not called");
         }
 
         [Test]
-        [ExpectedException(typeof (DataBusException), ExpectedMessage = "FeedProvider MyFeedProvider  is already registered in channel 'MyChannel' [Int32]")]
         public void FeedProvidersRegisteredTwiceFailureTest()
         {
             DataBus db = new DataBus();
             MyFeedProvider feedProvider1 = new MyFeedProvider();
             db.RegisterFeedProvider("MyChannel", feedProvider1);
-            db.RegisterFeedProvider("MyChannel", feedProvider1);
 
-
+            Assert.Throws<DataBusException>(
+                () => db.RegisterFeedProvider("MyChannel", feedProvider1)
+                , "FeedProvider MyFeedProvider  is already registered in channel 'MyChannel' [Int32]"
+            );
             db.Channel<string>("MyChannel").Feed(1);
         }
 
 
         [Test]
-        [ExpectedException(typeof (DataBusException), ExpectedMessage = "Channel 'MyChannel' has more then one feed for context 1 (Int32)")]
         public void TwoFeedProvidersForSameContextFailureTest()
         {
             DataBus db = new DataBus();
@@ -105,7 +106,10 @@ namespace Inceptum.DataBus.Tests
             db.RegisterFeedProvider("MyChannel", feedProvider2);
 
 
-            db.Channel<string>("MyChannel").Feed(1);
+            Assert.Throws<DataBusException>(
+                () => db.Channel<string>("MyChannel").Feed(1)
+                , "Channel 'MyChannel' has more then one feed for context 1 (Int32)"
+            );
         }
 
         [Test]

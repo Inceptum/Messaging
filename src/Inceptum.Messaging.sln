@@ -1,6 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inceptum.Messaging", "Inceptum.Messaging\Inceptum.Messaging.csproj", "{87CC7D22-A809-40D3-80FB-E9D58109DC82}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inceptum.DataBus", "Inceptum.DataBus\Inceptum.DataBus.csproj", "{7F5DD1AC-CA1A-488A-9053-03F4CBAF7D92}"
@@ -55,6 +57,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inceptum.Messaging.Sonic.Te
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inceptum.Messaging.Castle", "Inceptum.Messaging.Castle\Inceptum.Messaging.Castle.csproj", "{67899388-86C4-4C03-9A0E-9BD95B7652CF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inceptum.Messaging.Serialization.ProtobufNet", "Inceptum.Messaging.Serialization.ProtobufNet\Inceptum.Messaging.Serialization.ProtobufNet.csproj", "{96761EA6-3525-434B-B19B-B7F56FEE46F1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Inceptum.Messaging.Serialization.Json", "Inceptum.Messaging.Serialization.Json\Inceptum.Messaging.Serialization.Json.csproj", "{D407DC16-04CF-4CEB-BED0-2C832C81DD0F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -105,6 +111,14 @@ Global
 		{67899388-86C4-4C03-9A0E-9BD95B7652CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{67899388-86C4-4C03-9A0E-9BD95B7652CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{67899388-86C4-4C03-9A0E-9BD95B7652CF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{96761EA6-3525-434B-B19B-B7F56FEE46F1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{96761EA6-3525-434B-B19B-B7F56FEE46F1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{96761EA6-3525-434B-B19B-B7F56FEE46F1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{96761EA6-3525-434B-B19B-B7F56FEE46F1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D407DC16-04CF-4CEB-BED0-2C832C81DD0F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D407DC16-04CF-4CEB-BED0-2C832C81DD0F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D407DC16-04CF-4CEB-BED0-2C832C81DD0F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D407DC16-04CF-4CEB-BED0-2C832C81DD0F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

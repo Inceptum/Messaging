@@ -6,6 +6,7 @@ using System.Threading;
 using Castle.Core.Logging;
 using Inceptum.Messaging.Contract;
 using Inceptum.Messaging.Serialization;
+using Inceptum.Messaging.Serialization.Json;
 using Inceptum.Messaging.Transports;
 using NLog;
 using NUnit.Framework;
@@ -51,7 +52,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
         private string m_TempQueue;
 
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void TestFixtureSetUp()
         {
             m_Factory = new ConnectionFactory { HostName = HOST, UserName = "guest", Password = "guest" };
@@ -106,7 +107,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
 
 
         [Test]
-        [Ignore]
+        [Ignore("Ignored")]
         public void SendFailureTest()
         {
             using (var transport = new RabbitMqTransport(HOST, "guest", "guest"))
@@ -355,7 +356,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
         }
 
         [Test]
-        [Ignore]
+        [Ignore("Ignored")]
         [TestCase(10, true,TestName = "10b confirmed")]
         [TestCase(10, false,TestName = "10b")]
         [TestCase(1024, false, TestName = "1Kb")]
@@ -386,7 +387,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
 
 
         [Test]
-        [Ignore]
+        [Ignore("Ignored")]
         public void EndToEndRabbitResubscriptionTest()
         {
 
@@ -446,94 +447,87 @@ namespace Inceptum.Messaging.RabbitMq.Tests
       
 
         [Test]
-        [ExpectedException(typeof (InvalidOperationException))]
         public void AttemptToSubscribeSameDestinationAndMessageTypeTwiceFailureTest()
         {
             using (var transport = new RabbitMqTransport(HOST, "guest", "guest"))
             {
                 IMessagingSession messagingSession = transport.CreateSession( null);
                 messagingSession.Subscribe(TEST_QUEUE, (message, acknowledge) => { }, "type1");
-                messagingSession.Subscribe(TEST_QUEUE, (message, acknowledge) => { }, "type1");
+                Assert.Throws<InvalidOperationException>(() => messagingSession.Subscribe(TEST_QUEUE, (message, acknowledge) => { }, "type1"));
             }
         }
         
         [Test]
-        [ExpectedException(typeof (InvalidOperationException))]
         public void AttemptToSubscribeSharedDestinationWithoutMessageTypeFailureTest()
         {
             using (var transport = new RabbitMqTransport(HOST, "guest", "guest"))
             {
                 IMessagingSession messagingSession = transport.CreateSession( null);
                 messagingSession.Subscribe(TEST_QUEUE, (message, acknowledge) => { }, "type1");
-                messagingSession.Subscribe(TEST_QUEUE, (message, acknowledge) => { }, null);
+                Assert.Throws<InvalidOperationException>(() => messagingSession.Subscribe(TEST_QUEUE, (message, acknowledge) => { }, null));
             }
         }
 
         [Test]
-        [ExpectedException(typeof (InvalidOperationException))]
         public void AttemptToSubscribeNonSharedDestinationWithMessageTypeFailureTest()
         {
             using (var transport = new RabbitMqTransport(HOST, "guest", "guest"))
             {
                 IMessagingSession messagingSession = transport.CreateSession( null);
                 messagingSession.Subscribe(TEST_QUEUE, (message, acknowledge) => { }, null);
-                messagingSession.Subscribe(TEST_QUEUE, (message, acknowledge) => { }, "type1");
+                Assert.Throws<InvalidOperationException>(() => messagingSession.Subscribe(TEST_QUEUE, (message, acknowledge) => { }, "type1"));
             }
         }
 
         [Test]
-        [ExpectedException(typeof (InvalidOperationException))]
         public void AttemptToSubscribeSameDestinationWithoutMessageTypeTwiceFailureTest()
         {
             using (var transport = new RabbitMqTransport(HOST, "guest", "guest"))
             {
                 IMessagingSession messagingSession = transport.CreateSession( null);
                 messagingSession.Subscribe(TEST_QUEUE, (message, acknowledge) => { }, null);
-                messagingSession.Subscribe(TEST_QUEUE, (message, acknowledge) => { }, null);
+                Assert.Throws<InvalidOperationException>(() => messagingSession.Subscribe(TEST_QUEUE, (message, acknowledge) => { }, null));
             }
         }
 
-
-
         [Test]
-        public string VerifyPublishEndpointFailureTest()
+        public void VerifyPublishEndpointFailureTest()
         {
             var transport = new RabbitMqTransport(HOST, "guest", "guest");
             string error;
             var valid = transport.VerifyDestination("non.existing", EndpointUsage.Publish, false, out error);
             Assert.That(valid,Is.False, "endpoint reported as valid");
             Assert.That(error, Is.EqualTo(@"The AMQP operation was interrupted: AMQP close-reason, initiated by Peer, code=404, text=""NOT_FOUND - no exchange 'non.existing' in vhost '/'"", classId=40, methodId=10, cause="));
-            return error;
+            //return error;
         }
 
         [Test]
-        public string VerifySubscriptionEndpointNoExchangeFailureTest()
+        public void VerifySubscriptionEndpointNoExchangeFailureTest()
         {
             var transport = new RabbitMqTransport(HOST, "guest", "guest");
             string error;
             var valid = transport.VerifyDestination(new Destination { Subscribe = "non.existing", Publish = "non.existing" }, EndpointUsage.Subscribe, false, out error);
             Assert.That(valid,Is.False, "endpoint reported as valid");
             Assert.That(error, Is.EqualTo(@"The AMQP operation was interrupted: AMQP close-reason, initiated by Peer, code=404, text=""NOT_FOUND - no exchange 'non.existing' in vhost '/'"", classId=40, methodId=10, cause="));
-            return error;
+            //return error;
         }
 
 
         [Test]
-        public string VerifySubscriptionEndpointNoQueueFailureTest()
+        public void VerifySubscriptionEndpointNoQueueFailureTest()
         {
             var transport = new RabbitMqTransport(HOST, "guest", "guest");
             string error;
             var valid = transport.VerifyDestination(new Destination { Subscribe = "non.existing", Publish = "amq.direct" }, EndpointUsage.Subscribe, false, out error);
             Assert.That(valid,Is.False, "endpoint reported as valid");
             Assert.That(error, Is.EqualTo(@"The AMQP operation was interrupted: AMQP close-reason, initiated by Peer, code=404, text=""NOT_FOUND - no queue 'non.existing' in vhost '/'"", classId=50, methodId=10, cause="));
-            return error;
+            //return error;
         }
 
 
         [Test]
         public void SubscriptionToClusterTest()
         {
-
             ITransportResolver transportResolver = new TransportResolver(new Dictionary<string, TransportInfo>()
             {
                 {"main", new TransportInfo("localhost1,localhost", "guest", "guest", "None", "RabbitMq")},
@@ -545,6 +539,7 @@ namespace Inceptum.Messaging.RabbitMq.Tests
 
             using (var me = new MessagingEngine(transportResolver, new RabbitMqTransportFactory(false)))
             {
+                me.SerializationManager.RegisterSerializerFactory(new JsonSerializerFactory());
                 me.Send(1, sendEndpoint);
                 me.ResubscriptionTimeout = 100;
                 var received = new ManualResetEvent(false);
