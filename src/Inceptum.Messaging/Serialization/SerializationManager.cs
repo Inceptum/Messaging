@@ -58,7 +58,7 @@ namespace Inceptum.Messaging.Serialization
 
         public string GetMessageTypeString<TMessage>(string format)
         {
-            if (format == null) throw new ArgumentNullException(nameof(format));
+            if (format == null) throw new ArgumentNullException("format");
 
             var messageTypeStringProvider = (ExtractSerializer<TMessage>(format) as IMessageTypeStringProvider);
             return messageTypeStringProvider == null 
