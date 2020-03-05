@@ -22,10 +22,17 @@ namespace Inceptum.Messaging.RabbitMq
             {
                 m_Callback(properties, body, ack =>
                 {
-                    if (ack)
-                        Model.BasicAck(deliveryTag, false);
-                    else
-                        Model.BasicNack(deliveryTag, false, true);
+                    try
+                    {
+                        if (ack)
+                            Model.BasicAck(deliveryTag, false);
+                        else
+                            Model.BasicNack(deliveryTag, false, true);
+                    }
+                    catch (RabbitMQ.Client.Exceptions.AlreadyClosedException e)
+                    {
+                        throw new MessagingSessionClosedException("Consumer failed to handle ack with value " + ack + "", e);
+                    }
                 });
             }
             catch (Exception e)

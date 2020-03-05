@@ -172,7 +172,7 @@ namespace Inceptum.Messaging
         private void processDeferredAcknowledgements(bool all = false)
         {
             Tuple<DateTime, Action>[] ready;
-            var succeeded=new List<Tuple<DateTime, Action>>();
+            var remove = new List<Tuple<DateTime, Action>>();
             lock (m_DeferredAcknowledgements)
             {
                 ready = all
@@ -185,18 +185,22 @@ namespace Inceptum.Messaging
                 try
                 {
                     t.Item2();
-                    succeeded.Add(t);
+                    remove.Add(t);
+                }
+                catch (MessagingSessionClosedException e)
+                {
+                    m_Logger.WarnException("Deferred acknowledge failed due to session close.", e);
+                    remove.Add(t);
                 }
                 catch (Exception e)
                 {
-                    m_Logger.WarnException("Deferred acknowledge failed. Will retry later.",e);
-                    
+                    m_Logger.WarnException("Deferred acknowledge failed. Will retry later.", e);
                 }
             }
 
             lock (m_DeferredAcknowledgements)
             {
-                Array.ForEach(succeeded.ToArray(), r => m_DeferredAcknowledgements.Remove(r));
+                Array.ForEach(remove.ToArray(), r => m_DeferredAcknowledgements.Remove(r));
             }
         }
 
@@ -260,6 +264,26 @@ namespace Inceptum.Messaging
                 (builder, pair) => builder.AppendFormat("{0,-" + length + "}\tConcurrencyLevel:{1:-10}\tSent:{2}\tReceived:{3}\tProcessed:{4}" + Environment.NewLine, pair.Key, pair.Value.ConcurrencyLevel == 0 ? "[current thread]" : pair.Value.ConcurrencyLevel.ToString(), pair.Value.SentMessages, pair.Value.ReceivedMessages, pair.Value.ProcessedMessages));
             return stats.ToString();
         }
+
+        #region Internal Statistics for tests
+
+        internal struct InternalStatistics
+        {
+            public int DeferredAcknowledgements;
+        }
+
+        internal InternalStatistics GetInternalStatistics()
+        {
+            lock (m_DeferredAcknowledgements)
+            {
+                return new InternalStatistics
+                {
+                    DeferredAcknowledgements = m_DeferredAcknowledgements.Count
+                };
+            }
+        }
+
+        #endregion
 
         public void Dispose()
         {
