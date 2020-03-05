@@ -354,6 +354,73 @@ namespace Inceptum.Messaging.Tests
             }
         }
 
+
+        [Test]
+        public void DeferredAcknowledgementIsRemovedFromTheListOnMessagingSessionClosedException()
+        {
+            var finishProcessing = new ManualResetEvent(false);
+            Action<BinaryMessage, Action<bool>> callback = null;
+            using (var processingGroupManager = createProcessingGroupManagerWithMockedDependencies(action => callback = action))
+            {
+                IDisposable subscription = null;
+                subscription = processingGroupManager.Subscribe(new Endpoint("test", "test", false, "fake"), (message, acknowledge) =>
+                {
+                    acknowledge(100, true);
+                    finishProcessing.WaitOne();
+                }, null, "SingleThread", 0);
+
+
+                callback(
+                    new BinaryMessage {Bytes = new byte[] {1}, Type = typeof(string).Name}
+                    , b =>
+                    {
+                        finishProcessing.Set();
+                        throw new MessagingSessionClosedException();
+                    });
+
+                finishProcessing.WaitOne(150);
+                Thread.Sleep(50); // NOTE[MT]: just waiting for `MessagingSessionClosedException` to be thrown and handled
+                var statistics = processingGroupManager.GetInternalStatistics();
+                Assert.That(
+                    statistics.DeferredAcknowledgements
+                    , Is.EqualTo(0)
+                    , "Deferred ack should be removed on session closed exception");
+            }
+        }
+
+        [Test]
+        public void DeferredAcknowledgementIsNotRemovedFromTheListOnException()
+        {
+            var finishProcessing = new ManualResetEvent(false);
+            Action<BinaryMessage, Action<bool>> callback = null;
+            using (var processingGroupManager = createProcessingGroupManagerWithMockedDependencies(action => callback = action))
+            {
+                IDisposable subscription = null;
+                subscription = processingGroupManager.Subscribe(new Endpoint("test", "test", false, "fake"), (message, acknowledge) =>
+                {
+                    acknowledge(100, true);
+                    finishProcessing.WaitOne();
+                }, null, "SingleThread", 0);
+
+
+                callback(
+                    new BinaryMessage { Bytes = new byte[] { 1 }, Type = typeof(string).Name }
+                    , b =>
+                    {
+                        finishProcessing.Set();
+                        throw new Exception();
+                    });
+
+                finishProcessing.WaitOne(150);
+                Thread.Sleep(50); // NOTE[MT]: just waiting for `Exception` to be thrown and handled
+                var statistics = processingGroupManager.GetInternalStatistics();
+                Assert.That(
+                    statistics.DeferredAcknowledgements
+                    , Is.EqualTo(1)
+                    , "Deferred ack should not be removed on exception");
+            }
+        }
+
         [Test]
         [Ignore("PerformanceTest")]
         public void DeferredAcknowledgementPerformanceTest()

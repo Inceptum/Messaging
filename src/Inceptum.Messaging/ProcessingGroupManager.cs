@@ -265,6 +265,26 @@ namespace Inceptum.Messaging
             return stats.ToString();
         }
 
+        #region Internal Statistics for tests
+
+        internal struct InternalStatistics
+        {
+            public int DeferredAcknowledgements;
+        }
+
+        internal InternalStatistics GetInternalStatistics()
+        {
+            lock (m_DeferredAcknowledgements)
+            {
+                return new InternalStatistics
+                {
+                    DeferredAcknowledgements = m_DeferredAcknowledgements.Count
+                };
+            }
+        }
+
+        #endregion
+
         public void Dispose()
         {
             m_IsDisposing = true;
