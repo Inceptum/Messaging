@@ -172,7 +172,7 @@ namespace Inceptum.Messaging
         private void processDeferredAcknowledgements(bool all = false)
         {
             Tuple<DateTime, Action>[] ready;
-            var succeeded=new List<Tuple<DateTime, Action>>();
+            var remove = new List<Tuple<DateTime, Action>>();
             lock (m_DeferredAcknowledgements)
             {
                 ready = all
@@ -185,18 +185,22 @@ namespace Inceptum.Messaging
                 try
                 {
                     t.Item2();
-                    succeeded.Add(t);
+                    remove.Add(t);
+                }
+                catch (MessagingSessionClosedException e)
+                {
+                    m_Logger.WarnException("Deferred acknowledge failed due to session close.", e);
+                    remove.Add(t);
                 }
                 catch (Exception e)
                 {
-                    m_Logger.WarnException("Deferred acknowledge failed. Will retry later.",e);
-                    
+                    m_Logger.WarnException("Deferred acknowledge failed. Will retry later.", e);
                 }
             }
 
             lock (m_DeferredAcknowledgements)
             {
-                Array.ForEach(succeeded.ToArray(), r => m_DeferredAcknowledgements.Remove(r));
+                Array.ForEach(remove.ToArray(), r => m_DeferredAcknowledgements.Remove(r));
             }
         }
 

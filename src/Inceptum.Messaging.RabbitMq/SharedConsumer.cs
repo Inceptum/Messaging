@@ -65,11 +65,18 @@ namespace Inceptum.Messaging.RabbitMq
                     {
                         callback(properties, body,ack =>
                             {
-                                if(ack)
-                                    Model.BasicAck(deliveryTag, false);
-                                else
-                                    //TODO: allow callback to decide whether to redeliver
-                                    Model.BasicNack(deliveryTag, false,true);
+                                try
+                                {
+                                    if (ack)
+                                        Model.BasicAck(deliveryTag, false);
+                                    else
+                                        //TODO: allow callback to decide whether to redeliver
+                                        Model.BasicNack(deliveryTag, false, true);
+                                }
+                                catch (RabbitMQ.Client.Exceptions.AlreadyClosedException e)
+                                {
+                                    throw new MessagingSessionClosedException("Failed to handle ack with value " + ack + "", e);
+                                }
                             });
                         
                     }
