@@ -75,7 +75,7 @@ namespace Inceptum.Messaging.RabbitMq
                                 }
                                 catch (RabbitMQ.Client.Exceptions.AlreadyClosedException e)
                                 {
-                                    throw new MessagingSessionClosedException("Failed to handle ack with value " + ack + "", e);
+                                    throw new MessagingSessionClosedException("SharedConsumer failed to handle ack with value " + ack + "", e);
                                 }
                             });
                         
