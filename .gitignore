@@ -53,3 +53,4 @@ Inceptum.AppServer-*.wrap
 /*syntax: regexp
 ^[^\/]*.wrap*/
 
+.vs/
